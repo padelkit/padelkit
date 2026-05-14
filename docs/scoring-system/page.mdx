@@ -1,0 +1,43 @@
+export const metadata = {
+  title: 'Scoring System',
+  description:
+    'Detailed explanation of the PadelKit scoring engine, including match, set, and game logic.',
+}
+
+export const sections = [
+  { title: 'Match State', id: 'match-state' },
+  { title: 'Points and Deuce', id: 'points-and-deuce' },
+  { title: 'Games and Sets', id: 'games-and-sets' },
+]
+
+# Scoring System
+
+The scoring module implements the full logic for tracking a padel match, from individual points to the final match result. {{ className: 'lead' }}
+
+## Match State {{ id: 'match-state' }}
+
+The `MatchScore` class is the central entity for managing match progress. It tracks points, games, and sets for both teams.
+
+```python
+from padelkit import MatchScore
+from padelkit.scoring import TeamId
+
+score = MatchScore()
+score.add_point(TeamId.A)
+```
+
+## Points and Deuce {{ id: 'points-and-deuce' }}
+
+Points follow the traditional sequence: `0`, `15`, `30`, `40`. PadelKit handles the "Deuce" and "Advantage" states automatically.
+
+- If both teams reach 40, the state becomes **Deuce**.
+- Winning a point at Deuce grants **Advantage**.
+- If the team with Advantage loses the next point, it returns to **Deuce**.
+
+## Games and Sets {{ id: 'games-and-sets' }}
+
+Matches are typically played as the best of 3 sets.
+
+- **Games**: Won by reaching 40 and winning the deciding point.
+- **Sets**: Won by reaching 6 games with a 2-game lead, or reaching 7 games.
+- **Match**: The first team to win 2 sets wins the match.

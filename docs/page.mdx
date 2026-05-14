@@ -1,0 +1,28 @@
+import { HeroPattern } from '@/components/HeroPattern'
+
+export const metadata = {
+  title: 'PadelKit Documentation',
+  description:
+    'PadelKit is an open-source Python library designed for padel analytics and court geometry.',
+}
+
+export const sections = [
+  { title: 'Overview', id: 'overview' },
+  { title: 'Core Features', id: 'core-features' },
+]
+
+<HeroPattern />
+
+# PadelKit Documentation
+
+PadelKit is a modern Python toolkit for padel tennis analytics. It provides essential domain models for court geometry and scoring systems, serving as a lightweight foundation for padel-related software. {{ className: 'lead' }}
+
+## Overview {{ id: 'overview' }}
+
+The goal of PadelKit is to provide a standardized way to represent padel courts and match progress. It is designed to be dependency-free in its core, ensuring it remains lightweight and easy to integrate into any Python project.
+
+## Core Features {{ id: 'core-features' }}
+
+- **Court Geometry**: Official FIP standard dimensions and a standardized coordinate system.
+- **Scoring System**: Full match state management, including sets, games, and deuce logic.
+- **Developer Friendly**: Type-hinted, tested, and linted with modern Python tools.
