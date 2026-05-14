@@ -1,0 +1,147 @@
+export const metadata = {
+  title: 'Court Geometry',
+  description:
+    'Detailed API reference for the PadelCourt and CourtDimensions classes in PadelKit.',
+}
+
+# Court Geometry
+
+The court module defines the dimensions, landmarks, and coordinate system of an official padel court. On this page, we'll dive into the different classes and methods you can use to interact with court geometry programmatically. {{ className: 'lead' }}
+
+## The CourtDimensions model
+
+The `CourtDimensions` dataclass houses the official measurements of the court. All units are expressed in meters.
+
+### Properties
+
+<Properties>
+  <Property name="length" type="float">
+    The total length of the padel court.
+  </Property>
+  <Property name="width" type="float">
+    The total width of the padel court.
+  </Property>
+</Properties>
+
+---
+
+## The PadelCourt model
+
+The `PadelCourt` class is the main geometry model. It uses a centralized coordinate system where the origin `(0.0, 0.0)` is exactly at the center of the court (at the net). The **X** axis represents the width, and the **Y** axis represents the length.
+
+### Properties
+
+<Properties>
+  <Property name="dimensions" type="CourtDimensions">
+    An instance of the `CourtDimensions` class containing the physical measurements.
+  </Property>
+</Properties>
+
+---
+
+## Standard Initialization {{ tag: 'classmethod', label: 'PadelCourt.fip_standard()' }}
+
+<Row>
+  <Col>
+
+    This class method allows you to easily instantiate a `PadelCourt` using the standard measurements established by the International Padel Federation (FIP).
+
+    By default, an FIP court is 20.0m in length and 10.0m in width.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Instantiation" tag="classmethod" label="fip_standard">
+
+    ```python
+    from padelkit import PadelCourt
+
+    court = PadelCourt.fip_standard()
+    ```
+
+    ```json {{ title: 'Output structure' }}
+    PadelCourt(
+      dimensions=CourtDimensions(length=20.0, width=10.0)
+    )
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Get a landmark coordinate {{ tag: 'method', label: 'court.point()' }}
+
+<Row>
+  <Col>
+
+    This method allows you to retrieve the exact `(x, y)` coordinates of a specific standard landmark on the court.
+
+    ### Required arguments
+
+    <Properties>
+      <Property name="name" type="Landmark | str">
+        The name of the landmark. This can be an instance of the `Landmark` Enum (e.g., `Landmark.NET_CENTER`) or its string equivalent (e.g., `"NET_CENTER"`).
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Usage" tag="method" label="point">
+
+    ```python
+    from padelkit import PadelCourt
+
+    court = PadelCourt.fip_standard()
+    net_center = court.point("NET_CENTER")
+    ```
+
+    ```json {{ title: 'Output' }}
+    (0.0, 0.0)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## List all landmarks {{ tag: 'method', label: 'court.landmarks_2d()' }}
+
+<Row>
+  <Col>
+
+    This method returns a dictionary containing all the standardized 2D positions of the court landmarks. It's useful if you need to draw the court or access multiple points at once.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Usage" tag="method" label="landmarks_2d">
+
+    ```python
+    from padelkit import PadelCourt
+
+    court = PadelCourt.fip_standard()
+    all_points = court.landmarks_2d()
+    ```
+
+    ```json {{ title: 'Output (abridged)' }}
+    {
+      "CENTER": [0.0, 0.0],
+      "NET_LEFT": [-5.0, 0.0],
+      "NET_RIGHT": [5.0, 0.0],
+      "TOP_LEFT": [-5.0, -10.0],
+      "TOP_RIGHT": [5.0, -10.0],
+      "BOTTOM_LEFT": [-5.0, 10.0],
+      "BOTTOM_RIGHT": [5.0, 10.0]
+    }
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

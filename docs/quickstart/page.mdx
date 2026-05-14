@@ -1,0 +1,68 @@
+export const metadata = {
+  title: 'Quickstart',
+  description:
+    'Learn how to install PadelKit and start using its core features in a matter of minutes.',
+}
+
+# Quickstart
+
+This guide will get you up and running with PadelKit. You'll learn how to install the package and start using the Court Geometry and Scoring modules. {{ className: 'lead' }}
+
+## Installation
+
+To install PadelKit, simply use pip. The library is designed to be lightweight and has zero external dependencies by default.
+
+```bash
+pip install padelkit
+```
+
+## Basic Usage
+
+Once installed, you can easily import the necessary classes to start mapping a court or tracking a match.
+
+### Working with Court Geometry
+
+You can instantiate a standard FIP padel court and query for coordinates.
+
+```python
+from padelkit import PadelCourt
+
+# Instantiate a standard 20x10 court
+court = PadelCourt.fip_standard()
+
+# Get the coordinates of the center of the net
+net_center = court.point("NET_CENTER")
+print(f"Net center: {net_center}")
+# Output: Net center: (0.0, 0.0)
+```
+
+### Tracking Match Score
+
+You can also use the scoring module to track a match's state.
+
+```python
+from padelkit import MatchScore
+from padelkit.scoring import TeamId
+
+# Initialize a new match
+score = MatchScore()
+
+# Team A wins the first point
+score.add_point(TeamId.A)
+
+print(score.get_points(TeamId.A))
+# Output: 15
+```
+
+## Next steps
+
+Now that you have a basic understanding of PadelKit, you can dive deeper into the specific API documentation for each module.
+
+<div className="not-prose mt-6 flex gap-3">
+  <Button href="/court" arrow="right">
+    <>Court Geometry</>
+  </Button>
+  <Button href="/scoring" variant="outline">
+    <>Scoring System</>
+  </Button>
+</div>

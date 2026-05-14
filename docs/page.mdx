@@ -1,28 +1,43 @@
+import { Guides } from '@/components/Guides'
+import { Resources } from '@/components/Resources'
 import { HeroPattern } from '@/components/HeroPattern'
 
 export const metadata = {
-  title: 'PadelKit Documentation',
+  title: 'API Documentation',
   description:
-    'PadelKit is an open-source Python library designed for padel analytics and court geometry.',
+    'Learn everything there is to know about the PadelKit library and integrate it into your Python applications.',
 }
 
 export const sections = [
-  { title: 'Overview', id: 'overview' },
-  { title: 'Core Features', id: 'core-features' },
+  { title: 'Guides', id: 'guides' },
+  { title: 'Resources', id: 'resources' },
 ]
 
 <HeroPattern />
 
-# PadelKit Documentation
+# API Documentation
 
-PadelKit is a modern Python toolkit for padel tennis analytics. It provides essential domain models for court geometry and scoring systems, serving as a lightweight foundation for padel-related software. {{ className: 'lead' }}
+Use the PadelKit API to access court geometry, official dimensions, advanced scoring logic, and seamlessly integrate professional padel analytics into your software. {{ className: 'lead' }}
 
-## Overview {{ id: 'overview' }}
+<div className="not-prose mt-6 mb-16 flex gap-3">
+  <Button href="/quickstart" arrow="right">
+    <>Quickstart</>
+  </Button>
+  <Button href="https://github.com/padelkit/padelkit" variant="outline" target="_blank">
+    <>View on GitHub</>
+  </Button>
+</div>
 
-The goal of PadelKit is to provide a standardized way to represent padel courts and match progress. It is designed to be dependency-free in its core, ensuring it remains lightweight and easy to integrate into any Python project.
+## Getting started {{ anchor: false }}
 
-## Core Features {{ id: 'core-features' }}
+To get started, install the library using pip, then read about how to leverage the different modules for your specific needs. Whether you are building an inference engine for padel or a simple scoreboard, PadelKit provides the essential domain models you need. {{ className: 'lead' }}
 
-- **Court Geometry**: Official FIP standard dimensions and a standardized coordinate system.
-- **Scoring System**: Full match state management, including sets, games, and deuce logic.
-- **Developer Friendly**: Type-hinted, tested, and linted with modern Python tools.
+<div className="not-prose">
+  <Button href="/quickstart" variant="text" arrow="right">
+    <>Install PadelKit</>
+  </Button>
+</div>
+
+<Guides />
+
+<Resources />
