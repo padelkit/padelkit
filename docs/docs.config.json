@@ -1,0 +1,39 @@
+{
+  "navigation": [
+    {
+      "title": "Guides",
+      "links": [
+        { "title": "Introduction", "href": "/" },
+        { "title": "Quickstart", "href": "/quickstart" }
+      ]
+    },
+    {
+      "title": "Resources",
+      "links": [
+        { "title": "Court Geometry", "href": "/court" },
+        { "title": "Scoring System", "href": "/scoring" }
+      ]
+    }
+  ],
+  "intro_cards": {
+    "guides": [
+      {
+        "name": "Quickstart",
+        "href": "/quickstart",
+        "description": "Learn how to install and use PadelKit in minutes."
+      }
+    ],
+    "resources": [
+      {
+        "name": "Court Geometry",
+        "href": "/court",
+        "description": "API reference for the PadelCourt model and dimensions."
+      },
+      {
+        "name": "Scoring System",
+        "href": "/scoring",
+        "description": "API reference for MatchScore and padel scoring logic."
+      }
+    ]
+  }
+}
