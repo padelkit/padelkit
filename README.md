@@ -46,5 +46,5 @@ Apache 2.0 License.
 
 ## Links
 
-- **Documentation:** [https://padelkit.dev](https://padelkit.dev)
+- **Documentation:** [https://padelkit.dev](https://padelkit.dev) (See [Docs Guide](./docs/README.md) for contribution instructions)
 - **Source Code:** [GitHub](https://github.com/padelkit/padelkit)
