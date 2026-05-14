@@ -1,39 +1,36 @@
 {
+  "pages": {
+    "/": {
+      "title": "API Documentation",
+      "description": "Learn everything there is to know about the PadelKit library and integrate it into your Python applications."
+    },
+    "/quickstart": {
+      "title": "Quickstart",
+      "description": "Learn how to install and use PadelKit in minutes."
+    },
+    "/court": {
+      "title": "Court Geometry",
+      "description": "Detailed API reference for the PadelCourt model and dimensions.",
+      "icon": "UserIcon"
+    },
+    "/scoring": {
+      "title": "Scoring System",
+      "description": "API reference for MatchScore and padel scoring logic.",
+      "icon": "ChatBubbleIcon"
+    }
+  },
   "navigation": [
     {
       "title": "Guides",
-      "links": [
-        { "title": "Introduction", "href": "/" },
-        { "title": "Quickstart", "href": "/quickstart" }
-      ]
+      "links": ["/", "/quickstart"]
     },
     {
       "title": "Resources",
-      "links": [
-        { "title": "Court Geometry", "href": "/court" },
-        { "title": "Scoring System", "href": "/scoring" }
-      ]
+      "links": ["/court", "/scoring"]
     }
   ],
   "intro_cards": {
-    "guides": [
-      {
-        "name": "Quickstart",
-        "href": "/quickstart",
-        "description": "Learn how to install and use PadelKit in minutes."
-      }
-    ],
-    "resources": [
-      {
-        "name": "Court Geometry",
-        "href": "/court",
-        "description": "API reference for the PadelCourt model and dimensions."
-      },
-      {
-        "name": "Scoring System",
-        "href": "/scoring",
-        "description": "API reference for MatchScore and padel scoring logic."
-      }
-    ]
+    "guides": ["/quickstart"],
+    "resources": ["/court", "/scoring"]
   }
 }
