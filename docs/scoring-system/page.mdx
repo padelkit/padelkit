@@ -1,0 +1,65 @@
+# Scoring System
+
+PadelKit implements a robust Event Sourcing architecture for scoring, ensuring state consistency and enabling historical point tracking. This guide explores the core concepts of the scoring system. {{ className: 'lead' }}
+
+## Event Sourcing Architecture
+
+Unlike simple counters that just keep track of the current points, PadelKit uses an Event Sourcing approach. This means the single source of truth for a match is the sequential list of points won by each team.
+
+The `MatchScoreHistory` class stores these events and recalculates the complete score state instantly. This architecture provides several key advantages:
+
+1. **No inconsistent states**: You can never reach an invalid state (like a set score of 8-1) because the score is always deterministically calculated from the raw point history.
+2. **Historical corrections**: If a referee or player inputs a point for the wrong team, they can fix it at any time. By modifying a past event, the entire match score is automatically recalculated without breaking.
+3. **Analytics ready**: Having the exact sequence of points allows for advanced statistical analysis later on.
+
+---
+
+## The Match Wrapper
+
+While `MatchScoreHistory` deals with the mathematical sequence of padel scoring (games, sets, deuces, advantages), it does not care about the meta-rules of a specific tournament (e.g., "Is this match best of 3 or best of 5?").
+
+For a complete application, you should use the `Match` class. The `Match` class acts as a wrapper that:
+- Contains the `MatchScoreHistory` instance.
+- Tracks `Player` and `Team` metadata (names, sides).
+- Defines the `best_of_sets` completion criteria.
+- Provides properties like `is_completed` and `winner`.
+
+<CodeGroup title="Match flow" tag="concept" label="progression">
+
+```python
+from padelkit import Match, TeamId
+
+# Initialize a standard best-of-3 sets match
+match = Match()
+
+# Add points through the history property
+match.history.add_point(TeamId.A)
+match.history.add_point(TeamId.B)
+
+# Check if the match has been won
+if match.is_completed:
+    print(f"Match won by {match.winner.name}")
+else:
+    # Print the current score state
+    print(match.history.get_current_score())
+```
+
+</CodeGroup>
+
+---
+
+## Modifying Past Points
+
+One of the most powerful features of PadelKit is the ability to correct mistakes. If you realize that the point at index `15` was actually won by Team B instead of Team A, you can simply modify it:
+
+<CodeGroup title="Correction example" tag="concept" label="correction">
+
+```python
+# A mistake was made early in the game
+score = match.history.modify_point(15, TeamId.B)
+
+# The new state is automatically recalculated
+print(score)
+```
+
+</CodeGroup>

@@ -1,77 +1,98 @@
-from padelkit.scoring import MatchScore
-from padelkit.scoring.score import TeamId
+from padelkit.scoring import MatchScoreHistory, TeamId
 
 
 def test_initial_score():
-    score = MatchScore()
-    assert score.game_points == (0, 0)
+    history = MatchScoreHistory()
+    score = history.get_current_score()
+    assert (score.points_A, score.points_B) == (0, 0)
     assert score.games_A == 0
     assert score.games_B == 0
 
 
 def test_point_progression():
-    score = MatchScore()
-    score.point_won_by("A")
-    assert score.game_points == (15, 0)
-    score.point_won_by("B")
-    assert score.game_points == (15, 15)
-    score.point_won_by("A")
-    assert score.game_points == (30, 15)
-    score.point_won_by("A")
-    assert score.game_points == (40, 15)
+    history = MatchScoreHistory()
+    
+    score = history.add_point(TeamId.A)
+    assert (score.points_A, score.points_B) == (15, 0)
+    
+    score = history.add_point(TeamId.B)
+    assert (score.points_A, score.points_B) == (15, 15)
+    
+    score = history.add_point(TeamId.A)
+    assert (score.points_A, score.points_B) == (30, 15)
+    
+    score = history.add_point(TeamId.A)
+    assert (score.points_A, score.points_B) == (40, 15)
 
 
 def test_game_win():
-    score = MatchScore()
-    for _ in range(4):
-        score.point_won_by(TeamId.A)
+    history = MatchScoreHistory()
+    for _ in range(3):
+        history.add_point(TeamId.A)
     
+    score = history.add_point(TeamId.A)
     assert score.games_A == 1
     assert score.games_B == 0
-    assert score.game_points == (0, 0)
+    assert (score.points_A, score.points_B) == (0, 0)
 
 
 def test_deuce_and_advantage():
-    score = MatchScore()
+    history = MatchScoreHistory()
     
     # Get to 40-40
     for _ in range(3):
-        score.point_won_by("A")
-        score.point_won_by("B")
+        history.add_point(TeamId.A)
+        history.add_point(TeamId.B)
         
-    assert score.game_points == (40, 40)
-    assert score.advantage is None
+    score = history.get_current_score()
+    assert (score.points_A, score.points_B) == (40, 40)
     
     # A gets advantage
-    score.point_won_by("A")
-    assert score.game_points == ("AD", 40)
-    assert score.advantage == TeamId.A
+    score = history.add_point(TeamId.A)
+    assert (score.points_A, score.points_B) == ("AD", 40)
     
     # B ties (back to deuce)
-    score.point_won_by("B")
-    assert score.game_points == (40, 40)
-    assert score.advantage is None
+    score = history.add_point(TeamId.B)
+    assert (score.points_A, score.points_B) == (40, 40)
     
     # B gets advantage
-    score.point_won_by("B")
-    assert score.game_points == (40, "AD")
-    assert score.advantage == TeamId.B
+    score = history.add_point(TeamId.B)
+    assert (score.points_A, score.points_B) == (40, "AD")
     
     # B wins game
-    score.point_won_by("B")
+    score = history.add_point(TeamId.B)
     assert score.games_A == 0
     assert score.games_B == 1
-    assert score.game_points == (0, 0)
+    assert (score.points_A, score.points_B) == (0, 0)
 
 
 def test_set_win():
-    score = MatchScore()
+    history = MatchScoreHistory()
     
     # Team A wins 6 games straight
-    for _ in range(6):
+    for _ in range(5):
         for _ in range(4):
-            score.point_won_by("A")
+            history.add_point(TeamId.A)
+            
+    # Last game to win the set
+    for _ in range(3):
+        history.add_point(TeamId.A)
+    score = history.add_point(TeamId.A)
             
     assert score.sets_A == 1
     assert score.sets_B == 0
     assert score.completed_sets == [(6, 0)]
+
+
+def test_modify_point():
+    history = MatchScoreHistory()
+    history.add_point(TeamId.A)
+    history.add_point(TeamId.B)
+    history.add_point(TeamId.A)
+    
+    score = history.get_current_score()
+    assert (score.points_A, score.points_B) == (30, 15)
+    
+    # Modify second point (index 1) to be won by A instead of B
+    score = history.modify_point(1, TeamId.A)
+    assert (score.points_A, score.points_B) == (40, 0)

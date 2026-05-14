@@ -1,0 +1,46 @@
+# Match
+
+The `Match` class is the top-level entity representing a padel match. It encapsulates both the metadata (teams, duration, location) and the state management logic by holding a `MatchScoreHistory` instance. {{ className: 'lead' }}
+
+## Initialization
+
+You can create a `Match` by providing optional parameters. If no `teams` are provided, default generic teams will be instantiated.
+
+### Keyword Arguments
+
+<Properties>
+  <Property name="teams" type="dict[TeamId, Team]" optional>
+    A dictionary mapping a `TeamId` to a [`Team`](/team) object.
+  </Property>
+  <Property name="best_of_sets" type="int" optional default="3">
+    The number of sets to determine a winner (e.g., `3` means the first to win 2 sets wins).
+  </Property>
+  <Property name="duration_minutes" type="int | None" optional>
+    Total duration of the match in minutes.
+  </Property>
+  <Property name="date" type="datetime | None" optional>
+    The date and time of the match.
+  </Property>
+  <Property name="location" type="str | None" optional>
+    The venue or location.
+  </Property>
+  <Property name="court_type" type="str | None" optional>
+    E.g., "Indoor", "Outdoor".
+  </Property>
+</Properties>
+
+---
+
+## Properties
+
+<Properties>
+  <Property name="history" type="MatchScoreHistory">
+    The underlying [`MatchScoreHistory`](/match-score-history) engine driving the score logic.
+  </Property>
+  <Property name="winner" type="Team | None">
+    Returns the [`Team`](/team) that won the match based on `best_of_sets`, or `None` if incomplete.
+  </Property>
+  <Property name="is_completed" type="bool">
+    Returns `True` if a winner has been decided.
+  </Property>
+</Properties>

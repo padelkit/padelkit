@@ -1,4 +1,3 @@
-
 # Quickstart
 
 This guide will get you up and running with PadelKit. You'll learn how to install the package and start using the Court Geometry and Scoring modules. {{ className: 'lead' }}
@@ -33,20 +32,19 @@ print(f"Net center: {net_center}")
 
 ### Tracking Match Score
 
-You can also use the scoring module to track a match's state.
+You can use the scoring module to track a match's state using the event-sourcing architecture.
 
 ```python
-from padelkit import MatchScore
-from padelkit.scoring import TeamId
+from padelkit import Match, TeamId
 
-# Initialize a new match
-score = MatchScore()
+# Initialize a new match wrapper
+match = Match()
 
 # Team A wins the first point
-score.add_point(TeamId.A)
+match.history.add_point(TeamId.A)
 
-print(score.get_points(TeamId.A))
-# Output: 15
+# Print the cleanly formatted current state
+print(match.history.get_current_score())
 ```
 
 ## Next steps
@@ -57,7 +55,7 @@ Now that you have a basic understanding of PadelKit, you can dive deeper into th
   <Button href="/court" arrow="right">
     <>Court Geometry</>
   </Button>
-  <Button href="/scoring" variant="outline">
+  <Button href="/scoring-system" variant="outline">
     <>Scoring System</>
   </Button>
 </div>
