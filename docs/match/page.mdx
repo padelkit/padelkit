@@ -4,30 +4,65 @@ The `Match` class is the top-level entity representing a padel match. It encapsu
 
 ## Initialization
 
-You can create a `Match` by providing optional parameters. If no `teams` are provided, default generic teams will be instantiated.
+<Row>
+  <Col>
 
-### Keyword Arguments
+    You can create a `Match` by providing optional parameters. If no `teams` are provided, default generic teams will be instantiated.
 
-<Properties>
-  <Property name="teams" type="dict[TeamId, Team]" optional>
-    A dictionary mapping a `TeamId` to a [`Team`](/team) object.
-  </Property>
-  <Property name="best_of_sets" type="int" optional default="3">
-    The number of sets to determine a winner (e.g., `3` means the first to win 2 sets wins).
-  </Property>
-  <Property name="duration_minutes" type="int | None" optional>
-    Total duration of the match in minutes.
-  </Property>
-  <Property name="date" type="datetime | None" optional>
-    The date and time of the match.
-  </Property>
-  <Property name="location" type="str | None" optional>
-    The venue or location.
-  </Property>
-  <Property name="court_type" type="str | None" optional>
-    E.g., "Indoor", "Outdoor".
-  </Property>
-</Properties>
+    ### Keyword Arguments
+
+    <Properties>
+      <Property name="teams" type="dict[TeamId, Team]" optional>
+        A dictionary mapping a `TeamId` to a [`Team`](/team) object.
+      </Property>
+      <Property name="best_of_sets" type="int" optional default="3">
+        The number of sets to determine a winner (e.g., `3` means the first to win 2 sets wins).
+      </Property>
+      <Property name="duration_minutes" type="int | None" optional>
+        Total duration of the match in minutes.
+      </Property>
+      <Property name="date" type="datetime | None" optional>
+        The date and time of the match.
+      </Property>
+      <Property name="location" type="str | None" optional>
+        The venue or location.
+      </Property>
+      <Property name="court_type" type="str | None" optional>
+        E.g., "Indoor", "Outdoor".
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Instantiation" tag="class" label="Match">
+
+    ```python
+    from padelkit import Match
+    from datetime import datetime
+
+    match = Match(
+        best_of_sets=3,
+        location="Club Padel",
+        date=datetime.now()
+    )
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output structure' }}
+    Match(
+      teams=...,
+      best_of_sets=3,
+      duration_minutes=None,
+      date=datetime.datetime(...),
+      location='Club Padel',
+      court_type=None
+    )
+    ```
+
+  </Col>
+</Row>
 
 ---
 

@@ -2,43 +2,172 @@
 
 `MatchScoreHistory` is the event-sourcing engine that drives the score calculation. It maintains a chronological record of points and recalculates the game state efficiently. {{ className: 'lead' }}
 
-## Adding Points {{ tag: 'method', label: 'history.add_point()' }}
+## Initialization
 
-Adds a point won by a specific team to the history and returns the new recalculated score.
+<Row>
+  <Col>
 
-### Required arguments
+    Creates a new instance of `MatchScoreHistory`.
+
+    ### Keyword Arguments
+
+    <Properties>
+      <Property name="teams" type="dict[TeamId, Team] | None" optional>
+        An optional dictionary mapping a `TeamId` to a `Team` object.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Instantiation" tag="class" label="MatchScoreHistory">
+
+    ```python
+    from padelkit import MatchScoreHistory, TeamId
+
+    history = MatchScoreHistory()
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Properties
 
 <Properties>
-  <Property name="team" type="TeamId">
-    The team that won the point (`TeamId.A` or `TeamId.B`).
+  <Property name="teams" type="dict[TeamId, Team] | None">
+    The teams assigned to this match history, if any.
   </Property>
 </Properties>
 
-**Returns:** [`MatchScore`](/match-score)
+---
+
+## Adding Points {{ tag: 'method', label: 'history.add_point()' }}
+
+<Row>
+  <Col>
+
+    Adds a point won by a specific team to the history and returns the new recalculated score.
+
+    ### Required arguments
+
+    <Properties>
+      <Property name="team" type="TeamId">
+        The team that won the point (`TeamId.A` or `TeamId.B`).
+      </Property>
+    </Properties>
+
+    ### Returns
+
+    <Properties>
+      <Property name="MatchScore" type="MatchScore">
+        The new recalculated match state.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Usage" tag="method" label="add_point">
+
+    ```python
+    history.add_point(TeamId.A)
+    ```
+
+    </CodeGroup>
+
+    ```text {{ title: 'Output structure' }}
+    TEAM A |   | 0 | 15
+    TEAM B |   | 0 |  0
+    ```
+
+  </Col>
+</Row>
 
 ---
 
 ## Modifying Points {{ tag: 'method', label: 'history.modify_point()' }}
 
-Corrects a mistake by overwriting a point at a specific index in the history, triggering an instant recalculation of the entire match state.
+<Row>
+  <Col>
 
-### Required arguments
+    Corrects a mistake by overwriting a point at a specific index in the history, triggering an instant recalculation of the entire match state.
 
-<Properties>
-  <Property name="index" type="int">
-    The 0-based index of the point in history to modify.
-  </Property>
-  <Property name="team" type="TeamId">
-    The correct team that won the point.
-  </Property>
-</Properties>
+    ### Required arguments
 
-**Returns:** [`MatchScore`](/match-score)
+    <Properties>
+      <Property name="index" type="int">
+        The 0-based index of the point in history to modify.
+      </Property>
+      <Property name="team" type="TeamId">
+        The correct team that won the point.
+      </Property>
+    </Properties>
+
+    ### Returns
+
+    <Properties>
+      <Property name="MatchScore" type="MatchScore">
+        The new recalculated match state.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Usage" tag="method" label="modify_point">
+
+    ```python
+    # Overwrite the first point to be won by Team B
+    history.modify_point(0, TeamId.B)
+    ```
+
+    </CodeGroup>
+
+    ```text {{ title: 'Output structure' }}
+    TEAM A |   | 0 |  0
+    TEAM B |   | 0 | 15  *
+    ```
+
+  </Col>
+</Row>
 
 ---
 
 ## Retrieving Score {{ tag: 'method', label: 'history.get_current_score()' }}
 
-Iterates over the entire point history to compute the score up to the latest point.
+<Row>
+  <Col>
 
-**Returns:** [`MatchScore`](/match-score)
+    Iterates over the entire point history to compute the score up to the latest point.
+
+    ### Returns
+
+    <Properties>
+      <Property name="MatchScore" type="MatchScore">
+        The current recalculated match state.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Usage" tag="method" label="get_current_score">
+
+    ```python
+    score = history.get_current_score()
+    print(score)
+    ```
+
+    </CodeGroup>
+
+    ```text {{ title: 'Output structure' }}
+    TEAM A |   | 0 |  0
+    TEAM B |   | 0 | 15  *
+    ```
+
+  </Col>
+</Row>

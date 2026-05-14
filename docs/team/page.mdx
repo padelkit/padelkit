@@ -2,6 +2,66 @@
 
 The `Team` dataclass groups two players together and specifies team-level attributes. {{ className: 'lead' }}
 
+## Initialization
+
+<Row>
+  <Col>
+
+    Creates a new instance of a `Team`.
+
+    ### Keyword Arguments
+
+    <Properties>
+      <Property name="id" type="TeamId">
+        Identifier for the team (`TeamId.A` or `TeamId.B`).
+      </Property>
+      <Property name="player1" type="Player">
+        The first [`Player`](/player).
+      </Property>
+      <Property name="player2" type="Player">
+        The second [`Player`](/player).
+      </Property>
+      <Property name="serve_formation" type="Literal['standard', 'australian']" default="standard">
+        The serve formation used by the team.
+      </Property>
+      <Property name="name" type="str | None" optional>
+        An optional custom name for the team (e.g., "The Pros"). If omitted, the team will be displayed as "Player1 / Player2".
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Instantiation" tag="class" label="Team">
+
+    ```python
+    from padelkit import Team, TeamId, Player
+
+    team = Team(
+        id=TeamId.A,
+        player1=Player(name="A. Galán"),
+        player2=Player(name="J. Lebrón"),
+        serve_formation="australian"
+    )
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output structure' }}
+    Team(
+      id=<TeamId.A: 1>,
+      player1=Player(name='A. Galán', ...),
+      player2=Player(name='J. Lebrón', ...),
+      serve_formation='australian',
+      name=None
+    )
+    ```
+
+  </Col>
+</Row>
+
+---
+
 ## Properties
 
 <Properties>

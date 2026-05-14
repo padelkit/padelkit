@@ -2,6 +2,57 @@
 
 The `Player` dataclass holds individual player metadata. {{ className: 'lead' }}
 
+## Initialization
+
+<Row>
+  <Col>
+
+    Creates a new instance of a `Player`.
+
+    ### Keyword Arguments
+
+    <Properties>
+      <Property name="name" type="str">
+        The name of the player.
+      </Property>
+      <Property name="side" type="Literal['left', 'right'] | None" optional>
+        The preferred side the player plays on.
+      </Property>
+      <Property name="nationality" type="str | None" optional>
+        The nationality of the player.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Instantiation" tag="class" label="Player">
+
+    ```python
+    from padelkit import Player
+
+    player = Player(
+        name="Alejandro Galán",
+        side="left",
+        nationality="ESP"
+    )
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output structure' }}
+    Player(
+      name='Alejandro Galán',
+      side='left',
+      nationality='ESP'
+    )
+    ```
+
+  </Col>
+</Row>
+
+---
+
 ## Properties
 
 <Properties>
