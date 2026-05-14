@@ -91,11 +91,11 @@ Before diving into the class, it is important to know the `TeamId` Enum, which i
     points_b = score.get_points(TeamId.B)
     ```
 
+    </CodeGroup>
+
     ```json {{ title: 'Output' }}
     15
     ```
-
-    </CodeGroup>
 
   </Col>
 </Row>
@@ -116,6 +116,7 @@ Before diving into the class, it is important to know the `TeamId` Enum, which i
   </Col>
   <Col sticky>
     <CodeGroup title="Example" tag="concept" label="progression">
+
     ```python
     from padelkit import MatchScore
     from padelkit.scoring import TeamId
@@ -131,6 +132,7 @@ Before diving into the class, it is important to know the `TeamId` Enum, which i
     print(score.get_games(TeamId.A))
     # Output: 1
     ```
+
     </CodeGroup>
   </Col>
 </Row>

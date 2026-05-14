@@ -59,13 +59,13 @@ The `PadelCourt` class is the main geometry model. It uses a centralized coordin
     court = PadelCourt.fip_standard()
     ```
 
+    </CodeGroup>
+
     ```json {{ title: 'Output structure' }}
     PadelCourt(
       dimensions=CourtDimensions(length=20.0, width=10.0)
     )
     ```
-
-    </CodeGroup>
 
   </Col>
 </Row>
@@ -99,11 +99,11 @@ The `PadelCourt` class is the main geometry model. It uses a centralized coordin
     net_center = court.point("NET_CENTER")
     ```
 
+    </CodeGroup>
+
     ```json {{ title: 'Output' }}
     (0.0, 0.0)
     ```
-
-    </CodeGroup>
 
   </Col>
 </Row>
@@ -129,6 +129,8 @@ The `PadelCourt` class is the main geometry model. It uses a centralized coordin
     all_points = court.landmarks_2d()
     ```
 
+    </CodeGroup>
+
     ```json {{ title: 'Output (abridged)' }}
     {
       "CENTER": [0.0, 0.0],
@@ -140,8 +142,6 @@ The `PadelCourt` class is the main geometry model. It uses a centralized coordin
       "BOTTOM_RIGHT": [5.0, 10.0]
     }
     ```
-
-    </CodeGroup>
 
   </Col>
 </Row>
