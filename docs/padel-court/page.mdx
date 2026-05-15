@@ -1,0 +1,376 @@
+export const metadata = {
+  title: "PadelCourt",
+  description: "API reference for the PadelCourt dataclass.",
+}
+
+# PadelCourt
+
+`PadelCourt` is the main court geometry model. It combines physical [`CourtDimensions`](/court-dimensions) with optional descriptive metadata (enclosure type, location, door states, etc.) and exposes methods to retrieve standardised landmark positions in either of the two supported [coordinate systems](/court#coordinate-systems). {{ className: 'lead' }}
+
+## Initialization
+
+<Row>
+  <Col>
+
+    Creates a new instance of `PadelCourt`.
+
+    ### Keyword Arguments
+
+    <Properties>
+      <Property name="dimensions" type="CourtDimensions">
+        The physical measurements of the court. See [`CourtDimensions`](/court-dimensions).
+      </Property>
+      <Property name="enclosure_type" type="EnclosureType | None" optional>
+        The material used for the enclosure walls (`EnclosureType.GLASS` or `EnclosureType.WALL`).
+      </Property>
+      <Property name="enclosure_variant" type="EnclosureVariant | None" optional>
+        The regulatory variant as defined by the FIP (`EnclosureVariant.V1` or `EnclosureVariant.V2`).
+      </Property>
+      <Property name="orientation" type="CourtOrientation | None" optional>
+        The cardinal orientation of the court's length axis (`CourtOrientation.NORTH_SOUTH` or `CourtOrientation.EAST_WEST`).
+      </Property>
+      <Property name="turf_color" type="str | None" optional>
+        The color of the artificial turf (e.g., `"blue"`, `"green"`).
+      </Property>
+      <Property name="door_left" type="DoorState | None" optional>
+        State of the left lateral door, from the perspective of a player on the near side facing the net.
+      </Property>
+      <Property name="door_right" type="DoorState | None" optional>
+        State of the right lateral door, from the same perspective as `door_left`.
+      </Property>
+      <Property name="location" type="CourtLocation | None" optional>
+        Structured geographic location of the court. See [`CourtLocation`](#courtlocation).
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Instantiation" tag="class" label="PadelCourt">
+
+    ```python
+    from padelkit import (
+        PadelCourt,
+        CourtDimensions,
+        CourtLocation,
+        EnclosureType,
+        EnclosureVariant,
+        DoorState,
+    )
+
+    court = PadelCourt(
+        dimensions=CourtDimensions.fip_standard(),
+        enclosure_type=EnclosureType.GLASS,
+        enclosure_variant=EnclosureVariant.V1,
+        turf_color="blue",
+        door_left=DoorState.OPEN,
+        door_right=DoorState.CLOSED,
+        location=CourtLocation(
+            club="Club de Pádel Sol",
+            city="Madrid",
+            country="Spain",
+            latitude=40.4168,
+            longitude=-3.7038,
+        ),
+    )
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output structure' }}
+    PadelCourt(
+      dimensions=CourtDimensions(length=20.0, width=10.0, ...),
+      enclosure_type=<EnclosureType.GLASS: 'glass'>,
+      enclosure_variant=<EnclosureVariant.V1: 1>,
+      orientation=None,
+      turf_color='blue',
+      door_left=<DoorState.OPEN: 'open'>,
+      door_right=<DoorState.CLOSED: 'closed'>,
+      location=CourtLocation(club='Club de Pádel Sol', ...)
+    )
+    ```
+
+  </Col>
+</Row>
+
+---
+
+## Properties
+
+<Properties>
+  <Property name="dimensions" type="CourtDimensions">
+    The physical measurements of the court. See [`CourtDimensions`](/court-dimensions).
+  </Property>
+  <Property name="length" type="float">
+    Total length of the court in meters. Shorthand for `dimensions.length`.
+  </Property>
+  <Property name="width" type="float">
+    Total width of the court in meters. Shorthand for `dimensions.width`.
+  </Property>
+  <Property name="enclosure_type" type="EnclosureType | None">
+    The material used for the enclosure walls, if set.
+  </Property>
+  <Property name="enclosure_variant" type="EnclosureVariant | None">
+    The regulatory enclosure variant, if set.
+  </Property>
+  <Property name="orientation" type="CourtOrientation | None">
+    The cardinal orientation of the court's length axis, if set.
+  </Property>
+  <Property name="turf_color" type="str | None">
+    The color of the artificial turf, if set.
+  </Property>
+  <Property name="door_left" type="DoorState | None">
+    State of the left lateral access door, if set.
+  </Property>
+  <Property name="door_right" type="DoorState | None">
+    State of the right lateral access door, if set.
+  </Property>
+  <Property name="location" type="CourtLocation | None">
+    Structured geographic location of the court, if set.
+  </Property>
+</Properties>
+
+---
+
+## FIP Standard {{ tag: 'classmethod', label: 'PadelCourt.fip_standard()' }}
+
+<Row>
+  <Col>
+
+    Creates a `PadelCourt` with standard FIP dimensions and no optional metadata. All optional fields default to `None`.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Usage" tag="classmethod" label="fip_standard">
+
+    ```python
+    from padelkit import PadelCourt
+
+    court = PadelCourt.fip_standard()
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output' }}
+    PadelCourt(
+      dimensions=CourtDimensions(
+        length=20.0,
+        width=10.0,
+        net_height_center=0.88,
+        net_height_posts=0.92,
+        service_line_distance_from_back=3.0,
+        back_wall_height=4.0,
+        side_wall_height=3.0
+      ),
+      enclosure_type=None,
+      enclosure_variant=None,
+      orientation=None,
+      turf_color=None,
+      door_left=None,
+      door_right=None,
+      location=None
+    )
+    ```
+
+  </Col>
+</Row>
+
+---
+
+## List 2D landmarks {{ tag: 'method', label: 'court.landmarks_2d()' }}
+
+<Row>
+  <Col>
+
+    Returns a dictionary of all 13 standard **floor-level** landmarks as `(X, Y)` coordinate pairs. Useful for drawing the court outline or passing positions to analytics tools.
+
+    ### Keyword Arguments
+
+    <Properties>
+      <Property name="coordinate_system" type="CoordinateSystem" default="CoordinateSystem.CENTERED">
+        The reference frame for the returned coordinates. See the [coordinate systems guide](/court#coordinate-systems).
+      </Property>
+    </Properties>
+
+    ### Returns
+
+    <Properties>
+      <Property name="landmarks" type="dict[str, tuple[float, float]]">
+        A dictionary mapping each [`Landmark`](/landmark) value string to its `(X, Y)` position.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Usage" tag="method" label="landmarks_2d">
+
+    ```python
+    from padelkit import PadelCourt, CoordinateSystem
+
+    court = PadelCourt.fip_standard()
+
+    # Default: centered system
+    points = court.landmarks_2d()
+
+    # Or: corner-based system (padelamix compatible)
+    points_cb = court.landmarks_2d(
+        coordinate_system=CoordinateSystem.CORNER_BASED
+    )
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output (CENTERED)' }}
+    {
+      "floor_near_left":     [-5.0, -10.0],
+      "floor_near_right":    [ 5.0, -10.0],
+      "service_near_left":   [-5.0,  -7.0],
+      "service_near_center": [ 0.0,  -7.0],
+      "service_near_right":  [ 5.0,  -7.0],
+      "net_left":            [-5.0,   0.0],
+      "center":              [ 0.0,   0.0],
+      "net_right":           [ 5.0,   0.0],
+      "service_far_left":    [-5.0,   7.0],
+      "service_far_center":  [ 0.0,   7.0],
+      "service_far_right":   [ 5.0,   7.0],
+      "floor_far_left":      [-5.0,  10.0],
+      "floor_far_right":     [ 5.0,  10.0]
+    }
+    ```
+
+  </Col>
+</Row>
+
+---
+
+## List 3D landmarks {{ tag: 'method', label: 'court.landmarks_3d()' }}
+
+<Row>
+  <Col>
+
+    Returns a dictionary of all 17 standard landmarks as `(X, Y, Z)` coordinate triples. Floor points have `Z = 0`. Back-wall top points have `Z = dimensions.back_wall_height` (4.0 m in a standard FIP court).
+
+    ### Keyword Arguments
+
+    <Properties>
+      <Property name="coordinate_system" type="CoordinateSystem" default="CoordinateSystem.CENTERED">
+        The reference frame for the returned coordinates. See the [coordinate systems guide](/court#coordinate-systems).
+      </Property>
+    </Properties>
+
+    ### Returns
+
+    <Properties>
+      <Property name="landmarks" type="dict[str, tuple[float, float, float]]">
+        A dictionary mapping each [`Landmark`](/landmark) value string to its `(X, Y, Z)` position.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Usage" tag="method" label="landmarks_3d">
+
+    ```python
+    from padelkit import PadelCourt, CoordinateSystem
+
+    court = PadelCourt.fip_standard()
+
+    # Default: centered system
+    points_3d = court.landmarks_3d()
+
+    # Corner-based (padelamix pipeline format)
+    points_3d_cb = court.landmarks_3d(
+        coordinate_system=CoordinateSystem.CORNER_BASED
+    )
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output (CENTERED, abridged)' }}
+    {
+      "floor_near_left":      [-5.0, -10.0, 0.0],
+      "center":               [ 0.0,   0.0, 0.0],
+      "floor_far_right":      [ 5.0,  10.0, 0.0],
+      "wall_top_near_left":   [-5.0, -10.0, 4.0],
+      "wall_top_near_right":  [ 5.0, -10.0, 4.0],
+      "wall_top_far_left":    [-5.0,  10.0, 4.0],
+      "wall_top_far_right":   [ 5.0,  10.0, 4.0]
+    }
+    ```
+
+  </Col>
+</Row>
+
+---
+
+## Get a landmark {{ tag: 'method', label: 'court.point()' }}
+
+<Row>
+  <Col>
+
+    Returns the `(X, Y)` floor-level coordinates of a single named landmark.
+
+    ### Required arguments
+
+    <Properties>
+      <Property name="name" type="Landmark | str">
+        The landmark identifier. Accepts a `Landmark` enum member (e.g., `Landmark.CENTER`) or its string value (e.g., `"center"`).
+      </Property>
+    </Properties>
+
+    ### Keyword Arguments
+
+    <Properties>
+      <Property name="coordinate_system" type="CoordinateSystem" default="CoordinateSystem.CENTERED">
+        The reference frame for the returned coordinates.
+      </Property>
+    </Properties>
+
+    ### Returns
+
+    <Properties>
+      <Property name="coordinates" type="tuple[float, float]">
+        The `(X, Y)` position of the requested landmark.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Usage" tag="method" label="point">
+
+    ```python
+    from padelkit import PadelCourt, Landmark, CoordinateSystem
+
+    court = PadelCourt.fip_standard()
+
+    # Centered system (default)
+    center = court.point("center")
+
+    # Using enum member
+    net_left = court.point(Landmark.NET_LEFT)
+
+    # Corner-based system
+    center_cb = court.point(
+        "center",
+        CoordinateSystem.CORNER_BASED
+    )
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output' }}
+    # court.point("center")
+    (0.0, 0.0)
+
+    # court.point("center", CoordinateSystem.CORNER_BASED)
+    (5.0, 10.0)
+    ```
+
+  </Col>
+</Row>
+
+

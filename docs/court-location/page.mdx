@@ -1,0 +1,71 @@
+export const metadata = {
+  title: "CourtLocation",
+  description: "API reference for the CourtLocation dataclass.",
+}
+
+# CourtLocation
+
+The `CourtLocation` dataclass stores structured geographic information about a court's location. All fields are optional — any subset can be provided. {{ className: 'lead' }}
+
+## Initialization
+
+<Row>
+  <Col>
+
+    Creates a new instance of `CourtLocation`.
+
+    ### Keyword Arguments
+
+    <Properties>
+      <Property name="club" type="str | None" optional>
+        Name of the padel club.
+      </Property>
+      <Property name="city" type="str | None" optional>
+        City where the court is located.
+      </Property>
+      <Property name="address" type="str | None" optional>
+        Street address.
+      </Property>
+      <Property name="country" type="str | None" optional>
+        Country name or ISO 3166-1 code.
+      </Property>
+      <Property name="latitude" type="float | None" optional>
+        Geographic latitude in decimal degrees.
+      </Property>
+      <Property name="longitude" type="float | None" optional>
+        Geographic longitude in decimal degrees.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Instantiation" tag="class" label="CourtLocation">
+
+    ```python
+    from padelkit import CourtLocation
+
+    loc = CourtLocation(
+        club="Club de Pádel Sol",
+        city="Madrid",
+        country="Spain",
+        latitude=40.4168,
+        longitude=-3.7038,
+    )
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output structure' }}
+    CourtLocation(
+      club='Club de Pádel Sol',
+      city='Madrid',
+      address=None,
+      country='Spain',
+      latitude=40.4168,
+      longitude=-3.7038
+    )
+    ```
+
+  </Col>
+</Row>

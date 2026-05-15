@@ -1,0 +1,142 @@
+export const metadata = {
+  title: "CourtDimensions",
+  description: "API reference for the CourtDimensions dataclass.",
+}
+
+# CourtDimensions
+
+The `CourtDimensions` dataclass holds the official physical measurements of a padel court. All values are expressed in **meters**. {{ className: 'lead' }}
+
+## Initialization
+
+<Row>
+  <Col>
+
+    Creates a new instance of `CourtDimensions`.
+
+    ### Keyword Arguments
+
+    <Properties>
+      <Property name="length" type="float">
+        Total length of the court.
+      </Property>
+      <Property name="width" type="float">
+        Total width of the court.
+      </Property>
+      <Property name="net_height_center" type="float">
+        Height of the net at its center point.
+      </Property>
+      <Property name="net_height_posts" type="float">
+        Height of the net at the posts.
+      </Property>
+      <Property name="service_line_distance_from_back" type="float">
+        Distance from the back wall to the service line.
+      </Property>
+      <Property name="back_wall_height" type="float">
+        Height of the back walls. Always **4.0 m** per FIP regulations, for both enclosure variants.
+      </Property>
+      <Property name="side_wall_height" type="float">
+        Height of the side walls. **3.0 m** for Variant 1, **4.0 m** for Variant 2.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Instantiation" tag="class" label="CourtDimensions">
+
+    ```python
+    from padelkit import CourtDimensions
+
+    dims = CourtDimensions(
+        length=20.0,
+        width=10.0,
+        net_height_center=0.88,
+        net_height_posts=0.92,
+        service_line_distance_from_back=3.0,
+        back_wall_height=4.0,
+        side_wall_height=3.0,
+    )
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output structure' }}
+    CourtDimensions(
+      length=20.0,
+      width=10.0,
+      net_height_center=0.88,
+      net_height_posts=0.92,
+      service_line_distance_from_back=3.0,
+      back_wall_height=4.0,
+      side_wall_height=3.0
+    )
+    ```
+
+  </Col>
+</Row>
+
+---
+
+## Properties
+
+<Properties>
+  <Property name="length" type="float">
+    Total length of the court in meters.
+  </Property>
+  <Property name="width" type="float">
+    Total width of the court in meters.
+  </Property>
+  <Property name="net_height_center" type="float">
+    Height of the net at its center point in meters.
+  </Property>
+  <Property name="net_height_posts" type="float">
+    Height of the net at the posts in meters.
+  </Property>
+  <Property name="service_line_distance_from_back" type="float">
+    Distance from the back wall to the nearest service line in meters.
+  </Property>
+  <Property name="back_wall_height" type="float">
+    Height of the back walls in meters. Always 4.0 m per FIP regulations.
+  </Property>
+  <Property name="side_wall_height" type="float">
+    Height of the side walls in meters. 3.0 m for Enclosure Variant 1, 4.0 m for Variant 2.
+  </Property>
+</Properties>
+
+---
+
+## FIP Standard {{ tag: 'classmethod', label: 'CourtDimensions.fip_standard()' }}
+
+<Row>
+  <Col>
+
+    Returns a `CourtDimensions` instance pre-populated with the standard measurements defined by the International Padel Federation (FIP). These correspond to an **Enclosure Variant 1** court.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Usage" tag="classmethod" label="fip_standard">
+
+    ```python
+    from padelkit import CourtDimensions
+
+    dims = CourtDimensions.fip_standard()
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output' }}
+    CourtDimensions(
+      length=20.0,
+      width=10.0,
+      net_height_center=0.88,
+      net_height_posts=0.92,
+      service_line_distance_from_back=3.0,
+      back_wall_height=4.0,
+      side_wall_height=3.0
+    )
+    ```
+
+  </Col>
+</Row>

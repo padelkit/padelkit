@@ -14,8 +14,24 @@
     },
     "/court": {
       "title": "Court Geometry",
-      "description": "Detailed API reference for the PadelCourt model and dimensions.",
+      "description": "Understand coordinate systems, enclosure variants, and the 17-point landmark model."
+    },
+    "/court-dimensions": {
+      "title": "CourtDimensions",
+      "description": "API reference for the CourtDimensions dataclass."
+    },
+    "/padel-court": {
+      "title": "PadelCourt",
+      "description": "API reference for the main court geometry class.",
       "icon": "UserIcon"
+    },
+    "/landmark": {
+      "title": "Landmark",
+      "description": "API reference for the Landmark enum, including all 17 standard court positions and their coordinates."
+    },
+    "/court-location": {
+      "title": "CourtLocation",
+      "description": "API reference for the CourtLocation dataclass."
     },
     "/match": {
       "title": "Match",
@@ -46,15 +62,15 @@
   "navigation": [
     {
       "title": "Guides",
-      "links": ["/", "/quickstart", "/scoring-system"]
+      "links": ["/", "/quickstart", "/scoring-system", "/court"]
     },
     {
       "title": "Resources",
-      "links": ["/court", "/match", "/match-score-history", "/match-score", "/team", "/player"]
+      "links": ["/court-dimensions", "/padel-court", "/landmark", "/court-location", "/match", "/match-score-history", "/match-score", "/team", "/player"]
     }
   ],
   "intro_cards": {
-    "guides": ["/quickstart", "/scoring-system"],
-    "resources": ["/court", "/match"]
+    "guides": ["/quickstart", "/scoring-system", "/court"],
+    "resources": ["/padel-court", "/match"]
   }
 }

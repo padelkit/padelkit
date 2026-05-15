@@ -1,0 +1,88 @@
+export const metadata = {
+  title: "Landmark",
+  description: "API reference for the Landmark enum, including all 17 standard court positions and their coordinates.",
+}
+
+# Landmark
+
+`Landmark` is a string enum that enumerates the 17 standard positions on a padel court used for geometry calculations and camera calibration. {{ className: 'lead' }}
+
+The 17 points mirror the calibration convention of the padelamix computer-vision pipeline: points **1–13** lie on the **court floor** (Z = 0), and points **14–17** are at the **top of the back walls** (Z = `back_wall_height`, typically 4.0 m).
+
+---
+
+## Values
+
+```python
+from padelkit import Landmark
+
+# All members
+list(Landmark)
+```
+
+| # | Member | Value string |
+|---|---|---|
+| 1 | `Landmark.FLOOR_NEAR_LEFT` | `"floor_near_left"` |
+| 2 | `Landmark.FLOOR_NEAR_RIGHT` | `"floor_near_right"` |
+| 3 | `Landmark.SERVICE_NEAR_LEFT` | `"service_near_left"` |
+| 4 | `Landmark.SERVICE_NEAR_CENTER` | `"service_near_center"` |
+| 5 | `Landmark.SERVICE_NEAR_RIGHT` | `"service_near_right"` |
+| 6 | `Landmark.NET_LEFT` | `"net_left"` |
+| 7 | `Landmark.CENTER` | `"center"` |
+| 8 | `Landmark.NET_RIGHT` | `"net_right"` |
+| 9 | `Landmark.SERVICE_FAR_LEFT` | `"service_far_left"` |
+| 10 | `Landmark.SERVICE_FAR_CENTER` | `"service_far_center"` |
+| 11 | `Landmark.SERVICE_FAR_RIGHT` | `"service_far_right"` |
+| 12 | `Landmark.FLOOR_FAR_LEFT` | `"floor_far_left"` |
+| 13 | `Landmark.FLOOR_FAR_RIGHT` | `"floor_far_right"` |
+| 14 | `Landmark.WALL_TOP_NEAR_LEFT` | `"wall_top_near_left"` |
+| 15 | `Landmark.WALL_TOP_NEAR_RIGHT` | `"wall_top_near_right"` |
+| 16 | `Landmark.WALL_TOP_FAR_LEFT` | `"wall_top_far_left"` |
+| 17 | `Landmark.WALL_TOP_FAR_RIGHT` | `"wall_top_far_right"` |
+
+![3D Padel Court Landmarks](/images/court-landmarks-3d.png)
+
+---
+
+## Usage
+
+<Row>
+  <Col>
+
+    `Landmark` members can be used directly with [`PadelCourt`](/padel-court) methods, either as enum members or their string values.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Usage" tag="enum" label="Landmark">
+
+    ```python
+    from padelkit import PadelCourt, Landmark, CoordinateSystem
+
+    court = PadelCourt.fip_standard()
+
+    # Using an enum member
+    pos = court.point(Landmark.NET_LEFT)
+
+    # Using the string value
+    pos = court.point("net_left")
+
+    # Retrieve all 3D points in corner-based system
+    points = court.landmarks_3d(
+        coordinate_system=CoordinateSystem.CORNER_BASED
+    )
+    wall_top = points[Landmark.WALL_TOP_NEAR_LEFT.value]
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output' }}
+    # court.point(Landmark.NET_LEFT)
+    (-5.0, 0.0)
+
+    # wall_top (CORNER_BASED)
+    (0.0, 0.0, 4.0)
+    ```
+
+  </Col>
+</Row>
