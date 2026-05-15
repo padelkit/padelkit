@@ -7,6 +7,28 @@ export const metadata = {
 
 The `Team` dataclass groups two players together and specifies team-level attributes. {{ className: 'lead' }}
 
+## Properties
+
+<Properties>
+  <Property name="id" type="TeamId">
+    Identifier for the team (`TeamId.A` or `TeamId.B`).
+  </Property>
+  <Property name="player1" type="Player">
+    The first [`Player`](/player).
+  </Property>
+  <Property name="player2" type="Player">
+    The second [`Player`](/player).
+  </Property>
+  <Property name="serve_formation" type="Literal['standard', 'australian']" default="standard">
+    The serve formation used by the team.
+  </Property>
+  <Property name="name" type="str | None" optional>
+    An optional custom name for the team (e.g., "The Pros"). If omitted, the team will be displayed as "Player1 / Player2".
+  </Property>
+</Properties>
+
+---
+
 ## Initialization
 
 <Row>
@@ -65,24 +87,3 @@ The `Team` dataclass groups two players together and specifies team-level attrib
   </Col>
 </Row>
 
----
-
-## Properties
-
-<Properties>
-  <Property name="id" type="TeamId">
-    Identifier for the team (`TeamId.A` or `TeamId.B`).
-  </Property>
-  <Property name="player1" type="Player">
-    The first [`Player`](/player).
-  </Property>
-  <Property name="player2" type="Player">
-    The second [`Player`](/player).
-  </Property>
-  <Property name="serve_formation" type="Literal['standard', 'australian']" default="standard">
-    The serve formation used by the team.
-  </Property>
-  <Property name="name" type="str | None" optional>
-    An optional custom name for the team (e.g., "The Pros"). If omitted, the team will be displayed as "Player1 / Player2".
-  </Property>
-</Properties>

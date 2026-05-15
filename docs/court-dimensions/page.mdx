@@ -7,6 +7,34 @@ export const metadata = {
 
 The `CourtDimensions` dataclass holds the official physical measurements of a padel court. All values are expressed in **meters**. {{ className: 'lead' }}
 
+## Properties
+
+<Properties>
+  <Property name="length" type="float">
+    Total length of the court in meters.
+  </Property>
+  <Property name="width" type="float">
+    Total width of the court in meters.
+  </Property>
+  <Property name="net_height_center" type="float">
+    Height of the net at its center point in meters.
+  </Property>
+  <Property name="net_height_posts" type="float">
+    Height of the net at the posts in meters.
+  </Property>
+  <Property name="service_line_distance_from_back" type="float">
+    Distance from the back wall to the nearest service line in meters.
+  </Property>
+  <Property name="back_wall_height" type="float">
+    Height of the back walls in meters. Always 4.0 m per FIP regulations.
+  </Property>
+  <Property name="side_wall_height" type="float">
+    Height of the side walls in meters. 3.0 m for Enclosure Variant 1, 4.0 m for Variant 2.
+  </Property>
+</Properties>
+
+---
+
 ## Initialization
 
 <Row>
@@ -76,33 +104,6 @@ The `CourtDimensions` dataclass holds the official physical measurements of a pa
   </Col>
 </Row>
 
----
-
-## Properties
-
-<Properties>
-  <Property name="length" type="float">
-    Total length of the court in meters.
-  </Property>
-  <Property name="width" type="float">
-    Total width of the court in meters.
-  </Property>
-  <Property name="net_height_center" type="float">
-    Height of the net at its center point in meters.
-  </Property>
-  <Property name="net_height_posts" type="float">
-    Height of the net at the posts in meters.
-  </Property>
-  <Property name="service_line_distance_from_back" type="float">
-    Distance from the back wall to the nearest service line in meters.
-  </Property>
-  <Property name="back_wall_height" type="float">
-    Height of the back walls in meters. Always 4.0 m per FIP regulations.
-  </Property>
-  <Property name="side_wall_height" type="float">
-    Height of the side walls in meters. 3.0 m for Enclosure Variant 1, 4.0 m for Variant 2.
-  </Property>
-</Properties>
 
 ---
 

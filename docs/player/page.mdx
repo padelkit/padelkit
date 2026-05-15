@@ -7,6 +7,22 @@ export const metadata = {
 
 The `Player` dataclass holds individual player metadata. {{ className: 'lead' }}
 
+## Properties
+
+<Properties>
+  <Property name="name" type="str">
+    The name of the player.
+  </Property>
+  <Property name="side" type="Literal['left', 'right'] | None" optional>
+    The preferred side the player plays on.
+  </Property>
+  <Property name="nationality" type="str | None" optional>
+    The nationality of the player.
+  </Property>
+</Properties>
+
+---
+
 ## Initialization
 
 <Row>
@@ -56,18 +72,3 @@ The `Player` dataclass holds individual player metadata. {{ className: 'lead' }}
   </Col>
 </Row>
 
----
-
-## Properties
-
-<Properties>
-  <Property name="name" type="str">
-    The name of the player.
-  </Property>
-  <Property name="side" type="Literal['left', 'right'] | None" optional>
-    The preferred side the player plays on.
-  </Property>
-  <Property name="nationality" type="str | None" optional>
-    The nationality of the player.
-  </Property>
-</Properties>

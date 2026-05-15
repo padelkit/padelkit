@@ -7,6 +7,22 @@ export const metadata = {
 
 The `Match` class is the top-level entity representing a padel match. It encapsulates both the metadata (teams, duration, location) and the state management logic by holding a `MatchScoreHistory` instance. {{ className: 'lead' }}
 
+## Properties
+
+<Properties>
+  <Property name="history" type="MatchScoreHistory">
+    The underlying [`MatchScoreHistory`](/match-score-history) engine driving the score logic.
+  </Property>
+  <Property name="winner" type="Team | None">
+    Returns the [`Team`](/team) that won the match based on `best_of_sets`, or `None` if incomplete.
+  </Property>
+  <Property name="is_completed" type="bool">
+    Returns `True` if a winner has been decided.
+  </Property>
+</Properties>
+
+---
+
 ## Initialization
 
 <Row>
@@ -69,18 +85,3 @@ The `Match` class is the top-level entity representing a padel match. It encapsu
   </Col>
 </Row>
 
----
-
-## Properties
-
-<Properties>
-  <Property name="history" type="MatchScoreHistory">
-    The underlying [`MatchScoreHistory`](/match-score-history) engine driving the score logic.
-  </Property>
-  <Property name="winner" type="Team | None">
-    Returns the [`Team`](/team) that won the match based on `best_of_sets`, or `None` if incomplete.
-  </Property>
-  <Property name="is_completed" type="bool">
-    Returns `True` if a winner has been decided.
-  </Property>
-</Properties>

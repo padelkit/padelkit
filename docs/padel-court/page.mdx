@@ -1,11 +1,48 @@
 export const metadata = {
   title: "PadelCourt",
-  description: "API reference for the PadelCourt dataclass.",
+  description: "API reference for the main court geometry class.",
 }
 
 # PadelCourt
 
 `PadelCourt` is the main court geometry model. It combines physical [`CourtDimensions`](/court-dimensions) with optional descriptive metadata (enclosure type, location, door states, etc.) and exposes methods to retrieve standardised landmark positions in either of the two supported [coordinate systems](/court#coordinate-systems). {{ className: 'lead' }}
+
+## Properties
+
+<Properties>
+  <Property name="dimensions" type="CourtDimensions">
+    The physical measurements of the court. See [`CourtDimensions`](/court-dimensions).
+  </Property>
+  <Property name="length" type="float">
+    Total length of the court in meters. Shorthand for `dimensions.length`.
+  </Property>
+  <Property name="width" type="float">
+    Total width of the court in meters. Shorthand for `dimensions.width`.
+  </Property>
+  <Property name="enclosure_type" type="EnclosureType | None">
+    The material used for the enclosure walls, if set.
+  </Property>
+  <Property name="enclosure_variant" type="EnclosureVariant | None">
+    The regulatory enclosure variant, if set.
+  </Property>
+  <Property name="orientation" type="CourtOrientation | None">
+    The cardinal orientation of the court's length axis, if set.
+  </Property>
+  <Property name="turf_color" type="str | None">
+    The color of the artificial turf, if set.
+  </Property>
+  <Property name="door_left" type="DoorState | None">
+    State of the left lateral access door, if set.
+  </Property>
+  <Property name="door_right" type="DoorState | None">
+    State of the right lateral access door, if set.
+  </Property>
+  <Property name="location" type="CourtLocation | None">
+    Structured geographic location of the court, if set.
+  </Property>
+</Properties>
+
+---
 
 ## Initialization
 
@@ -93,42 +130,6 @@ export const metadata = {
   </Col>
 </Row>
 
----
-
-## Properties
-
-<Properties>
-  <Property name="dimensions" type="CourtDimensions">
-    The physical measurements of the court. See [`CourtDimensions`](/court-dimensions).
-  </Property>
-  <Property name="length" type="float">
-    Total length of the court in meters. Shorthand for `dimensions.length`.
-  </Property>
-  <Property name="width" type="float">
-    Total width of the court in meters. Shorthand for `dimensions.width`.
-  </Property>
-  <Property name="enclosure_type" type="EnclosureType | None">
-    The material used for the enclosure walls, if set.
-  </Property>
-  <Property name="enclosure_variant" type="EnclosureVariant | None">
-    The regulatory enclosure variant, if set.
-  </Property>
-  <Property name="orientation" type="CourtOrientation | None">
-    The cardinal orientation of the court's length axis, if set.
-  </Property>
-  <Property name="turf_color" type="str | None">
-    The color of the artificial turf, if set.
-  </Property>
-  <Property name="door_left" type="DoorState | None">
-    State of the left lateral access door, if set.
-  </Property>
-  <Property name="door_right" type="DoorState | None">
-    State of the right lateral access door, if set.
-  </Property>
-  <Property name="location" type="CourtLocation | None">
-    Structured geographic location of the court, if set.
-  </Property>
-</Properties>
 
 ---
 
