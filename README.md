@@ -1,11 +1,13 @@
-# PadelKit
+# PadelKit 🎾
 
-PadelKit is an open source toolkit for developers building padel analytics tools.
+The open-source core foundations for padel analytics.
+
+PadelKit is a lightweight Python library that powers [Padelamix](https://padelamix.com), the upcoming video-analysis platform for professional and amateur padel clubs.
 
 ![PyPI - Version](https://img.shields.io/pypi/v/padelkit)
 ![License](https://img.shields.io/github/license/padelkit/padelkit)
 
-> **Status:** Early Alpha. This is a very early version focusing on core domain models. 
+> **Status:** Early Alpha. This is a very early version focusing on core domain models.
 
 ## Installation
 
@@ -31,7 +33,7 @@ print(score)
 
 ## Features
 
-- **Court Geometry:** Official dimensions and 2D coordinate system.
+- **Court Geometry:** Official dimensions and 2D/3D coordinate system.
 - **Scoring System:** Basic match, set and game scoring logic.
 
 ## Roadmap
@@ -39,6 +41,8 @@ print(score)
 - Extended landmarks and 3D geometries.
 - Event structures (serve, rally, etc.).
 - Camera calibration and world-to-image projections.
+- Trajectory representations for players and ball movement.
+- Tools for visualization and analysis (e.g. heatmaps).
 
 ## License
 
