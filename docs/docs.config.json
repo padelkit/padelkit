@@ -27,7 +27,8 @@
     },
     "/landmark": {
       "title": "Landmark",
-      "description": "API reference for the Landmark enum, including all 17 standard court positions and their coordinates."
+      "description": "API reference for the Landmark enum, including all 17 standard court positions and their coordinates.",
+      "icon": "ViewfinderCircleIcon"
     },
     "/court-location": {
       "title": "CourtLocation",
@@ -36,7 +37,7 @@
     "/match": {
       "title": "Match",
       "description": "API reference for the Match class, which manages metadata and completion conditions.",
-      "icon": "ChatBubbleIcon"
+      "icon": "TrophyIcon"
     },
     "/match-score-history": {
       "title": "MatchScoreHistory",
@@ -51,7 +52,7 @@
     "/team": {
       "title": "Team",
       "description": "API reference for the Team dataclass.",
-      "icon": "UserIcon"
+      "icon": "UserGroupIcon"
     },
     "/player": {
       "title": "Player",
@@ -71,6 +72,6 @@
   ],
   "intro_cards": {
     "guides": ["/quickstart", "/scoring-system", "/court"],
-    "resources": ["/padel-court", "/match"]
+    "resources": ["/landmark", "/match", "/team", "/player"]
   }
 }
