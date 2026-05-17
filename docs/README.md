@@ -16,16 +16,39 @@ You should place your files inside this folder (e.g., `my-feature/page.mdx`).
 
 ### 🏷️ Multi-Version Documentation
 
-PadelKit uses a single-source-of-truth differential engine for its documentation. Instead of maintaining multiple copies of the same file for different versions, we use MDX components to conditionally render text based on the version selected by the user.
+PadelKit uses a single-source-of-truth differential engine for its documentation, combining global page constraints with granular MDX components.
 
-- `<Version min="1.0.0" max="1.5.0">...</Version>`: Shows content only if the selected version is within the specified range.
-- `<AddedIn version="1.2.0">...</AddedIn>`: Shows a styled block indicating that a feature was added in a specific version (only visible in that version and newer).
-- `<DeprecatedIn version="1.6.0">...</DeprecatedIn>`: Shows a styled block indicating that a feature was deprecated.
+#### 1. Full-Page Versioning (docs.config.json)
+If a page (like a class or concept) was introduced in a specific version or deprecated in another, define this in `docs.config.json` inside the `"pages"` object. 
+The system will **automatically** intercept requests to out-of-bounds pages, hide them from the sidebar and search results, and display a standardized warning.
+
+```json
+"pages": {
+  "/my-feature": {
+    "title": "My Feature",
+    "description": "API Reference.",
+    "min": "2.0.0", // Only available in 2.0.0 or higher
+    "max": "2.5.0", // Deprecated after 2.5.0
+    "supersededBy": { // Optional: suggest an alternative when deprecated
+      "title": "NewFeature",
+      "href": "/new-feature"
+    }
+  }
+}
+```
+*Note: Do NOT wrap the entire MDX file content in `<Version>` tags if the entire page is restricted. Let `docs.config.json` handle it globally!*
+
+#### 2. Granular Versioning (MDX)
+If you only need to show/hide specific paragraphs, properties, or methods *within* a valid page, use MDX components:
+
+- `<Version min="1.0.0" max="1.5.0">...</Version>`: Shows inner content only if the selected version is within the specified range.
+- `<AddedIn version="1.2.0">...</AddedIn>`: Shows a styled block indicating that a granular feature was added.
+- `<DeprecatedIn version="1.6.0">...</DeprecatedIn>`: Shows a styled block indicating that a granular feature was deprecated.
 
 **Example usage:**
 ```mdx
 <Version min="1.0.0" max="1.5.0">
-  This is the old behavior.
+  This property had the old behavior.
 </Version>
 
 <AddedIn version="1.6.0">

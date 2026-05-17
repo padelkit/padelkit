@@ -1,5 +1,5 @@
 {
-  "versions": ["1.0.0", "1.1.0"],
+  "versions": ["1.0.0", "1.1.0", "2.0.0", "2.0.1"],
   "pages": {
     "/": {
       "title": "API Documentation",
@@ -11,7 +11,8 @@
     },
     "/scoring-system": {
       "title": "Scoring System",
-      "description": "Learn how the padel scoring system works, including concepts like event sourcing."
+      "description": "Learn how the padel scoring system works, including concepts like event sourcing.",
+      "min": "1.1.0"
     },
     "/court": {
       "title": "Court Geometry",
@@ -19,7 +20,12 @@
     },
     "/court-dimensions": {
       "title": "CourtDimensions",
-      "description": "API reference for the CourtDimensions dataclass."
+      "description": "API reference for the CourtDimensions dataclass.",
+      "max": "1.1.0",
+      "supersededBy": {
+        "title": "PadelCourt",
+        "href": "/padel-court"
+      }
     },
     "/padel-court": {
       "title": "PadelCourt",
@@ -38,17 +44,20 @@
     "/match": {
       "title": "Match",
       "description": "API reference for the Match class, which manages metadata and completion conditions.",
-      "icon": "TrophyIcon"
+      "icon": "TrophyIcon",
+      "min": "2.0.0"
     },
     "/match-score-history": {
       "title": "MatchScoreHistory",
       "description": "API reference for tracking points through event sourcing.",
-      "icon": "ChatBubbleIcon"
+      "icon": "ChatBubbleIcon",
+      "min": "1.1.0"
     },
     "/match-score": {
       "title": "MatchScore",
       "description": "API reference for the immutable snapshot of a match's current score.",
-      "icon": "ChatBubbleIcon"
+      "icon": "ChatBubbleIcon",
+      "min": "1.1.0"
     },
     "/team": {
       "title": "Team",
