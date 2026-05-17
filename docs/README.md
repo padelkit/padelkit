@@ -12,7 +12,26 @@ You should place your files inside this folder (e.g., `my-feature/page.mdx`).
 **Important Rules:**
 - Do **not** use Next.js `export const metadata = { ... }` blocks at the top of your markdown files.
 - Write pure markdown (e.g., start directly with `# My Feature Title`).
-- Code blocks can be wrapped in `<CodeGroup>` components for tabbed interfaces if needed (the rendering engine supports MDX).
+- Code blocks can be wrapped in `<CodeGroup>` components for tabbed interfaces if needed.
+
+### 🏷️ Multi-Version Documentation
+
+PadelKit uses a single-source-of-truth differential engine for its documentation. Instead of maintaining multiple copies of the same file for different versions, we use MDX components to conditionally render text based on the version selected by the user.
+
+- `<Version min="1.0.0" max="1.5.0">...</Version>`: Shows content only if the selected version is within the specified range.
+- `<AddedIn version="1.2.0">...</AddedIn>`: Shows a styled block indicating that a feature was added in a specific version (only visible in that version and newer).
+- `<DeprecatedIn version="1.6.0">...</DeprecatedIn>`: Shows a styled block indicating that a feature was deprecated.
+
+**Example usage:**
+```mdx
+<Version min="1.0.0" max="1.5.0">
+  This is the old behavior.
+</Version>
+
+<AddedIn version="1.6.0">
+  This is the new behavior.
+</AddedIn>
+```
 
 ## ⚙️ Configuring the Website
 

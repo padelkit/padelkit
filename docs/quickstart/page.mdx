@@ -48,9 +48,18 @@ match = Match()
 # Team A wins the first point
 match.history.add_point(TeamId.A)
 
+<AddedIn version="1.1.0">
+# You can easily undo a point in case of a mistake (added in 1.1.0)
+match.history.undo_point()
+</AddedIn>
+
 # Print the cleanly formatted current state
 print(match.history.get_current_score())
 ```
+
+<Version min="1.0.0" max="1.0.0">
+*Note: In version 1.0.0, to undo a point you must rebuild the MatchScoreHistory without the last event.*
+</Version>
 
 ## Next steps
 
