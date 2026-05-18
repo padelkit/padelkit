@@ -32,24 +32,16 @@ The `MatchScore` dataclass is an immutable snapshot of the match score at a spec
     A history of scores from completed sets, e.g., `[(6, 4), (7, 5)]`.
   </Property>
   <Property name="server" type="ServingState | None">
-    <AddedIn version="2.0.1">
-      The active serving team and player encapsulated in a [`ServingState`](/serving-state) object, or `None` if the match is completed.
-    </AddedIn>
+    The active serving team and player encapsulated in a [`ServingState`](/serving-state) object, or `None` if the match is completed.
   </Property>
   <Property name="in_tiebreak" type="bool">
-    <AddedIn version="2.0.1">
-      Indicates whether a regular tie-break is currently active in the current set.
-    </AddedIn>
+    Indicates whether a regular tie-break is currently active in the current set.
   </Property>
   <Property name="in_super_tiebreak" type="bool">
-    <AddedIn version="2.0.1">
-      Indicates whether a match-deciding tie-break (or super tie-break) is currently active.
-    </AddedIn>
+    Indicates whether a match-deciding tie-break (or super tie-break) is currently active.
   </Property>
   <Property name="is_gold_point" type="bool">
-    <AddedIn version="2.0.1">
-      Indicates whether the current game is at `40-40` and is being decided by a *Punto de Oro* (Golden Point) without advantages.
-    </AddedIn>
+    Indicates whether the current game is at `40-40` and is being decided by a *Punto de Oro* (Golden Point) without advantages.
   </Property>
 </Properties>
 
