@@ -73,6 +73,12 @@
       "title": "Player",
       "description": "API reference for the Player dataclass.",
       "icon": "UserNoCircleIcon"
+    },
+    "/serving-state": {
+      "title": "ServingState",
+      "description": "API reference for the ServingState dataclass representing server state.",
+      "icon": "UserIcon",
+      "min": "2.0.1"
     }
   },
   "navigation": [
@@ -106,7 +112,8 @@
       "title": "Core entities",
       "links": [
         "/player",
-        "/team"
+        "/team",
+        "/serving-state"
       ]
     }
   ],
@@ -123,7 +130,8 @@
       "/player",
       "/court-dimensions",
       "/court",
-      "/match-score"
+      "/match-score",
+      "/serving-state"
     ]
   }
 }

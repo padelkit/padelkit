@@ -1,0 +1,67 @@
+export const metadata = {
+  title: "ServingState",
+  description: "API reference for the ServingState dataclass representing server state.",
+}
+
+# ServingState
+
+<AddedIn version="2.0.1">
+  The `ServingState` dataclass encapsulates the serving team and player at a specific point in time. It is exposed through the `server` property of the [`MatchScore`](/match-score). {{ className: 'lead' }}
+</AddedIn>
+
+## Properties
+
+<Properties>
+  <Property name="team" type="TeamId">
+    The [`TeamId`](/team) currently serving (`TeamId.A` or `TeamId.B`).
+  </Property>
+  <Property name="player" type="Player | None">
+    The specific [`Player`](/player) currently serving, or `None` if player details are not configured.
+  </Property>
+</Properties>
+
+---
+
+## Initialization
+
+<Row>
+  <Col>
+
+    Creates a new instance of a `ServingState`.
+
+    ### Keyword Arguments
+
+    <Properties>
+      <Property name="team" type="TeamId">
+        The [`TeamId`](/team) currently serving (`TeamId.A` or `TeamId.B`).
+      </Property>
+      <Property name="player" type="Player | None" optional default="None">
+        The specific [`Player`](/player) currently serving, or `None` if player details are not configured.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Instantiation" tag="class" label="ServingState">
+
+    ```python
+    from padelkit import ServingState, TeamId, Player
+
+    server_state = ServingState(
+        team=TeamId.A,
+        player=Player(name="A. Galán")
+    )
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output structure' }}
+    ServingState(
+      team=<TeamId.A: 1>,
+      player=Player(name='A. Galán', ...)
+    )
+    ```
+
+  </Col>
+</Row>

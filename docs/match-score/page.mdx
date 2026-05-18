@@ -31,8 +31,10 @@ The `MatchScore` dataclass is an immutable snapshot of the match score at a spec
   <Property name="completed_sets" type="list[tuple[int, int]]">
     A history of scores from completed sets, e.g., `[(6, 4), (7, 5)]`.
   </Property>
-  <Property name="server" type="TeamId | None">
-    Indicates which team is currently serving.
+  <Property name="server" type="ServingState | None">
+    <AddedIn version="2.0.1">
+      The active serving team and player encapsulated in a [`ServingState`](/serving-state) object, or `None` if the match is completed.
+    </AddedIn>
   </Property>
   <Property name="in_tiebreak" type="bool">
     <AddedIn version="2.0.1">
@@ -51,6 +53,7 @@ The `MatchScore` dataclass is an immutable snapshot of the match score at a spec
   </Property>
 </Properties>
 
+
 ## String Representation
 
 When cast to a string via `print(score)` or `str(score)`, it provides a cleanly formatted tabular output, utilizing the teams' names if available:
@@ -60,3 +63,4 @@ TEAM A (I. Swiatek / Otro Jugador) | 6 4 | 3 | 30
 TEAM B (E. Svitolina / Otra)       | 4 6 | 5 | 40  *
 ```
 *(The asterisk `*` indicates the team currently serving)*
+

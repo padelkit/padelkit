@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
-from .entities import TeamId, Team
+from .entities import TeamId, Team, Player, ServingState
 
 @dataclass(frozen=True)
 class MatchScore:
@@ -12,7 +12,7 @@ class MatchScore:
     sets_A: int
     sets_B: int
     completed_sets: list[tuple[int, int]]
-    server: TeamId | None = None
+    server: ServingState | None = None
     teams: dict[TeamId, Team] | None = None
     in_tiebreak: bool = False
     in_super_tiebreak: bool = False
@@ -44,8 +44,8 @@ class MatchScore:
         team_a_label = team_a_label.ljust(pad_len)
         team_b_label = team_b_label.ljust(pad_len)
 
-        serve_a = " *" if self.server == TeamId.A else ""
-        serve_b = " *" if self.server == TeamId.B else ""
+        serve_a = " *" if self.server and self.server.team == TeamId.A else ""
+        serve_b = " *" if self.server and self.server.team == TeamId.B else ""
 
         a_line = f"{team_a_label} | {sets_str_a} | {self.games_A} | {self.points_A:>2}{serve_a}"
         b_line = f"{team_b_label} | {sets_str_b} | {self.games_B} | {self.points_B:>2}{serve_b}"
@@ -66,7 +66,9 @@ class MatchScoreHistory:
         best_of_sets: int = 3,
         advantage_method: str = "advantage",
         set_format: str = "standard",
-        deciding_set_format: str = "regular"
+        deciding_set_format: str = "regular",
+        starting_server_team: TeamId = TeamId.A,
+        set_starting_servers: dict[int, dict[TeamId, Player]] | None = None
     ):
         self._points_history: list[TeamId] = []
         self.teams = teams
@@ -74,6 +76,14 @@ class MatchScoreHistory:
         self.advantage_method = advantage_method
         self.set_format = set_format
         self.deciding_set_format = deciding_set_format
+        self.starting_server_team = starting_server_team
+        self.set_starting_servers = set_starting_servers or {}
+
+    def set_set_starting_server(self, set_index: int, team_id: TeamId, player: Player) -> None:
+        """Sets the starting server for a specific set (1-indexed) and team."""
+        if set_index not in self.set_starting_servers:
+            self.set_starting_servers[set_index] = {}
+        self.set_starting_servers[set_index][team_id] = player
 
     def add_point(self, team: TeamId) -> MatchScore:
         """Adds a point to the history and returns the new MatchScore state."""
@@ -134,7 +144,10 @@ class MatchScoreHistory:
                         in_super_tiebreak = True
                     else:
                         in_tiebreak = True
-                    tiebreak_starter = TeamId.B if total_games % 2 != 0 else TeamId.A
+                    if self.starting_server_team == TeamId.A:
+                        tiebreak_starter = TeamId.B if total_games % 2 != 0 else TeamId.A
+                    else:
+                        tiebreak_starter = TeamId.A if total_games % 2 != 0 else TeamId.B
                     tiebreak_points_played = 0
 
             # 1. Processing under a tie-break (either regular set tie-break, or match deciding tie-break)
@@ -267,7 +280,10 @@ class MatchScoreHistory:
                     limit = 4 if self.set_format == "mini" else 6
                     if games_a == limit and games_b == limit:
                         in_tiebreak = True
-                        tiebreak_starter = TeamId.B if total_games % 2 != 0 else TeamId.A
+                        if self.starting_server_team == TeamId.A:
+                            tiebreak_starter = TeamId.B if total_games % 2 != 0 else TeamId.A
+                        else:
+                            tiebreak_starter = TeamId.A if total_games % 2 != 0 else TeamId.B
                         tiebreak_points_played = 0
                     else:
                         is_set_won_a = False
@@ -310,22 +326,67 @@ class MatchScoreHistory:
                     in_super_tiebreak = True
                 else:
                     in_tiebreak = True
-                tiebreak_starter = TeamId.B if total_games % 2 != 0 else TeamId.A
+                if self.starting_server_team == TeamId.A:
+                    tiebreak_starter = TeamId.B if total_games % 2 != 0 else TeamId.A
+                else:
+                    tiebreak_starter = TeamId.A if total_games % 2 != 0 else TeamId.B
                 tiebreak_points_played = 0
 
         # After processing all points, let's format the return values:
-        # 1. Determine active server:
+        # 1. Determine active server team:
         if in_tiebreak or in_super_tiebreak:
             points_played = points_a + points_b
             is_odd = ((points_played + 1) // 2) % 2 != 0
             if is_odd:
-                server = TeamId.B if tiebreak_starter == TeamId.A else TeamId.A
+                server_team = TeamId.B if tiebreak_starter == TeamId.A else TeamId.A
             else:
-                server = tiebreak_starter
+                server_team = tiebreak_starter
         else:
-            server = TeamId.B if total_games % 2 != 0 else TeamId.A
+            if self.starting_server_team == TeamId.A:
+                server_team = TeamId.B if total_games % 2 != 0 else TeamId.A
+            else:
+                server_team = TeamId.A if total_games % 2 != 0 else TeamId.B
 
-        # 2. Determine display points:
+        # 2. Determine active server player:
+        server_player = None
+        if self.teams:
+            team = self.teams.get(server_team)
+            if team:
+                current_set = sets_a + sets_b + 1
+                starting_server = self.set_starting_servers.get(current_set, {}).get(server_team)
+                if starting_server not in (team.player1, team.player2):
+                    starting_server = team.player1
+                second_server = team.player2 if starting_server == team.player1 else team.player1
+
+                if in_tiebreak or in_super_tiebreak:
+                    # Count points served by server_team in this tie-break
+                    pts_served_by_team = 0
+                    for i in range(points_played):
+                        pt_is_odd = ((i + 1) // 2) % 2 != 0
+                        if pt_is_odd:
+                            pt_server_team = TeamId.B if tiebreak_starter == TeamId.A else TeamId.A
+                        else:
+                            pt_server_team = tiebreak_starter
+                        if pt_server_team == server_team:
+                            pts_served_by_team += 1
+
+                    if server_team == tiebreak_starter:
+                        turn_index = (pts_served_by_team + 1) // 2
+                    else:
+                        turn_index = pts_served_by_team // 2
+
+                    if turn_index % 2 == 0:
+                        server_player = starting_server
+                    else:
+                        server_player = second_server
+                else:
+                    games_served_before = (games_a + games_b) // 2
+                    if games_served_before % 2 == 0:
+                        server_player = starting_server
+                    else:
+                        server_player = second_server
+
+        # 3. Determine display points:
         if in_tiebreak or in_super_tiebreak:
             disp_points_a = points_a
             disp_points_b = points_b
@@ -338,7 +399,7 @@ class MatchScoreHistory:
                 disp_points_a = self.POINTS_SEQUENCE[points_a]
                 disp_points_b = self.POINTS_SEQUENCE[points_b]
 
-        # 3. Determine is_gold_point:
+        # 4. Determine is_gold_point:
         is_gold_point = (
             not in_tiebreak
             and not in_super_tiebreak
@@ -346,6 +407,8 @@ class MatchScoreHistory:
             and points_a == 3
             and points_b == 3
         )
+
+        server_state = ServingState(team=server_team, player=server_player) if server_team is not None else None
 
         return MatchScore(
             points_A=disp_points_a,
@@ -355,7 +418,7 @@ class MatchScoreHistory:
             sets_A=sets_a,
             sets_B=sets_b,
             completed_sets=completed_sets.copy(),
-            server=server,
+            server=server_state,
             teams=self.teams,
             in_tiebreak=in_tiebreak,
             in_super_tiebreak=in_super_tiebreak,

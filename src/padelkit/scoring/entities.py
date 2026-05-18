@@ -30,3 +30,10 @@ class Team:
         if self.name:
             return self.name
         return f"{self.player1.name} / {self.player2.name}"
+
+
+@dataclass(frozen=True)
+class ServingState:
+    """Represents the active serving team and player at a specific point."""
+    team: TeamId
+    player: Player | None = None

@@ -111,11 +111,13 @@ match = Match(deciding_set_format="super_tiebreak")
 During any tie-break (regular or match-deciding), PadelKit automatically manages the official server rotation rules:
 1.  **First Point**: The first server of the tie-break serves `1` point from the right (deuce) court.
 2.  **Subsequent Points**: The service alternates every `2` points. The next server serves from the left (ad) court for the first point and the right (deuce) court for the second point.
-3.  **Active Server Tracking**: The active server can always be dynamically tracked using the `server` property on `MatchScore`.
+3.  **Active Server Tracking**: The active server and player can always be dynamically tracked using the `server` property on `MatchScore` (which returns a [`ServingState`](/serving-state) object containing both `team` and `player`).
 
 ```python
-# Check which team serves the 3rd point of a tie-break
+# Check which team and player serve the 3rd point of a tie-break
 score = match.history.get_current_score()
-print(f"Active server team: {score.server}")
+if score.server:
+    print(f"Active server team: {score.server.team}")
+    print(f"Active server player: {score.server.player.name}")
 ```
 

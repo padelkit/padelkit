@@ -12,7 +12,7 @@ from padelkit.court.enums import (
 )
 from padelkit.court.landmarks import CourtLandmark
 from padelkit.court.location import CourtLocation
-from padelkit.scoring import Match, MatchScore, MatchScoreHistory, Player, Team, TeamId
+from padelkit.scoring import Match, MatchScore, MatchScoreHistory, Player, Team, TeamId, ServingState
 
 __all__ = [
     # Court geometry
@@ -34,6 +34,7 @@ __all__ = [
     "TeamId",
     "Team",
     "Player",
+    "ServingState",
     # Package
     "__version__",
 ]

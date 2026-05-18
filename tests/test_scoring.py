@@ -249,25 +249,31 @@ def test_tiebreak_server_rotation():
             
     score = history.get_current_score()
     assert score.in_tiebreak is True
-    assert score.server == TeamId.A # 1st point served by Team A
+    assert score.server is not None
+    assert score.server.team == TeamId.A # 1st point served by Team A
     
     # Point 1 won by A. Score 1-0. points_played = 1.
     score = history.add_point(TeamId.A)
-    assert score.server == TeamId.B # 2nd point served by Team B
+    assert score.server is not None
+    assert score.server.team == TeamId.B # 2nd point served by Team B
     
     # Point 2 won by B. Score 1-1. points_played = 2.
     score = history.add_point(TeamId.B)
-    assert score.server == TeamId.B # 3rd point served by Team B
+    assert score.server is not None
+    assert score.server.team == TeamId.B # 3rd point served by Team B
     
     # Point 3 won by A. Score 2-1. points_played = 3.
     score = history.add_point(TeamId.A)
-    assert score.server == TeamId.A # 4th point served by Team A
+    assert score.server is not None
+    assert score.server.team == TeamId.A # 4th point served by Team A
     
     # Point 4 won by B. Score 2-2. points_played = 4.
     score = history.add_point(TeamId.B)
-    assert score.server == TeamId.A # 5th point served by Team A
+    assert score.server is not None
+    assert score.server.team == TeamId.A # 5th point served by Team A
     
     # Point 5 won by A. Score 3-2. points_played = 5.
     score = history.add_point(TeamId.A)
-    assert score.server == TeamId.B # 6th point served by Team B
+    assert score.server is not None
+    assert score.server.team == TeamId.B # 6th point served by Team B
 
