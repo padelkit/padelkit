@@ -1,0 +1,105 @@
+export const metadata = {
+  title: "MatchConfiguration",
+  description: "API reference for the MatchConfiguration dataclass representing all scoring rules, formats, and structures of a padel match.",
+}
+
+# MatchConfiguration
+
+The `MatchConfiguration` dataclass groups together all scoring formats, rules, starting server rotations, and other parameters that define the conditions of a padel match. This class is passed to [`Match`](/match) or [`MatchScoreHistory`](/match-score-history) to establish rules like Golden Point (Punto de Oro), Mini Sets, or Match Deciding Super Tie-breaks. {{ className: 'lead' }}
+
+## Properties
+
+<Properties>
+  <Property name="best_of_sets" type="int">
+    The maximum number of sets to be played in the match (default is `3` for best-of-three, but can also be configured to `5`).
+  </Property>
+  <Property name="advantage_method" type="Literal['advantage', 'gold_point']">
+    The method used to break a deuce (`40-40`) tie in games. Use `'advantage'` for traditional advantages, or `'gold_point'` for the FIP-official deciding gold point (Punto de Oro).
+  </Property>
+  <Property name="set_format" type="Literal['standard', 'mini']">
+    The structure of each regular set. `'standard'` sets are won by reaching 6 games (with a margin of 2, or a tie-break at 6-6). `'mini'` sets are played to 4 games (with a tie-break at 4-4).
+  </Property>
+  <Property name="deciding_set_format" type="Literal['regular', 'tiebreak', 'super_tiebreak']">
+    The format of the final set if a tie occurs (e.g. at 1-1 in a best-of-three match). Use `'regular'` for a full set, `'tiebreak'` for a match-deciding 7-point tie-break, or `'super_tiebreak'` for a 10-point super tie-break.
+  </Property>
+  <Property name="starting_server_team" type="TeamId">
+    The [`TeamId`](/team) who will start serving on the very first point of the match. Defaults to `TeamId.A`.
+  </Property>
+  <Property name="set_starting_servers" type="dict[int, dict[TeamId, Player]]">
+    A dictionary mapping 1-indexed set indices to their starting servers for each team. Allows declaring serving rosters for each set dynamically.
+  </Property>
+</Properties>
+
+---
+
+## Initialization
+
+<Row>
+  <Col>
+
+    Creates a new instance of a `MatchConfiguration`.
+
+    ### Keyword Arguments
+
+    <Properties>
+      <Property name="best_of_sets" type="int" optional default="3">
+        Number of sets to play (usually `3` or `5`).
+      </Property>
+      <Property name="advantage_method" type="str" optional default="'advantage'">
+        Deuce-breaking format: `'advantage'` or `'gold_point'`.
+      </Property>
+      <Property name="set_format" type="str" optional default="'standard'">
+        Set length: `'standard'` (to 6 games) or `'mini'` (to 4 games).
+      </Property>
+      <Property name="deciding_set_format" type="str" optional default="'regular'">
+        Deciding final set behavior: `'regular'`, `'tiebreak'` or `'super_tiebreak'`.
+      </Property>
+      <Property name="starting_server_team" type="TeamId" optional default="TeamId.A">
+        The starting server team on point 1 of set 1.
+      </Property>
+      <Property name="set_starting_servers" type="dict[int, dict[TeamId, Player]]" optional default="{}">
+        Starting serving players dictionary by set index and team.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Instantiation" tag="class" label="MatchConfiguration">
+
+    ```python
+    from padelkit import MatchConfiguration, TeamId, Player
+
+    p1 = Player(name="Coello")
+    p3 = Player(name="Galán")
+
+    config = MatchConfiguration(
+        best_of_sets=3,
+        advantage_method="gold_point",
+        set_format="standard",
+        deciding_set_format="super_tiebreak",
+        starting_server_team=TeamId.A,
+        set_starting_servers={
+            1: {
+                TeamId.A: p1,
+                TeamId.B: p3
+            }
+        }
+    )
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output structure' }}
+    MatchConfiguration(
+      best_of_sets=3,
+      advantage_method='gold_point',
+      set_format='standard',
+      deciding_set_format='super_tiebreak',
+      starting_server_team=<TeamId.A: 'A'>,
+      set_starting_servers={1: {<TeamId.A: 'A'>: Player(name='Coello'), ...}}
+    )
+    ```
+
+  </Col>
+</Row>

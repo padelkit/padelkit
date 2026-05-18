@@ -17,7 +17,7 @@ export const metadata = {
     The team configured to start serving first in the match.
   </Property>
   <Property name="set_starting_servers" type="dict[int, dict[TeamId, Player]]">
-    A dictionary mapping 0-based set indexes to each team's chosen initial server for that set.
+    A dictionary mapping 1-based set indexes (e.g., `1`, `2`, `3`) to each team's chosen initial server for that set.
   </Property>
 </Properties>
 
@@ -40,7 +40,7 @@ export const metadata = {
         The team that starts serving first in the match.
       </Property>
       <Property name="set_starting_servers" type="dict[int, dict[TeamId, Player]] | None" optional default="None">
-        A dictionary mapping a 0-based set index to a nested dictionary mapping `TeamId` to the `Player` chosen to start serving for that team in that set.
+        A dictionary mapping a 1-based set index (e.g., `1`, `2`, `3`) to a nested dictionary mapping `TeamId` to the `Player` chosen to start serving for that team in that set.
       </Property>
     </Properties>
 
@@ -203,7 +203,7 @@ export const metadata = {
 
     <Properties>
       <Property name="set_index" type="int">
-        The 0-based index of the set.
+        The 1-based index of the set (e.g., `1` for the first set, `2` for the second set).
       </Property>
       <Property name="team_id" type="TeamId">
         The team identifying (`TeamId.A` or `TeamId.B`).
@@ -222,7 +222,8 @@ export const metadata = {
     from padelkit import Player, TeamId
 
     player = Player("Juan Lebrón")
-    history.set_set_starting_server(set_index=0, team_id=TeamId.A, player=player)
+    # Set server for Set 1
+    history.set_set_starting_server(set_index=1, team_id=TeamId.A, player=player)
     ```
 
     </CodeGroup>

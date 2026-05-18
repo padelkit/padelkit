@@ -9,30 +9,56 @@ The `Match` class is the top-level entity representing a padel match. It encapsu
 
 ## Properties
 
+### Core Properties
+
 <Properties>
+  <Property name="teams" type="dict[TeamId, Team]">
+    A dictionary mapping [`TeamId`](/team) to each [`Team`](/team) playing the match.
+  </Property>
+  <Property name="court" type="Court | None">
+    The [`Court`](/court) geometry instance representing the physical padel court.
+  </Property>
+  <Property name="config" type="MatchConfiguration">
+    The complete [`MatchConfiguration`](/match-configuration) instance containing the rules and formats for the match.
+  </Property>
   <Property name="history" type="MatchScoreHistory">
     The underlying [`MatchScoreHistory`](/match-score-history) engine driving the score logic.
   </Property>
+</Properties>
+
+### Match Status & Logic
+
+<Properties>
   <Property name="winner" type="Team | None">
-    Returns the [`Team`](/team) that won the match based on `best_of_sets`, or `None` if incomplete.
+    Returns the [`Team`](/team) that won the match based on the score and `best_of_sets`, or `None` if incomplete.
   </Property>
   <Property name="is_completed" type="bool">
     Returns `True` if a winner has been decided.
   </Property>
+</Properties>
+
+### Configuration Shortcuts (Proxies)
+
+The following properties are convenience proxies for the properties encapsulated within the `config` ([`MatchConfiguration`](/match-configuration)) instance. Reading or writing these properties directly forwards the action to the configuration instance.
+
+<Properties>
+  <Property name="best_of_sets" type="int">
+    Shortcut for `config.best_of_sets`. The maximum number of sets to determine a winner (typically 3 or 5).
+  </Property>
   <Property name="advantage_method" type="str">
-    The game-level scoring rules. Can be `"advantage"` (standard advantage loop) or `"gold_point"` (golden point at 40-40).
+    Shortcut for `config.advantage_method`. The game-level scoring rules. Can be `"advantage"` or `"gold_point"`.
   </Property>
   <Property name="set_format" type="str">
-    The format of sets played in the match. Can be `"standard"` (sets to 6 games) or `"mini"` (sets to 4 games).
+    Shortcut for `config.set_format`. The format of sets played. Can be `"standard"` or `"mini"`.
   </Property>
   <Property name="deciding_set_format" type="str">
-    The format of the final/deciding set. Can be `"regular"` (standard set), `"tiebreak"` (7-point match tie-break), or `"super_tiebreak"` (10-point match super tie-break).
+    Shortcut for `config.deciding_set_format`. The format of the final/deciding set. Can be `"regular"`, `"tiebreak"`, or `"super_tiebreak"`.
   </Property>
   <Property name="starting_server_team" type="TeamId">
-    The team configured to start serving first in the match.
+    Shortcut for `config.starting_server_team`. The team configured to start serving first in the match.
   </Property>
   <Property name="set_starting_servers" type="dict[int, dict[TeamId, Player]]">
-    A dictionary mapping 0-based set indexes to each team's chosen initial server for that set.
+    Shortcut for `config.set_starting_servers`. A dictionary mapping 1-based set indexes (e.g. `1`, `2`, `3`) to each team's chosen initial server for that set.
   </Property>
 </Properties>
 
@@ -45,12 +71,31 @@ The `Match` class is the top-level entity representing a padel match. It encapsu
 
     You can create a `Match` by providing optional parameters. If no `teams` are provided, default generic teams will be instantiated.
 
-    ### Keyword Arguments
+    ### Core Arguments
 
     <Properties>
       <Property name="teams" type="dict[TeamId, Team]" optional>
         A dictionary mapping a `TeamId` to a [`Team`](/team) object.
       </Property>
+      <Property name="config" type="MatchConfiguration | None" optional default="None">
+        An optional custom [`MatchConfiguration`](/match-configuration) object to initialize the match rules. If provided, other individual scoring parameter arguments (like `best_of_sets`, `advantage_method`) are ignored.
+      </Property>
+      <Property name="court" type="Court | None" optional default="None">
+        The [`Court`](/court) geometry instance representing the court bounds and landmark points.
+      </Property>
+      <Property name="date" type="datetime | None" optional>
+        The date and time of the match.
+      </Property>
+      <Property name="duration_minutes" type="int | None" optional>
+        Total duration of the match in minutes.
+      </Property>
+    </Properties>
+
+    ### Configuration Shortcut Arguments
+
+    These arguments are automatically packaged into a `MatchConfiguration` if a custom `config` object is not provided.
+
+    <Properties>
       <Property name="best_of_sets" type="int" optional default="3">
         The number of sets to determine a winner (e.g., `3` means the first to win 2 sets wins).
       </Property>
@@ -67,19 +112,7 @@ The `Match` class is the top-level entity representing a padel match. It encapsu
         The team that starts serving first in the match.
       </Property>
       <Property name="set_starting_servers" type="dict[int, dict[TeamId, Player]] | None" optional default="None">
-        A dictionary mapping a 0-based set index to a nested dictionary mapping `TeamId` to the `Player` chosen to start serving for that team in that set.
-      </Property>
-      <Property name="duration_minutes" type="int | None" optional>
-        Total duration of the match in minutes.
-      </Property>
-      <Property name="date" type="datetime | None" optional>
-        The date and time of the match.
-      </Property>
-      <Property name="location" type="str | None" optional>
-        The venue or location.
-      </Property>
-      <Property name="court_type" type="str | None" optional>
-        E.g., "Indoor", "Outdoor".
+        A dictionary mapping a 1-based set index (e.g., `1`, `2`, `3`) to a nested dictionary mapping `TeamId` to the `Player` chosen to start serving for that team in that set.
       </Property>
     </Properties>
 
@@ -89,8 +122,11 @@ The `Match` class is the top-level entity representing a padel match. It encapsu
     <CodeGroup title="Instantiation" tag="class" label="Match">
 
     ```python
-    from padelkit import Match
+    from padelkit import Match, Court
     from datetime import datetime
+
+    # Initialize a standard court
+    court = Court.fip_standard()
 
     # Start a premium mini-set match with gold points
     # and a match-deciding super tie-break
@@ -99,8 +135,8 @@ The `Match` class is the top-level entity representing a padel match. It encapsu
         advantage_method="gold_point",
         set_format="mini",
         deciding_set_format="super_tiebreak",
-        location="Club Padel",
-        date=datetime.now()
+        date=datetime.now(),
+        court=court
     )
     ```
 
@@ -108,15 +144,22 @@ The `Match` class is the top-level entity representing a padel match. It encapsu
 
     ```json {{ title: 'Output structure' }}
     Match(
-      teams=...,
-      best_of_sets=3,
-      advantage_method='gold_point',
-      set_format='mini',
-      deciding_set_format='super_tiebreak',
+      teams={
+        TeamId.A: Team(id=TeamId.A, player1=Player(name='Player 1'), player2=Player(name='Player 2')),
+        TeamId.B: Team(id=TeamId.B, player1=Player(name='Player 3'), player2=Player(name='Player 4'))
+      },
+      config=MatchConfiguration(
+        best_of_sets=3,
+        advantage_method='gold_point',
+        set_format='mini',
+        deciding_set_format='super_tiebreak',
+        starting_server_team=<TeamId.A: 'A'>,
+        set_starting_servers={}
+      ),
+      history=<MatchScoreHistory object at 0x...>,
       duration_minutes=None,
       date=datetime.datetime(...),
-      location='Club Padel',
-      court_type=None
+      court=Court(dimensions=CourtDimensions(length=20.0, width=10.0, ...))
     )
     ```
 
@@ -136,7 +179,7 @@ The `Match` class is the top-level entity representing a padel match. It encapsu
 
     <Properties>
       <Property name="set_index" type="int">
-        The 0-based index of the set.
+        The 1-based index of the set (e.g., `1` for the first set, `2` for the second set).
       </Property>
       <Property name="team_id" type="TeamId">
         The team identifying (`TeamId.A` or `TeamId.B`).
@@ -155,7 +198,8 @@ The `Match` class is the top-level entity representing a padel match. It encapsu
     from padelkit import Player, TeamId
 
     player = Player("Juan Lebrón")
-    match.set_set_starting_server(set_index=0, team_id=TeamId.A, player=player)
+    # Set server for Set 1
+    match.set_set_starting_server(set_index=1, team_id=TeamId.A, player=player)
     ```
 
     </CodeGroup>

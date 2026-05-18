@@ -79,6 +79,12 @@
       "description": "API reference for the ServingState dataclass representing server state.",
       "icon": "UserIcon",
       "min": "2.0.1"
+    },
+    "/match-configuration": {
+      "title": "MatchConfiguration",
+      "description": "API reference for the MatchConfiguration dataclass representing match configuration parameters.",
+      "icon": "CogIcon",
+      "min": "2.0.1"
     }
   },
   "navigation": [
@@ -104,6 +110,7 @@
       "title": "Match model",
       "links": [
         "/match",
+        "/match-configuration",
         "/match-score",
         "/match-score-history"
       ]
@@ -112,8 +119,8 @@
       "title": "Core entities",
       "links": [
         "/player",
-        "/team",
-        "/serving-state"
+        "/serving-state",
+        "/team"
       ]
     }
   ],
@@ -131,7 +138,8 @@
       "/court-dimensions",
       "/court",
       "/match-score",
-      "/serving-state"
+      "/serving-state",
+      "/match-configuration"
     ]
   }
 }

@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
 from enum import Enum
 
@@ -37,3 +37,15 @@ class ServingState:
     """Represents the active serving team and player at a specific point."""
     team: TeamId
     player: Player | None = None
+
+
+@dataclass
+class MatchConfiguration:
+    """Encapsulates all rules, formats, and structural configurations for a padel match."""
+    best_of_sets: int = 3
+    advantage_method: Literal["advantage", "gold_point"] = "advantage"
+    set_format: Literal["standard", "mini"] = "standard"
+    deciding_set_format: Literal["regular", "tiebreak", "super_tiebreak"] = "regular"
+    starting_server_team: TeamId = TeamId.A
+    set_starting_servers: dict[int, dict[TeamId, Player]] = field(default_factory=dict)
+

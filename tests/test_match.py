@@ -260,3 +260,42 @@ def test_serving_state_exports():
     assert ScoringServingState is ServingState
 
 
+def test_match_configuration_direct_instantiation():
+    from padelkit.scoring import MatchConfiguration
+    
+    config = MatchConfiguration(
+        best_of_sets=5,
+        advantage_method="gold_point",
+        set_format="mini",
+        deciding_set_format="super_tiebreak"
+    )
+    match = Match(config=config)
+    
+    assert match.config is config
+    assert match.best_of_sets == 5
+    assert match.advantage_method == "gold_point"
+    assert match.set_format == "mini"
+    assert match.deciding_set_format == "super_tiebreak"
+    assert match.history.config is config
+
+
+def test_match_configuration_property_setters():
+    match = Match()
+    
+    match.best_of_sets = 5
+    match.advantage_method = "gold_point"
+    match.set_format = "mini"
+    match.deciding_set_format = "super_tiebreak"
+    
+    assert match.config.best_of_sets == 5
+    assert match.config.advantage_method == "gold_point"
+    assert match.config.set_format == "mini"
+    assert match.config.deciding_set_format == "super_tiebreak"
+    
+    assert match.history.config.best_of_sets == 5
+    assert match.history.config.advantage_method == "gold_point"
+    assert match.history.config.set_format == "mini"
+    assert match.history.config.deciding_set_format == "super_tiebreak"
+
+
+
