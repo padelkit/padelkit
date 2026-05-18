@@ -32,7 +32,7 @@ The `MatchScore` dataclass is an immutable snapshot of the match score at a spec
     A history of scores from completed sets, e.g., `[(6, 4), (7, 5)]`.
   </Property>
   <Property name="server" type="ServingState | None">
-    The active serving team and player encapsulated in a [`ServingState`](/serving-state) object, or `None` if the match is completed.
+    The active serving team and player encapsulated in a [`ServingState`](/serving-state) object (representing who is about to serve the upcoming/next point), or `None` if the match is completed.
   </Property>
   <Property name="in_tiebreak" type="bool">
     Indicates whether a regular tie-break is currently active in the current set.

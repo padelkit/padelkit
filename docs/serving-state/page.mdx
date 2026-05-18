@@ -5,16 +5,16 @@ export const metadata = {
 
 # ServingState
 
-The `ServingState` dataclass encapsulates the serving team and player at a specific point in time. It is exposed through the `server` property of the [`MatchScore`](/match-score). {{ className: 'lead' }}
+The `ServingState` dataclass encapsulates the serving team and player who are about to serve the upcoming/next point in the match. It is exposed through the `server` property of the [`MatchScore`](/match-score). {{ className: 'lead' }}
 
 ## Properties
 
 <Properties>
   <Property name="team" type="TeamId">
-    The [`TeamId`](/team) currently serving (`TeamId.A` or `TeamId.B`).
+    The [`TeamId`](/team) about to serve the upcoming/next point (`TeamId.A` or `TeamId.B`).
   </Property>
   <Property name="player" type="Player | None">
-    The specific [`Player`](/player) currently serving, or `None` if player details are not configured.
+    The specific [`Player`](/player) about to serve the upcoming/next point, or `None` if player details are not configured.
   </Property>
 </Properties>
 
@@ -31,10 +31,10 @@ The `ServingState` dataclass encapsulates the serving team and player at a speci
 
     <Properties>
       <Property name="team" type="TeamId">
-        The [`TeamId`](/team) currently serving (`TeamId.A` or `TeamId.B`).
+        The [`TeamId`](/team) about to serve the upcoming/next point (`TeamId.A` or `TeamId.B`).
       </Property>
       <Property name="player" type="Player | None" optional default="None">
-        The specific [`Player`](/player) currently serving, or `None` if player details are not configured.
+        The specific [`Player`](/player) about to serve the upcoming/next point, or `None` if player details are not configured.
       </Property>
     </Properties>
 
