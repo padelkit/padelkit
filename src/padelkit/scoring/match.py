@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from ..court.court import PadelCourt
+from ..court.court import Court
 from .entities import Player, Team, TeamId
 from .score import MatchScoreHistory
 
@@ -14,7 +14,7 @@ class Match:
         best_of_sets: int = 3,
         duration_minutes: int | None = None,
         date: datetime | None = None,
-        court: PadelCourt | None = None,
+        court: Court | None = None,
     ):
         if teams is None:
             teams = {

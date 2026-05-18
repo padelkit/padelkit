@@ -8,8 +8,8 @@ from padelkit.court import (
     DoorState,
     EnclosureType,
     EnclosureVariant,
-    Landmark,
-    PadelCourt,
+    CourtLandmark,
+    Court,
 )
 from padelkit.court.enums import CourtOrientation
 
@@ -19,7 +19,7 @@ from padelkit.court.enums import CourtOrientation
 
 
 def test_fip_standard_dimensions():
-    court = PadelCourt.fip_standard()
+    court = Court.fip_standard()
     assert court.length == 20.0
     assert court.width == 10.0
 
@@ -31,12 +31,12 @@ def test_fip_standard_wall_heights():
 
 
 # ---------------------------------------------------------------------------
-# PadelCourt — optional fields
+# Court — optional fields
 # ---------------------------------------------------------------------------
 
 
 def test_padel_court_optional_fields_default_to_none():
-    court = PadelCourt.fip_standard()
+    court = Court.fip_standard()
     assert court.enclosure_type is None
     assert court.enclosure_variant is None
     assert court.orientation is None
@@ -48,7 +48,7 @@ def test_padel_court_optional_fields_default_to_none():
 
 
 def test_padel_court_with_all_optional_fields():
-    court = PadelCourt(
+    court = Court(
         dimensions=CourtDimensions.fip_standard(),
         enclosure_type=EnclosureType.GLASS,
         enclosure_variant=EnclosureVariant.V1,
@@ -81,35 +81,35 @@ def test_padel_court_with_all_optional_fields():
 
 
 def test_landmarks_2d_centered_corners():
-    court = PadelCourt.fip_standard()
+    court = Court.fip_standard()
     lm = court.landmarks_2d()
 
-    assert lm[Landmark.FLOOR_NEAR_LEFT.value] == (-5.0, -10.0)
-    assert lm[Landmark.FLOOR_NEAR_RIGHT.value] == (5.0, -10.0)
-    assert lm[Landmark.FLOOR_FAR_LEFT.value] == (-5.0, 10.0)
-    assert lm[Landmark.FLOOR_FAR_RIGHT.value] == (5.0, 10.0)
+    assert lm[CourtLandmark.FLOOR_NEAR_LEFT.value] == (-5.0, -10.0)
+    assert lm[CourtLandmark.FLOOR_NEAR_RIGHT.value] == (5.0, -10.0)
+    assert lm[CourtLandmark.FLOOR_FAR_LEFT.value] == (-5.0, 10.0)
+    assert lm[CourtLandmark.FLOOR_FAR_RIGHT.value] == (5.0, 10.0)
 
 
 def test_landmarks_2d_centered_net():
-    court = PadelCourt.fip_standard()
+    court = Court.fip_standard()
     lm = court.landmarks_2d()
 
-    assert lm[Landmark.CENTER.value] == (0.0, 0.0)
-    assert lm[Landmark.NET_LEFT.value] == (-5.0, 0.0)
-    assert lm[Landmark.NET_RIGHT.value] == (5.0, 0.0)
+    assert lm[CourtLandmark.CENTER.value] == (0.0, 0.0)
+    assert lm[CourtLandmark.NET_LEFT.value] == (-5.0, 0.0)
+    assert lm[CourtLandmark.NET_RIGHT.value] == (5.0, 0.0)
 
 
 def test_landmarks_2d_centered_service_lines():
-    court = PadelCourt.fip_standard()
+    court = Court.fip_standard()
     lm = court.landmarks_2d()
 
     # service_line_distance_from_back = 3.0  → svc = 10.0 - 3.0 = 7.0
-    assert lm[Landmark.SERVICE_NEAR_CENTER.value] == pytest.approx((0.0, -7.0))
-    assert lm[Landmark.SERVICE_FAR_CENTER.value] == pytest.approx((0.0, 7.0))
+    assert lm[CourtLandmark.SERVICE_NEAR_CENTER.value] == pytest.approx((0.0, -7.0))
+    assert lm[CourtLandmark.SERVICE_FAR_CENTER.value] == pytest.approx((0.0, 7.0))
 
 
 def test_landmarks_2d_has_all_13_floor_points():
-    court = PadelCourt.fip_standard()
+    court = Court.fip_standard()
     lm = court.landmarks_2d()
     assert len(lm) == 13
 
@@ -120,20 +120,20 @@ def test_landmarks_2d_has_all_13_floor_points():
 
 
 def test_landmarks_2d_corner_based_origin():
-    court = PadelCourt.fip_standard()
+    court = Court.fip_standard()
     lm = court.landmarks_2d(coordinate_system=CoordinateSystem.CORNER_BASED)
 
-    assert lm[Landmark.FLOOR_NEAR_LEFT.value] == pytest.approx((0.0, 0.0))
-    assert lm[Landmark.FLOOR_NEAR_RIGHT.value] == pytest.approx((10.0, 0.0))
-    assert lm[Landmark.FLOOR_FAR_LEFT.value] == pytest.approx((0.0, 20.0))
-    assert lm[Landmark.FLOOR_FAR_RIGHT.value] == pytest.approx((10.0, 20.0))
+    assert lm[CourtLandmark.FLOOR_NEAR_LEFT.value] == pytest.approx((0.0, 0.0))
+    assert lm[CourtLandmark.FLOOR_NEAR_RIGHT.value] == pytest.approx((10.0, 0.0))
+    assert lm[CourtLandmark.FLOOR_FAR_LEFT.value] == pytest.approx((0.0, 20.0))
+    assert lm[CourtLandmark.FLOOR_FAR_RIGHT.value] == pytest.approx((10.0, 20.0))
 
 
 def test_landmarks_2d_corner_based_center():
-    court = PadelCourt.fip_standard()
+    court = Court.fip_standard()
     lm = court.landmarks_2d(coordinate_system=CoordinateSystem.CORNER_BASED)
 
-    assert lm[Landmark.CENTER.value] == pytest.approx((5.0, 10.0))
+    assert lm[CourtLandmark.CENTER.value] == pytest.approx((5.0, 10.0))
 
 
 # ---------------------------------------------------------------------------
@@ -142,13 +142,13 @@ def test_landmarks_2d_corner_based_center():
 
 
 def test_landmarks_3d_has_all_17_points():
-    court = PadelCourt.fip_standard()
+    court = Court.fip_standard()
     lm = court.landmarks_3d()
     assert len(lm) == 17
 
 
 def test_landmarks_3d_floor_points_z_zero():
-    court = PadelCourt.fip_standard()
+    court = Court.fip_standard()
     lm = court.landmarks_3d()
 
     floor_keys = [lm_name for lm_name in lm if not lm_name.startswith("wall")]
@@ -157,15 +157,15 @@ def test_landmarks_3d_floor_points_z_zero():
 
 
 def test_landmarks_3d_wall_points_z_equals_back_wall_height():
-    court = PadelCourt.fip_standard()
+    court = Court.fip_standard()
     lm = court.landmarks_3d()
     wall_height = court.dimensions.back_wall_height  # 4.0
 
     wall_keys = [
-        Landmark.WALL_TOP_NEAR_LEFT.value,
-        Landmark.WALL_TOP_NEAR_RIGHT.value,
-        Landmark.WALL_TOP_FAR_LEFT.value,
-        Landmark.WALL_TOP_FAR_RIGHT.value,
+        CourtLandmark.WALL_TOP_NEAR_LEFT.value,
+        CourtLandmark.WALL_TOP_NEAR_RIGHT.value,
+        CourtLandmark.WALL_TOP_FAR_LEFT.value,
+        CourtLandmark.WALL_TOP_FAR_RIGHT.value,
     ]
     for key in wall_keys:
         assert lm[key][2] == pytest.approx(wall_height), (
@@ -174,10 +174,10 @@ def test_landmarks_3d_wall_points_z_equals_back_wall_height():
 
 
 def test_landmarks_3d_corner_based_near_left_wall_top():
-    court = PadelCourt.fip_standard()
+    court = Court.fip_standard()
     lm = court.landmarks_3d(coordinate_system=CoordinateSystem.CORNER_BASED)
 
-    x, y, z = lm[Landmark.WALL_TOP_NEAR_LEFT.value]
+    x, y, z = lm[CourtLandmark.WALL_TOP_NEAR_LEFT.value]
     assert x == pytest.approx(0.0)
     assert y == pytest.approx(0.0)
     assert z == pytest.approx(4.0)
@@ -189,18 +189,18 @@ def test_landmarks_3d_corner_based_near_left_wall_top():
 
 
 def test_point_retrieval_centered():
-    court = PadelCourt.fip_standard()
+    court = Court.fip_standard()
     assert court.point("center") == (0.0, 0.0)
-    assert court.point(Landmark.FLOOR_NEAR_LEFT.value) == (-5.0, -10.0)
+    assert court.point(CourtLandmark.FLOOR_NEAR_LEFT.value) == (-5.0, -10.0)
 
 
 def test_point_retrieval_corner_based():
-    court = PadelCourt.fip_standard()
+    court = Court.fip_standard()
     result = court.point("center", CoordinateSystem.CORNER_BASED)
     assert result == pytest.approx((5.0, 10.0))
 
 
 def test_invalid_point():
-    court = PadelCourt.fip_standard()
+    court = Court.fip_standard()
     with pytest.raises(ValueError):
         court.point("invalid_landmark")

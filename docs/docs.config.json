@@ -1,5 +1,10 @@
 {
-  "versions": ["1.0.0", "1.1.0", "2.0.0", "2.0.1"],
+  "versions": [
+    "1.0.0",
+    "1.1.0",
+    "2.0.0",
+    "2.0.1"
+  ],
   "pages": {
     "/": {
       "title": "API Documentation",
@@ -14,7 +19,7 @@
       "description": "Learn how the padel scoring system works, including concepts like event sourcing.",
       "min": "1.1.0"
     },
-    "/court": {
+    "/court-geometry": {
       "title": "Court Geometry",
       "description": "Understand coordinate systems, enclosure variants, and the 17-point landmark model."
     },
@@ -23,18 +28,18 @@
       "description": "API reference for the CourtDimensions dataclass.",
       "max": "1.1.0",
       "supersededBy": {
-        "title": "PadelCourt",
-        "href": "/padel-court"
+        "title": "Court",
+        "href": "/court"
       }
     },
-    "/padel-court": {
-      "title": "PadelCourt",
+    "/court": {
+      "title": "Court",
       "description": "API reference for the main court geometry class.",
       "icon": "UserIcon"
     },
-    "/landmark": {
-      "title": "Landmark",
-      "description": "API reference for the Landmark enum, including all 17 standard court positions and their coordinates.",
+    "/court-landmark": {
+      "title": "CourtLandmark",
+      "description": "API reference for the CourtLandmark enum, including all 17 standard court positions and their coordinates.",
       "icon": "ViewfinderCircleIcon"
     },
     "/court-location": {
@@ -77,21 +82,21 @@
         "/",
         "/quickstart",
         "/scoring-system",
-        "/court"
+        "/court-geometry"
       ]
     },
     {
       "title": "Resources",
       "links": [
+        "/court",
         "/court-dimensions",
-        "/padel-court",
-        "/landmark",
+        "/court-landmark",
         "/court-location",
         "/match",
-        "/match-score-history",
         "/match-score",
-        "/team",
-        "/player"
+        "/match-score-history",
+        "/player",
+        "/team"
       ]
     }
   ],
@@ -99,15 +104,15 @@
     "guides": [
       "/quickstart",
       "/scoring-system",
-      "/court"
+      "/court-geometry"
     ],
     "resources": [
-      "/landmark",
+      "/court-landmark",
       "/match",
       "/team",
       "/player",
       "/court-dimensions",
-      "/padel-court",
+      "/court",
       "/match-score"
     ]
   }

@@ -9,6 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Project initialization with basic `pyproject.toml`.
-- Basic `padelkit.court` module with `PadelCourt`, `CourtDimensions` and coordinate system.
+- Basic `padelkit.court` module with `Court`, `CourtDimensions` and coordinate system.
 - Basic `padelkit.scoring` module with `MatchScore` logic.
 - CI via GitHub Actions.

@@ -1,0 +1,88 @@
+export const metadata = {
+  title: "CourtLandmark",
+  description: "API reference for the CourtLandmark enum, including all 17 standard court positions and their coordinates.",
+}
+
+# CourtLandmark
+
+`CourtLandmark` is a string enum that enumerates the 17 standard positions on a padel court used for geometry calculations and camera calibration. {{ className: 'lead' }}
+
+The 17 points mirror the calibration convention of the padelamix computer-vision pipeline: points **1–13** lie on the **court floor** (Z = 0), and points **14–17** are at the **top of the back walls** (Z = `back_wall_height`, typically 4.0 m).
+
+---
+
+## Values
+
+```python
+from padelkit import CourtLandmark
+
+# All members
+list(CourtLandmark)
+```
+
+| # | Member | Value string |
+|---|---|---|
+| 1 | `CourtLandmark.FLOOR_NEAR_LEFT` | `"floor_near_left"` |
+| 2 | `CourtLandmark.FLOOR_NEAR_RIGHT` | `"floor_near_right"` |
+| 3 | `CourtLandmark.SERVICE_NEAR_LEFT` | `"service_near_left"` |
+| 4 | `CourtLandmark.SERVICE_NEAR_CENTER` | `"service_near_center"` |
+| 5 | `CourtLandmark.SERVICE_NEAR_RIGHT` | `"service_near_right"` |
+| 6 | `CourtLandmark.NET_LEFT` | `"net_left"` |
+| 7 | `CourtLandmark.CENTER` | `"center"` |
+| 8 | `CourtLandmark.NET_RIGHT` | `"net_right"` |
+| 9 | `CourtLandmark.SERVICE_FAR_LEFT` | `"service_far_left"` |
+| 10 | `CourtLandmark.SERVICE_FAR_CENTER` | `"service_far_center"` |
+| 11 | `CourtLandmark.SERVICE_FAR_RIGHT` | `"service_far_right"` |
+| 12 | `CourtLandmark.FLOOR_FAR_LEFT` | `"floor_far_left"` |
+| 13 | `CourtLandmark.FLOOR_FAR_RIGHT` | `"floor_far_right"` |
+| 14 | `CourtLandmark.WALL_TOP_NEAR_LEFT` | `"wall_top_near_left"` |
+| 15 | `CourtLandmark.WALL_TOP_NEAR_RIGHT` | `"wall_top_near_right"` |
+| 16 | `CourtLandmark.WALL_TOP_FAR_LEFT` | `"wall_top_far_left"` |
+| 17 | `CourtLandmark.WALL_TOP_FAR_RIGHT` | `"wall_top_far_right"` |
+
+![3D Padel Court Landmarks](/images/court-landmarks-3d.png)
+
+---
+
+## Usage
+
+<Row>
+  <Col>
+
+    `CourtLandmark` members can be used directly with [`Court`](/court) methods, either as enum members or their string values.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Usage" tag="enum" label="CourtLandmark">
+
+    ```python
+    from padelkit import Court, CourtLandmark, CoordinateSystem
+
+    court = Court.fip_standard()
+
+    # Using an enum member
+    pos = court.point(CourtLandmark.NET_LEFT)
+
+    # Using the string value
+    pos = court.point("net_left")
+
+    # Retrieve all 3D points in corner-based system
+    points = court.landmarks_3d(
+        coordinate_system=CoordinateSystem.CORNER_BASED
+    )
+    wall_top = points[CourtLandmark.WALL_TOP_NEAR_LEFT.value]
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output' }}
+    # court.point(CourtLandmark.NET_LEFT)
+    (-5.0, 0.0)
+
+    # wall_top (CORNER_BASED)
+    (0.0, 0.0, 4.0)
+    ```
+
+  </Col>
+</Row>

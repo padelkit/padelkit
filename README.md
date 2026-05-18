@@ -18,11 +18,11 @@ pip install padelkit
 ## Quickstart
 
 ```python
-from padelkit.court import PadelCourt
+from padelkit.court import Court
 from padelkit.scoring import MatchScore
 
 # Court Geometry
-court = PadelCourt.fip_standard()
+court = Court.fip_standard()
 print(f"Court dimensions: {court.length}m x {court.width}m")
 
 # Scoring

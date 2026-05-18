@@ -15,7 +15,7 @@ This document serves as the single source of truth regarding the architecture, i
 
 ## Code Architecture (`src/padelkit/`)
 
-The library exposes its functionality through very specific submodules. The initial public API exposes the `PadelCourt` and `MatchScore` classes directly from the root (`padelkit`).
+The library exposes its functionality through very specific submodules. The initial public API exposes the `Court` and `MatchScore` classes directly from the root (`padelkit`).
 
 ### 1. `court` Module (Court Geometry)
 Defines the dimensions, landmarks, and coordinate system of an official padel court.
@@ -26,8 +26,8 @@ Defines the dimensions, landmarks, and coordinate system of an official padel co
   - The **X** axis represents the width (left to right, from `-5.0` to `5.0`).
   - The **Y** axis represents the length (back to back, from `-10.0` to `10.0`).
   - All units are in **meters**.
-- **`Landmark`:** Enumeration for standardized 2D positions (e.g., `CENTER`, `TOP_LEFT`, `NET_RIGHT`).
-- **`PadelCourt`:** Main geometry class. It can be instantiated via `PadelCourt.fip_standard()`. It provides methods like `landmarks_2d()` (a dictionary with all coordinates) and `point(name)` (specific coordinates of a landmark).
+- **`CourtLandmark`:** Enumeration for standardized 2D positions (e.g., `CENTER`, `TOP_LEFT`, `NET_RIGHT`).
+- **`Court`:** Main geometry class. It can be instantiated via `Court.fip_standard()`. It provides methods like `landmarks_2d()` (a dictionary with all coordinates) and `point(name)` (specific coordinates of a landmark).
 
 ### 2. `scoring` Module (Scoring System)
 Implements the logic of the match state and score progression.

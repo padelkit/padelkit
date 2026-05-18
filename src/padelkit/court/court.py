@@ -9,12 +9,12 @@ from .enums import (
     EnclosureType,
     EnclosureVariant,
 )
-from .landmarks import Landmark
+from .landmarks import CourtLandmark
 from .location import CourtLocation
 
 
 @dataclass(frozen=True)
-class PadelCourt:
+class Court:
     """Represents a padel court with its geometry, physical
     characteristics, and metadata.
 
@@ -51,7 +51,7 @@ class PadelCourt:
     # ------------------------------------------------------------------ #
 
     @classmethod
-    def fip_standard(cls) -> "PadelCourt":
+    def fip_standard(cls) -> "Court":
         """Creates a standard FIP padel court with no optional metadata."""
         return cls(dimensions=CourtDimensions.fip_standard())
 
@@ -99,7 +99,7 @@ class PadelCourt:
         return x2, y2, z
 
     # ------------------------------------------------------------------ #
-    # Landmark methods
+    # CourtLandmark methods
     # ------------------------------------------------------------------ #
 
     def landmarks_2d(
@@ -113,26 +113,26 @@ class PadelCourt:
                 Defaults to ``CoordinateSystem.CENTERED``.
 
         Returns:
-            A dictionary mapping each :class:`Landmark` name to its (X, Y) position.
+            A dictionary mapping each :class:`CourtLandmark` name to its (X, Y) position.
         """
         hw = self.width / 2
         hl = self.length / 2
         svc = hl - self.dimensions.service_line_distance_from_back
 
         raw: dict[str, tuple[float, float]] = {
-            Landmark.FLOOR_NEAR_LEFT.value:      (-hw, -hl),
-            Landmark.FLOOR_NEAR_RIGHT.value:     ( hw, -hl),
-            Landmark.SERVICE_NEAR_LEFT.value:    (-hw, -svc),
-            Landmark.SERVICE_NEAR_CENTER.value:  (0.0, -svc),
-            Landmark.SERVICE_NEAR_RIGHT.value:   ( hw, -svc),
-            Landmark.NET_LEFT.value:             (-hw,  0.0),
-            Landmark.CENTER.value:               (0.0,  0.0),
-            Landmark.NET_RIGHT.value:            ( hw,  0.0),
-            Landmark.SERVICE_FAR_LEFT.value:     (-hw,  svc),
-            Landmark.SERVICE_FAR_CENTER.value:   (0.0,  svc),
-            Landmark.SERVICE_FAR_RIGHT.value:    ( hw,  svc),
-            Landmark.FLOOR_FAR_LEFT.value:       (-hw,  hl),
-            Landmark.FLOOR_FAR_RIGHT.value:      ( hw,  hl),
+            CourtLandmark.FLOOR_NEAR_LEFT.value:      (-hw, -hl),
+            CourtLandmark.FLOOR_NEAR_RIGHT.value:     ( hw, -hl),
+            CourtLandmark.SERVICE_NEAR_LEFT.value:    (-hw, -svc),
+            CourtLandmark.SERVICE_NEAR_CENTER.value:  (0.0, -svc),
+            CourtLandmark.SERVICE_NEAR_RIGHT.value:   ( hw, -svc),
+            CourtLandmark.NET_LEFT.value:             (-hw,  0.0),
+            CourtLandmark.CENTER.value:               (0.0,  0.0),
+            CourtLandmark.NET_RIGHT.value:            ( hw,  0.0),
+            CourtLandmark.SERVICE_FAR_LEFT.value:     (-hw,  svc),
+            CourtLandmark.SERVICE_FAR_CENTER.value:   (0.0,  svc),
+            CourtLandmark.SERVICE_FAR_RIGHT.value:    ( hw,  svc),
+            CourtLandmark.FLOOR_FAR_LEFT.value:       (-hw,  hl),
+            CourtLandmark.FLOOR_FAR_RIGHT.value:      ( hw,  hl),
         }
 
         return {
@@ -154,7 +154,7 @@ class PadelCourt:
                 Defaults to ``CoordinateSystem.CENTERED``.
 
         Returns:
-            A dictionary mapping each :class:`Landmark` name to its (X, Y, Z) position.
+            A dictionary mapping each :class:`CourtLandmark` name to its (X, Y, Z) position.
         """
         hw = self.width / 2
         hl = self.length / 2
@@ -163,24 +163,24 @@ class PadelCourt:
 
         raw: dict[str, tuple[float, float, float]] = {
             # Floor points
-            Landmark.FLOOR_NEAR_LEFT.value:      (-hw, -hl,   0.0),
-            Landmark.FLOOR_NEAR_RIGHT.value:     ( hw, -hl,   0.0),
-            Landmark.SERVICE_NEAR_LEFT.value:    (-hw, -svc,  0.0),
-            Landmark.SERVICE_NEAR_CENTER.value:  (0.0, -svc,  0.0),
-            Landmark.SERVICE_NEAR_RIGHT.value:   ( hw, -svc,  0.0),
-            Landmark.NET_LEFT.value:             (-hw,  0.0,  0.0),
-            Landmark.CENTER.value:               (0.0,  0.0,  0.0),
-            Landmark.NET_RIGHT.value:            ( hw,  0.0,  0.0),
-            Landmark.SERVICE_FAR_LEFT.value:     (-hw,  svc,  0.0),
-            Landmark.SERVICE_FAR_CENTER.value:   (0.0,  svc,  0.0),
-            Landmark.SERVICE_FAR_RIGHT.value:    ( hw,  svc,  0.0),
-            Landmark.FLOOR_FAR_LEFT.value:       (-hw,  hl,   0.0),
-            Landmark.FLOOR_FAR_RIGHT.value:      ( hw,  hl,   0.0),
+            CourtLandmark.FLOOR_NEAR_LEFT.value:      (-hw, -hl,   0.0),
+            CourtLandmark.FLOOR_NEAR_RIGHT.value:     ( hw, -hl,   0.0),
+            CourtLandmark.SERVICE_NEAR_LEFT.value:    (-hw, -svc,  0.0),
+            CourtLandmark.SERVICE_NEAR_CENTER.value:  (0.0, -svc,  0.0),
+            CourtLandmark.SERVICE_NEAR_RIGHT.value:   ( hw, -svc,  0.0),
+            CourtLandmark.NET_LEFT.value:             (-hw,  0.0,  0.0),
+            CourtLandmark.CENTER.value:               (0.0,  0.0,  0.0),
+            CourtLandmark.NET_RIGHT.value:            ( hw,  0.0,  0.0),
+            CourtLandmark.SERVICE_FAR_LEFT.value:     (-hw,  svc,  0.0),
+            CourtLandmark.SERVICE_FAR_CENTER.value:   (0.0,  svc,  0.0),
+            CourtLandmark.SERVICE_FAR_RIGHT.value:    ( hw,  svc,  0.0),
+            CourtLandmark.FLOOR_FAR_LEFT.value:       (-hw,  hl,   0.0),
+            CourtLandmark.FLOOR_FAR_RIGHT.value:      ( hw,  hl,   0.0),
             # Back wall top points
-            Landmark.WALL_TOP_NEAR_LEFT.value:   (-hw, -hl,   wh),
-            Landmark.WALL_TOP_NEAR_RIGHT.value:  ( hw, -hl,   wh),
-            Landmark.WALL_TOP_FAR_LEFT.value:    (-hw,  hl,   wh),
-            Landmark.WALL_TOP_FAR_RIGHT.value:   ( hw,  hl,   wh),
+            CourtLandmark.WALL_TOP_NEAR_LEFT.value:   (-hw, -hl,   wh),
+            CourtLandmark.WALL_TOP_NEAR_RIGHT.value:  ( hw, -hl,   wh),
+            CourtLandmark.WALL_TOP_FAR_LEFT.value:    (-hw,  hl,   wh),
+            CourtLandmark.WALL_TOP_FAR_RIGHT.value:   ( hw,  hl,   wh),
         }
 
         return {
@@ -196,7 +196,7 @@ class PadelCourt:
         """Returns the (X, Y) coordinates of a specific 2D landmark.
 
         Args:
-            name: A :class:`Landmark` value string (e.g., ``"center"``).
+            name: A :class:`CourtLandmark` value string (e.g., ``"center"``).
             coordinate_system: The reference frame for the returned coordinates.
                 Defaults to ``CoordinateSystem.CENTERED``.
 

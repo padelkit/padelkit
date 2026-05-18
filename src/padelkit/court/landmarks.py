@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class Landmark(str, Enum):
+class CourtLandmark(str, Enum):
     """Standard landmark positions on a padel court.
 
     Landmarks are numbered 1-17 to match the camera-calibration convention

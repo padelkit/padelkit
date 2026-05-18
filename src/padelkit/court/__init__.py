@@ -1,4 +1,4 @@
-from .court import PadelCourt
+from .court import Court
 from .dimensions import CourtDimensions
 from .enums import (
     CoordinateSystem,
@@ -8,14 +8,14 @@ from .enums import (
     EnclosureType,
     EnclosureVariant,
 )
-from .landmarks import Landmark
+from .landmarks import CourtLandmark
 from .location import CourtLocation
 
 __all__ = [
-    "PadelCourt",
+    "Court",
     "CourtDimensions",
     "CourtLocation",
-    "Landmark",
+    "CourtLandmark",
     "CoordinateSystem",
     "EnclosureType",
     "EnclosureVariant",
