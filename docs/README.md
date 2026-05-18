@@ -88,9 +88,40 @@ To make the page accessible from the sidebar menu, add its URL to the `"navigati
 ```
 
 ### 3. Add it to the Homepage Cards (Optional)
-If you want the page to appear as a large visual card on the homepage, add its URL to the `"intro_cards"` object under `guides` or `resources`. If you place it under `resources`, ensure you specified a valid `"icon"` string in the `pages` object.
+If you want the page to appear as a large visual card on the homepage, add its URL to the `"intro_cards"` object under `guides` or `resources`. 
 
-Supported icons include: `UserIcon`, `ChatBubbleIcon`, `EnvelopeIcon`, `UsersIcon`.
+If you place it under `resources`, you must specify a valid `"icon"` string in the page's object inside `"pages"`.
+
+#### 🎨 Synced Icons System
+Icons are defined directly within PadelKit in [docs/icons/](file:///home/fidelechevarria/repos/padelkit/docs/icons/). The build pipeline automatically copies these icons, registers them, and exposes them dynamically on the documentation website.
+
+*   **Using an Existing Icon:** 
+    You can use any of the pre-configured icons by setting `"icon"` to the icon's component name (without the `.tsx` extension). Some of the available built-in options include:
+    *   `UserIcon` / `UserNoCircleIcon` (for single user/player metrics)
+    *   `UsersIcon` (for teams/groups)
+    *   `TrophyIcon` (for matches/tournaments)
+    *   `ChatBubbleIcon` (for chat, scoring history, or feedback)
+    *   `ViewfinderCircleIcon` (for landmarks/vision system)
+    *   `BookIcon`, `CalendarIcon`, `CartIcon`, `ClipboardIcon`, `CogIcon`, `FolderIcon`, `LinkIcon`, `MapPinIcon`, `PackageIcon`, `TagIcon` (and many more in [docs/icons/](file:///home/fidelechevarria/repos/padelkit/docs/icons/)).
+
+*   **Adding a Custom Icon:**
+    If you need a new icon that is not in the list, simply create a new React component file inside [docs/icons/](file:///home/fidelechevarria/repos/padelkit/docs/icons/) (e.g., `NewFeatureIcon.tsx`). It must be a standard React SVG component accepting SVG properties:
+    
+    ```tsx
+    export function NewFeatureIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
+      return (
+        <svg viewBox="0 0 20 20" aria-hidden="true" {...props}>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="..."
+          />
+        </svg>
+      )
+    }
+    ```
+    
+    Once the file is saved, reference it in `docs.config.json` as `"icon": "NewFeatureIcon"`. During the next automated sync, the build process will automatically copy, register, and render your custom icon.
 
 ## 🚀 Deployment
 
