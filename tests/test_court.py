@@ -4,6 +4,7 @@ from padelkit.court import (
     CoordinateSystem,
     CourtDimensions,
     CourtLocation,
+    CourtSetting,
     DoorState,
     EnclosureType,
     EnclosureVariant,
@@ -43,6 +44,7 @@ def test_padel_court_optional_fields_default_to_none():
     assert court.door_left is None
     assert court.door_right is None
     assert court.location is None
+    assert court.setting is None
 
 
 def test_padel_court_with_all_optional_fields():
@@ -54,6 +56,7 @@ def test_padel_court_with_all_optional_fields():
         turf_color="blue",
         door_left=DoorState.OPEN,
         door_right=DoorState.CLOSED,
+        setting=CourtSetting.OUTDOOR,
         location=CourtLocation(
             club="Padel Club Madrid",
             city="Madrid",
@@ -66,8 +69,10 @@ def test_padel_court_with_all_optional_fields():
     assert court.enclosure_variant is EnclosureVariant.V1
     assert court.door_left is DoorState.OPEN
     assert court.door_right is DoorState.CLOSED
+    assert court.setting is CourtSetting.OUTDOOR
     assert court.location.city == "Madrid"
     assert court.location.latitude == pytest.approx(40.4168)
+
 
 
 # ---------------------------------------------------------------------------

@@ -4,6 +4,7 @@ from .dimensions import CourtDimensions
 from .enums import (
     CoordinateSystem,
     CourtOrientation,
+    CourtSetting,
     DoorState,
     EnclosureType,
     EnclosureVariant,
@@ -33,6 +34,8 @@ class PadelCourt:
     enclosure_variant: EnclosureVariant | None = None
     orientation: CourtOrientation | None = None
     turf_color: str | None = None
+    setting: CourtSetting | None = None
+
 
     # Access doors (one per lateral side)
     # "left" and "right" are from the perspective of a player

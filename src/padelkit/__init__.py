@@ -5,6 +5,7 @@ from padelkit.court.dimensions import CourtDimensions
 from padelkit.court.enums import (
     CoordinateSystem,
     CourtOrientation,
+    CourtSetting,
     DoorState,
     EnclosureType,
     EnclosureVariant,
@@ -24,6 +25,8 @@ __all__ = [
     "EnclosureVariant",
     "CourtOrientation",
     "DoorState",
+    "CourtSetting",
+
     # Scoring
     "MatchScore",
     "MatchScoreHistory",

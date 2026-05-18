@@ -3,6 +3,7 @@ from .dimensions import CourtDimensions
 from .enums import (
     CoordinateSystem,
     CourtOrientation,
+    CourtSetting,
     DoorState,
     EnclosureType,
     EnclosureVariant,
@@ -20,4 +21,6 @@ __all__ = [
     "EnclosureVariant",
     "CourtOrientation",
     "DoorState",
+    "CourtSetting",
 ]
+

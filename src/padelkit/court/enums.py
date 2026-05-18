@@ -55,3 +55,12 @@ class DoorState(str, Enum):
 
     OPEN = "open"
     CLOSED = "closed"
+
+
+class CourtSetting(str, Enum):
+    """Setting or environment of the court (indoor, outdoor, or semi-covered)."""
+
+    INDOOR = "indoor"
+    OUTDOOR = "outdoor"
+    SEMI_COVERED = "semi_covered"
+

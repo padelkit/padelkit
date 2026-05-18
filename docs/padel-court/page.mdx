@@ -31,6 +31,9 @@ export const metadata = {
   <Property name="turf_color" type="str | None">
     The color of the artificial turf, if set.
   </Property>
+  <Property name="setting" type="CourtSetting | None">
+    The environment setting of the court (indoor, outdoor, or semi-covered), if set.
+  </Property>
   <Property name="door_left" type="DoorState | None">
     State of the left lateral access door, if set.
   </Property>
@@ -69,6 +72,9 @@ export const metadata = {
       <Property name="turf_color" type="str | None" optional>
         The color of the artificial turf (e.g., `"blue"`, `"green"`).
       </Property>
+      <Property name="setting" type="CourtSetting | None" optional>
+        The environment setting of the court (`CourtSetting.INDOOR`, `CourtSetting.OUTDOOR`, or `CourtSetting.SEMI_COVERED`).
+      </Property>
       <Property name="door_left" type="DoorState | None" optional>
         State of the left lateral door, from the perspective of a player on the near side facing the net.
       </Property>
@@ -93,6 +99,7 @@ export const metadata = {
         EnclosureType,
         EnclosureVariant,
         DoorState,
+        CourtSetting,
     )
 
     court = PadelCourt(
@@ -100,6 +107,7 @@ export const metadata = {
         enclosure_type=EnclosureType.GLASS,
         enclosure_variant=EnclosureVariant.V1,
         turf_color="blue",
+        setting=CourtSetting.OUTDOOR,
         door_left=DoorState.OPEN,
         door_right=DoorState.CLOSED,
         location=CourtLocation(
@@ -121,6 +129,7 @@ export const metadata = {
       enclosure_variant=<EnclosureVariant.V1: 1>,
       orientation=None,
       turf_color='blue',
+      setting=<CourtSetting.OUTDOOR: 'outdoor'>,
       door_left=<DoorState.OPEN: 'open'>,
       door_right=<DoorState.CLOSED: 'closed'>,
       location=CourtLocation(club='Club de Pádel Sol', ...)
@@ -168,6 +177,7 @@ export const metadata = {
       enclosure_variant=None,
       orientation=None,
       turf_color=None,
+      setting=None,
       door_left=None,
       door_right=None,
       location=None
