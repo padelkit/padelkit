@@ -14,6 +14,9 @@ class MatchScore:
     completed_sets: list[tuple[int, int]]
     server: TeamId | None = None
     teams: dict[TeamId, Team] | None = None
+    in_tiebreak: bool = False
+    in_super_tiebreak: bool = False
+    is_gold_point: bool = False
 
     def __str__(self) -> str:
         # Determine team labels
@@ -57,9 +60,20 @@ class MatchScoreHistory:
     """Tracks the history of a match and recalculates the score upon changes."""
     POINTS_SEQUENCE = [0, 15, 30, 40]
 
-    def __init__(self, teams: dict[TeamId, Team] | None = None):
+    def __init__(
+        self,
+        teams: dict[TeamId, Team] | None = None,
+        best_of_sets: int = 3,
+        advantage_method: str = "advantage",
+        set_format: str = "standard",
+        deciding_set_format: str = "regular"
+    ):
         self._points_history: list[TeamId] = []
         self.teams = teams
+        self.best_of_sets = best_of_sets
+        self.advantage_method = advantage_method
+        self.set_format = set_format
+        self.deciding_set_format = deciding_set_format
 
     def add_point(self, team: TeamId) -> MatchScore:
         """Adds a point to the history and returns the new MatchScore state."""
@@ -86,77 +100,252 @@ class MatchScoreHistory:
         sets_b = 0
         completed_sets: list[tuple[int, int]] = []
         
-        # Simple server logic: Team A starts, then alternates every game.
-        # This doesn't take into account tiebreaks right now.
         total_games = 0
+        
+        in_tiebreak = False
+        in_super_tiebreak = False
+        tiebreak_starter: TeamId | None = None
+        tiebreak_points_played = 0
+
+        sets_to_win = (self.best_of_sets // 2) + 1
 
         for team in self._points_history:
-            if advantage is not None:
-                if advantage == team:
-                    # Win game from advantage
-                    points_a = 0
-                    points_b = 0
-                    advantage = None
-                    if team == TeamId.A:
-                        games_a += 1
+            # If match is already won, ignore further points
+            if sets_a >= sets_to_win or sets_b >= sets_to_win:
+                break
+
+            # Before processing the point, if we are at the start of a set,
+            # check if this is the deciding set and we need to play a tie-break or super tie-break.
+            if (
+                games_a == 0
+                and games_b == 0
+                and points_a == 0
+                and points_b == 0
+                and not in_tiebreak
+                and not in_super_tiebreak
+            ):
+                is_deciding_set = (
+                    sets_a + sets_b == self.best_of_sets - 1
+                    and sets_a == sets_b
+                    and self.deciding_set_format in ["tiebreak", "super_tiebreak"]
+                )
+                if is_deciding_set:
+                    if self.deciding_set_format == "super_tiebreak":
+                        in_super_tiebreak = True
                     else:
-                        games_b += 1
-                    total_games += 1
-                else:
-                    # Back to deuce
-                    advantage = None
-            else:
+                        in_tiebreak = True
+                    tiebreak_starter = TeamId.B if total_games % 2 != 0 else TeamId.A
+                    tiebreak_points_played = 0
+
+            # 1. Processing under a tie-break (either regular set tie-break, or match deciding tie-break)
+            if in_tiebreak or in_super_tiebreak:
                 if team == TeamId.A:
-                    if points_a == 3: # 40
-                        if points_b == 3: # 40-40
-                            advantage = TeamId.A
-                        else:
-                            # Win game
-                            points_a = 0
-                            points_b = 0
-                            games_a += 1
-                            total_games += 1
-                    else:
-                        points_a += 1
+                    points_a += 1
                 else:
-                    if points_b == 3: # 40
-                        if points_a == 3: # 40-40
-                            advantage = TeamId.B
+                    points_b += 1
+                tiebreak_points_played += 1
+
+                target = 10 if in_super_tiebreak else 7
+
+                if (points_a >= target and points_a - points_b >= 2) or (points_b >= target and points_b - points_a >= 2):
+                    # Tie-break ends! Determine the winner
+                    winner_team = TeamId.A if points_a > points_b else TeamId.B
+
+                    # Check if this is a match-deciding tie-break (i.e. games score is 0-0)
+                    if games_a == 0 and games_b == 0:
+                        if winner_team == TeamId.A:
+                            sets_a += 1
+                            completed_sets.append((1, 0))
                         else:
-                            # Win game
+                            sets_b += 1
+                            completed_sets.append((0, 1))
+                        # Reset tie-break/points
+                        points_a = 0
+                        points_b = 0
+                        in_tiebreak = False
+                        in_super_tiebreak = False
+                        tiebreak_starter = None
+                        tiebreak_points_played = 0
+                    else:
+                        # It was a regular set tie-break
+                        if winner_team == TeamId.A:
+                            games_a += 1  # becomes 7 (standard) or 5 (mini)
+                            completed_sets.append((games_a, games_b))
+                            sets_a += 1
+                        else:
+                            games_b += 1  # becomes 7 (standard) or 5 (mini)
+                            completed_sets.append((games_a, games_b))
+                            sets_b += 1
+                        total_games += 1
+                        # Reset for next set
+                        games_a = 0
+                        games_b = 0
+                        points_a = 0
+                        points_b = 0
+                        in_tiebreak = False
+                        tiebreak_starter = None
+                        tiebreak_points_played = 0
+            
+            # 2. Processing a regular game
+            else:
+                if self.advantage_method == "gold_point":
+                    if team == TeamId.A:
+                        if points_a == 3:  # 40
+                            if points_b == 3:  # 40-40, golden point!
+                                # A wins game
+                                games_a += 1
+                                total_games += 1
+                                points_a = 0
+                                points_b = 0
+                            else:
+                                # A wins game
+                                games_a += 1
+                                total_games += 1
+                                points_a = 0
+                                points_b = 0
+                        else:
+                            points_a += 1
+                    else:  # team == TeamId.B
+                        if points_b == 3:  # 40
+                            if points_a == 3:  # 40-40, golden point!
+                                # B wins game
+                                games_b += 1
+                                total_games += 1
+                                points_a = 0
+                                points_b = 0
+                            else:
+                                # B wins game
+                                games_b += 1
+                                total_games += 1
+                                points_a = 0
+                                points_b = 0
+                        else:
+                            points_b += 1
+                else:  # advantage method
+                    if advantage is not None:
+                        if advantage == team:
+                            # Win game from advantage
                             points_a = 0
                             points_b = 0
-                            games_b += 1
+                            advantage = None
+                            if team == TeamId.A:
+                                games_a += 1
+                            else:
+                                games_b += 1
                             total_games += 1
+                        else:
+                            # Back to deuce
+                            advantage = None
                     else:
-                        points_b += 1
+                        if team == TeamId.A:
+                            if points_a == 3:  # 40
+                                if points_b == 3:  # 40-40
+                                    advantage = TeamId.A
+                                else:
+                                    # Win game
+                                    points_a = 0
+                                    points_b = 0
+                                    games_a += 1
+                                    total_games += 1
+                            else:
+                                points_a += 1
+                        else:
+                            if points_b == 3:  # 40
+                                if points_a == 3:  # 40-40
+                                    advantage = TeamId.B
+                                else:
+                                    # Win game
+                                    points_a = 0
+                                    points_b = 0
+                                    games_b += 1
+                                    total_games += 1
+                            else:
+                                points_b += 1
 
-            # Check if a set was won (6 games with diff 2, or 7 games)
-            # Note: The logic in the original was just testing if games >= 6 and diff >= 2
-            # but it has to be evaluated only when games_a or games_b is updated.
-            if games_a >= 6 or games_b >= 6:
-                if (games_a >= 6 and games_a - games_b >= 2) or games_a == 7:
-                    completed_sets.append((games_a, games_b))
-                    sets_a += 1
-                    games_a = 0
-                    games_b = 0
-                elif (games_b >= 6 and games_b - games_a >= 2) or games_b == 7:
-                    completed_sets.append((games_a, games_b))
-                    sets_b += 1
-                    games_a = 0
-                    games_b = 0
+                # Check if a game finishing wins the set or triggers a tie-break
+                if points_a == 0 and points_b == 0:
+                    limit = 4 if self.set_format == "mini" else 6
+                    if games_a == limit and games_b == limit:
+                        in_tiebreak = True
+                        tiebreak_starter = TeamId.B if total_games % 2 != 0 else TeamId.A
+                        tiebreak_points_played = 0
+                    else:
+                        is_set_won_a = False
+                        is_set_won_b = False
 
-        # Current Server: Alternates every game
-        server = TeamId.B if total_games % 2 != 0 else TeamId.A
+                        if games_a >= limit and games_a - games_b >= 2:
+                            is_set_won_a = True
+                        elif games_b >= limit and games_b - games_a >= 2:
+                            is_set_won_b = True
 
-        # Format points
-        if advantage == TeamId.A:
-            disp_points_a, disp_points_b = "AD", 40
-        elif advantage == TeamId.B:
-            disp_points_a, disp_points_b = 40, "AD"
+                        if is_set_won_a:
+                            completed_sets.append((games_a, games_b))
+                            sets_a += 1
+                            games_a = 0
+                            games_b = 0
+                        elif is_set_won_b:
+                            completed_sets.append((games_a, games_b))
+                            sets_b += 1
+                            games_a = 0
+                            games_b = 0
+
+        # Check if we should be in a deciding set tie-break or super tie-break after the loop as well
+        if (
+            sets_a < sets_to_win
+            and sets_b < sets_to_win
+            and games_a == 0
+            and games_b == 0
+            and points_a == 0
+            and points_b == 0
+            and not in_tiebreak
+            and not in_super_tiebreak
+        ):
+            is_deciding_set = (
+                sets_a + sets_b == self.best_of_sets - 1
+                and sets_a == sets_b
+                and self.deciding_set_format in ["tiebreak", "super_tiebreak"]
+            )
+            if is_deciding_set:
+                if self.deciding_set_format == "super_tiebreak":
+                    in_super_tiebreak = True
+                else:
+                    in_tiebreak = True
+                tiebreak_starter = TeamId.B if total_games % 2 != 0 else TeamId.A
+                tiebreak_points_played = 0
+
+        # After processing all points, let's format the return values:
+        # 1. Determine active server:
+        if in_tiebreak or in_super_tiebreak:
+            points_played = points_a + points_b
+            is_odd = ((points_played + 1) // 2) % 2 != 0
+            if is_odd:
+                server = TeamId.B if tiebreak_starter == TeamId.A else TeamId.A
+            else:
+                server = tiebreak_starter
         else:
-            disp_points_a = self.POINTS_SEQUENCE[points_a]
-            disp_points_b = self.POINTS_SEQUENCE[points_b]
+            server = TeamId.B if total_games % 2 != 0 else TeamId.A
+
+        # 2. Determine display points:
+        if in_tiebreak or in_super_tiebreak:
+            disp_points_a = points_a
+            disp_points_b = points_b
+        else:
+            if advantage == TeamId.A:
+                disp_points_a, disp_points_b = "AD", 40
+            elif advantage == TeamId.B:
+                disp_points_a, disp_points_b = 40, "AD"
+            else:
+                disp_points_a = self.POINTS_SEQUENCE[points_a]
+                disp_points_b = self.POINTS_SEQUENCE[points_b]
+
+        # 3. Determine is_gold_point:
+        is_gold_point = (
+            not in_tiebreak
+            and not in_super_tiebreak
+            and self.advantage_method == "gold_point"
+            and points_a == 3
+            and points_b == 3
+        )
 
         return MatchScore(
             points_A=disp_points_a,
@@ -167,5 +356,8 @@ class MatchScoreHistory:
             sets_B=sets_b,
             completed_sets=completed_sets.copy(),
             server=server,
-            teams=self.teams
+            teams=self.teams,
+            in_tiebreak=in_tiebreak,
+            in_super_tiebreak=in_super_tiebreak,
+            is_gold_point=is_gold_point
         )

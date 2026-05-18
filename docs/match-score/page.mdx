@@ -34,6 +34,21 @@ The `MatchScore` dataclass is an immutable snapshot of the match score at a spec
   <Property name="server" type="TeamId | None">
     Indicates which team is currently serving.
   </Property>
+  <Property name="in_tiebreak" type="bool">
+    <AddedIn version="2.0.1">
+      Indicates whether a regular tie-break is currently active in the current set.
+    </AddedIn>
+  </Property>
+  <Property name="in_super_tiebreak" type="bool">
+    <AddedIn version="2.0.1">
+      Indicates whether a match-deciding tie-break (or super tie-break) is currently active.
+    </AddedIn>
+  </Property>
+  <Property name="is_gold_point" type="bool">
+    <AddedIn version="2.0.1">
+      Indicates whether the current game is at `40-40` and is being decided by a *Punto de Oro* (Golden Point) without advantages.
+    </AddedIn>
+  </Property>
 </Properties>
 
 ## String Representation

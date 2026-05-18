@@ -68,3 +68,54 @@ print(score)
 ```
 
 </CodeGroup>
+
+---
+
+## Official & Alternative Scoring Formats
+
+PadelKit supports multiple official and alternative scoring methods defined by the FIP (International Padel Federation) regulations. You can easily configure these when instantiating a `Match` or a `MatchScoreHistory`.
+
+### 1. Advantage Method vs. Punto de Oro (Golden Point)
+*   **Advantage Method (`"advantage"`)**: The traditional tennis-style scoring. When the score reaches `40-40` (Deuce), a team must win two consecutive points (Advantage followed by Game Point) to win the game.
+*   **Punto de Oro (`"gold_point"`)**: A modern, high-stakes alternative. When the score reaches `40-40`, a single decisive point decides the game. The receiving team chooses which side (deuce or ad) the server must serve to. In `MatchScore`, the property `is_gold_point` becomes `True` when this decisive point is active.
+
+```python
+# Initialize a match with Punto de Oro (Golden Point)
+match = Match(advantage_method="gold_point")
+```
+
+### 2. Set Formats: Standard vs. Mini Sets
+*   **Standard Sets (`"standard"`)**: A set is won by the first team to win `6` games with a margin of at least `2` games. If the score reaches `6-6`, a 7-point tie-break is played.
+*   **Mini Sets (`"mini"`)**: A shorter format designed for faster matches. A set is won by the first team to win `4` games with a margin of at least `2` games. If the score reaches `4-4`, a 7-point tie-break is played.
+
+```python
+# Initialize a match using Mini Sets
+match = Match(set_format="mini")
+```
+
+### 3. Deciding Set Formats
+When sets are tied (e.g., `1-1` in a best-of-3 match), FIP regulations allow different methods to decide the final set:
+*   **Regular Set (`"regular"`)**: A full regular set is played (standard set to 6 games or mini set to 4 games, depending on `set_format`).
+*   **Match Tie-Break (`"tiebreak"`)**: A standard 7-point tie-break is played in place of the final set. In `MatchScore`, the property `in_tiebreak` becomes `True` during this tie-break.
+*   **Match Super Tie-Break (`"super_tiebreak"`)**: A 10-point super tie-break (requiring a 2-point margin) is played in place of the final set. In `MatchScore`, the property `in_super_tiebreak` becomes `True` during this super tie-break.
+
+```python
+# Configure a match to be decided by a 10-point Super Tie-Break
+match = Match(deciding_set_format="super_tiebreak")
+```
+
+---
+
+## Tie-Break Server Rotation Rules
+
+During any tie-break (regular or match-deciding), PadelKit automatically manages the official server rotation rules:
+1.  **First Point**: The first server of the tie-break serves `1` point from the right (deuce) court.
+2.  **Subsequent Points**: The service alternates every `2` points. The next server serves from the left (ad) court for the first point and the right (deuce) court for the second point.
+3.  **Active Server Tracking**: The active server can always be dynamically tracked using the `server` property on `MatchScore`.
+
+```python
+# Check which team serves the 3rd point of a tie-break
+score = match.history.get_current_score()
+print(f"Active server team: {score.server}")
+```
+

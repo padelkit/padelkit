@@ -15,6 +15,9 @@ class Match:
         duration_minutes: int | None = None,
         date: datetime | None = None,
         court: Court | None = None,
+        advantage_method: str = "advantage",
+        set_format: str = "standard",
+        deciding_set_format: str = "regular",
     ):
         if teams is None:
             teams = {
@@ -22,8 +25,17 @@ class Match:
                 TeamId.B: Team(TeamId.B, Player("Player 3"), Player("Player 4")),
             }
         self.teams = teams
-        self.history = MatchScoreHistory(teams=self.teams)
+        self.history = MatchScoreHistory(
+            teams=self.teams,
+            best_of_sets=best_of_sets,
+            advantage_method=advantage_method,
+            set_format=set_format,
+            deciding_set_format=deciding_set_format,
+        )
         self.best_of_sets = best_of_sets
+        self.advantage_method = advantage_method
+        self.set_format = set_format
+        self.deciding_set_format = deciding_set_format
         self.duration_minutes = duration_minutes
         self.date = date
         self.court = court

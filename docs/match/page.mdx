@@ -19,6 +19,21 @@ The `Match` class is the top-level entity representing a padel match. It encapsu
   <Property name="is_completed" type="bool">
     Returns `True` if a winner has been decided.
   </Property>
+  <Property name="advantage_method" type="str">
+    <AddedIn version="2.0.1">
+      The game-level scoring rules. Can be `"advantage"` (standard advantage loop) or `"gold_point"` (golden point at 40-40).
+    </AddedIn>
+  </Property>
+  <Property name="set_format" type="str">
+    <AddedIn version="2.0.1">
+      The format of sets played in the match. Can be `"standard"` (sets to 6 games) or `"mini"` (sets to 4 games).
+    </AddedIn>
+  </Property>
+  <Property name="deciding_set_format" type="str">
+    <AddedIn version="2.0.1">
+      The format of the final/deciding set. Can be `"regular"` (standard set), `"tiebreak"` (7-point match tie-break), or `"super_tiebreak"` (10-point match super tie-break).
+    </AddedIn>
+  </Property>
 </Properties>
 
 ---
@@ -38,6 +53,21 @@ The `Match` class is the top-level entity representing a padel match. It encapsu
       </Property>
       <Property name="best_of_sets" type="int" optional default="3">
         The number of sets to determine a winner (e.g., `3` means the first to win 2 sets wins).
+      </Property>
+      <Property name="advantage_method" type="str" optional default="&quot;advantage&quot;">
+        <AddedIn version="2.0.1">
+          The game-level scoring system. Can be `"advantage"` (normal deuce/advantage) or `"gold_point"` (golden point at 40-40).
+        </AddedIn>
+      </Property>
+      <Property name="set_format" type="str" optional default="&quot;standard&quot;">
+        <AddedIn version="2.0.1">
+          The length of sets. Can be `"standard"` (sets to 6 games) or `"mini"` (sets to 4 games).
+        </AddedIn>
+      </Property>
+      <Property name="deciding_set_format" type="str" optional default="&quot;regular&quot;">
+        <AddedIn version="2.0.1">
+          How the final set is resolved if sets are tied. Can be `"regular"` (standard set), `"tiebreak"` (7-point tie-break), or `"super_tiebreak"` (10-point super tie-break).
+        </AddedIn>
       </Property>
       <Property name="duration_minutes" type="int | None" optional>
         Total duration of the match in minutes.
@@ -62,8 +92,13 @@ The `Match` class is the top-level entity representing a padel match. It encapsu
     from padelkit import Match
     from datetime import datetime
 
+    # Start a premium mini-set match with gold points
+    # and a match-deciding super tie-break
     match = Match(
         best_of_sets=3,
+        advantage_method="gold_point",
+        set_format="mini",
+        deciding_set_format="super_tiebreak",
         location="Club Padel",
         date=datetime.now()
     )
@@ -75,6 +110,9 @@ The `Match` class is the top-level entity representing a padel match. It encapsu
     Match(
       teams=...,
       best_of_sets=3,
+      advantage_method='gold_point',
+      set_format='mini',
+      deciding_set_format='super_tiebreak',
       duration_minutes=None,
       date=datetime.datetime(...),
       location='Club Padel',
