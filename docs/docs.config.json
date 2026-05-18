@@ -86,15 +86,25 @@
       ]
     },
     {
-      "title": "Resources",
+      "title": "Court model",
       "links": [
         "/court",
         "/court-dimensions",
         "/court-landmark",
-        "/court-location",
+        "/court-location"
+      ]
+    },
+    {
+      "title": "Match model",
+      "links": [
         "/match",
         "/match-score",
-        "/match-score-history",
+        "/match-score-history"
+      ]
+    },
+    {
+      "title": "Core entities",
+      "links": [
         "/player",
         "/team"
       ]
