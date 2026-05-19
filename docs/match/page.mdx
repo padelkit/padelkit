@@ -71,6 +71,8 @@ The following properties are convenience proxies for the properties encapsulated
 
     You can create a `Match` by providing optional parameters. If no `teams` are provided, default generic teams will be instantiated.
 
+    *Note: During initialization, PadelKit performs early validation checks. A `ValueError` will be raised if duplicate player names are found across teams, or if any configured starting servers do not belong to their respective teams.*
+
     ### Core Arguments
 
     <Properties>
@@ -174,6 +176,8 @@ The following properties are convenience proxies for the properties encapsulated
   <Col>
 
     Configures the starting server player for a specific team in a specific set.
+
+    *Note: The configured `player` must belong to the specified team. If the player is not a member of that team, a `ValueError` will be raised.*
 
     ### Required arguments
 

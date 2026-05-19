@@ -39,6 +39,8 @@ The `MatchConfiguration` dataclass groups together all scoring formats, rules, s
 
     Creates a new instance of a `MatchConfiguration`.
 
+    *Note: PadelKit validates configurations early on both initialization and dynamically on dynamic updates, raising a `ValueError` for invalid parameters (e.g. non-positive or even `best_of_sets`, invalid format option strings, or incorrect types).*
+
     ### Keyword Arguments
 
     <Properties>

@@ -5,7 +5,7 @@ export const metadata = {
 
 # ServingState
 
-The `ServingState` dataclass encapsulates the serving team and player who are about to serve the upcoming/next point in the match. It is exposed through the `server` property of the [`MatchScore`](/match-score). {{ className: 'lead' }}
+The `ServingState` dataclass encapsulates the serving team, player, receiver, and court side for the upcoming/next point in the match. It is exposed through the `server` property of the [`MatchScore`](/match-score). {{ className: 'lead' }}
 
 ## Properties
 
@@ -15,6 +15,12 @@ The `ServingState` dataclass encapsulates the serving team and player who are ab
   </Property>
   <Property name="player" type="Player | None">
     The specific [`Player`](/player) about to serve the upcoming/next point, or `None` if player details are not configured.
+  </Property>
+  <Property name="receiver" type="Player | None">
+    The specific [`Player`](/player) about to receive the upcoming/next serve, or `None` if team details are not configured.
+  </Property>
+  <Property name="court_side" type="'left' | 'right' | None">
+    The side of the court from which the serve is executed (`"left"` or `"right"`), or `None`.
   </Property>
 </Properties>
 
@@ -36,6 +42,12 @@ The `ServingState` dataclass encapsulates the serving team and player who are ab
       <Property name="player" type="Player | None" optional default="None">
         The specific [`Player`](/player) about to serve the upcoming/next point, or `None` if player details are not configured.
       </Property>
+      <Property name="receiver" type="Player | None" optional default="None">
+        The specific [`Player`](/player) about to receive the upcoming/next serve, or `None` if player details are not configured.
+      </Property>
+      <Property name="court_side" type="'left' | 'right' | None" optional default="None">
+        The side of the court from which the serve is executed (`"left"` or `"right"`), or `None`.
+      </Property>
     </Properties>
 
   </Col>
@@ -48,7 +60,9 @@ The `ServingState` dataclass encapsulates the serving team and player who are ab
 
     server_state = ServingState(
         team=TeamId.A,
-        player=Player(name="A. Galán")
+        player=Player(name="A. Galán"),
+        receiver=Player(name="F. Belasteguín"),
+        court_side="right"
     )
     ```
 
@@ -56,8 +70,10 @@ The `ServingState` dataclass encapsulates the serving team and player who are ab
 
     ```json {{ title: 'Output structure' }}
     ServingState(
-      team=<TeamId.A: 1>,
-      player=Player(name='A. Galán', ...)
+      team=<TeamId.A: 'A'>,
+      player=Player(name='A. Galán', ...),
+      receiver=Player(name='F. Belasteguín', ...),
+      court_side='right'
     )
     ```
 

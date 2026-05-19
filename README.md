@@ -39,10 +39,10 @@ print(score)
 ## Roadmap
 
 - Extended landmarks and 3D geometries.
-- Event structures (serve, rally, etc.).
+- Event structures (serve, rally, impact, etc.).
 - Camera calibration and world-to-image projections.
 - Trajectory representations for players and ball movement.
-- Tools for visualization and analysis (e.g. heatmaps).
+- Tools for visualization and analysis (e.g. heatmaps, impact maps, etc.).
 
 ## License
 

@@ -77,7 +77,8 @@ class MatchScoreHistory:
         config: MatchConfiguration | None = None,
     ):
         self._points_history: list[TeamId] = []
-        self.teams = teams
+        self._teams = None
+
         if config is not None:
             self.config = config
         else:
@@ -89,6 +90,40 @@ class MatchScoreHistory:
                 starting_server_team=starting_server_team,
                 set_starting_servers=set_starting_servers or {},
             )
+
+        self.teams = teams
+
+    def _validate_player_membership(self) -> None:
+        if self._teams and hasattr(self, "config") and self.config is not None:
+            for set_idx, servers in self.config.set_starting_servers.items():
+                for team_id, player in servers.items():
+                    team = self._teams.get(team_id)
+                    if team:
+                        if player not in (team.player1, team.player2):
+                            raise ValueError(f"Starting server '{player.name}' for set {set_idx} does not belong to Team {team_id}.")
+
+    @property
+    def teams(self) -> dict[TeamId, Team] | None:
+        return self._teams
+
+    @teams.setter
+    def teams(self, value: dict[TeamId, Team] | None) -> None:
+        if value is not None:
+            if not isinstance(value, dict):
+                raise ValueError("teams must be a dictionary.")
+            all_player_names = []
+            for team_id, team in value.items():
+                if team_id not in (TeamId.A, TeamId.B):
+                    raise ValueError("teams keys must be TeamId.A or TeamId.B.")
+                if not isinstance(team, Team):
+                    raise ValueError("teams values must be Team instances.")
+                if team.id != team_id:
+                    raise ValueError("team id must match its dictionary key.")
+                all_player_names.extend([team.player1.name, team.player2.name])
+            if len(set(all_player_names)) < len(all_player_names):
+                raise ValueError("Duplicate player found across teams.")
+        self._teams = value
+        self._validate_player_membership()
 
     @property
     def best_of_sets(self) -> int:
@@ -137,9 +172,14 @@ class MatchScoreHistory:
     @set_starting_servers.setter
     def set_starting_servers(self, value: dict[int, dict[TeamId, Player]]) -> None:
         self.config.set_starting_servers = value
+        self._validate_player_membership()
 
     def set_set_starting_server(self, set_index: int, team_id: TeamId, player: Player) -> None:
         """Sets the starting server for a specific set (1-indexed) and team."""
+        if self._teams:
+            team = self._teams.get(team_id)
+            if team and player not in (team.player1, team.player2):
+                raise ValueError(f"Player '{player.name}' does not belong to Team {team_id}.")
         if set_index not in self.config.set_starting_servers:
             self.config.set_starting_servers[set_index] = {}
         self.config.set_starting_servers[set_index][team_id] = player

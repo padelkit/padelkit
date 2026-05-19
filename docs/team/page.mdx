@@ -36,6 +36,8 @@ The `Team` dataclass groups two players together and specifies team-level attrib
 
     Creates a new instance of a `Team`.
 
+    *Note: Both players in a team must be unique and have different, unique names. Instantiating a team with duplicate players or names will raise a `ValueError`.*
+
     ### Keyword Arguments
 
     <Properties>

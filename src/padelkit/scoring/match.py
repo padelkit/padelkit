@@ -22,12 +22,6 @@ class Match:
         set_starting_servers: dict[int, dict[TeamId, Player]] | None = None,
         config: MatchConfiguration | None = None,
     ):
-        if teams is None:
-            teams = {
-                TeamId.A: Team(TeamId.A, Player("Player 1"), Player("Player 2")),
-                TeamId.B: Team(TeamId.B, Player("Player 3"), Player("Player 4")),
-            }
-        self.teams = teams
         if config is not None:
             self.config = config
         else:
@@ -40,12 +34,26 @@ class Match:
                 set_starting_servers=set_starting_servers or {},
             )
         self.history = MatchScoreHistory(
-            teams=self.teams,
+            teams=None,
             config=self.config,
         )
+        if teams is None:
+            teams = {
+                TeamId.A: Team(TeamId.A, Player("Player 1"), Player("Player 2")),
+                TeamId.B: Team(TeamId.B, Player("Player 3"), Player("Player 4")),
+            }
+        self.teams = teams
         self.duration_minutes = duration_minutes
         self.date = date
         self.court = court
+
+    @property
+    def teams(self) -> dict[TeamId, Team] | None:
+        return self.history.teams
+
+    @teams.setter
+    def teams(self, value: dict[TeamId, Team] | None) -> None:
+        self.history.teams = value
 
     @property
     def best_of_sets(self) -> int:
@@ -96,6 +104,7 @@ class Match:
     @set_starting_servers.setter
     def set_starting_servers(self, value: dict[int, dict[TeamId, Player]]) -> None:
         self.config.set_starting_servers = value
+        self.history._validate_player_membership()
 
     def set_set_starting_server(self, set_index: int, team_id: TeamId, player: Player) -> None:
         """Sets the starting server for a specific set (1-indexed) and team."""

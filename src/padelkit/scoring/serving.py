@@ -71,6 +71,35 @@ class ServingEngine:
                     else:
                         server_player = second_server
 
+        # 3. Determine court side and receiver:
+        receiver = None
+        court_side = None
+        if server_team is not None:
+            court_side = "right" if points_played % 2 == 0 else "left"
+            if teams:
+                recv_team_id = TeamId.B if server_team == TeamId.A else TeamId.A
+                recv_team = teams.get(recv_team_id)
+                if recv_team:
+                    p1 = recv_team.player1
+                    p2 = recv_team.player2
+                    if p1.side == "right" and p2.side != "right":
+                        right_player, left_player = p1, p2
+                    elif p1.side == "left" and p2.side != "left":
+                        right_player, left_player = p2, p1
+                    elif p2.side == "right" and p1.side != "right":
+                        right_player, left_player = p2, p1
+                    elif p2.side == "left" and p1.side != "left":
+                        right_player, left_player = p1, p2
+                    else:
+                        right_player, left_player = p1, p2
+
+                    receiver = right_player if court_side == "right" else left_player
+
         if server_team is None:
             return None
-        return ServingState(team=server_team, player=server_player)
+        return ServingState(
+            team=server_team,
+            player=server_player,
+            receiver=receiver,
+            court_side=court_side,
+        )

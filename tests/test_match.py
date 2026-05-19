@@ -298,4 +298,69 @@ def test_match_configuration_property_setters():
     assert match.history.config.deciding_set_format == "super_tiebreak"
 
 
+def test_early_validation_errors():
+    import pytest
+    from padelkit.scoring import Match, TeamId, Team, Player
+    
+    # 1. Duplicate player name across teams
+    teams_dup = {
+        TeamId.A: Team(TeamId.A, Player("Player A1"), Player("Player A2")),
+        TeamId.B: Team(TeamId.B, Player("Player B1"), Player("Player A1")) # A1 is in both!
+    }
+    with pytest.raises(ValueError) as exc:
+        Match(teams=teams_dup)
+    assert "Duplicate player found" in str(exc.value)
 
+    # 2. Duplicate player name within same team
+    with pytest.raises(ValueError) as exc:
+        Team(TeamId.A, Player("Player A1"), Player("Player A1"))
+    assert "must consist of two different players with unique names" in str(exc.value)
+    
+    # 3. Invalid set starting server player (player not in team)
+    teams_valid = {
+        TeamId.A: Team(TeamId.A, Player("P1"), Player("P2")),
+        TeamId.B: Team(TeamId.B, Player("P3"), Player("P4"))
+    }
+    with pytest.raises(ValueError) as exc:
+        Match(teams=teams_valid, set_starting_servers={1: {TeamId.A: Player("P5")}})
+    assert "does not belong to Team" in str(exc.value)
+
+
+def test_serving_state_details():
+    player1 = Player("P1")
+    player2 = Player("P2")
+    player3 = Player("P3")
+    player4 = Player("P4")
+    
+    teams = {
+        TeamId.A: Team(TeamId.A, player1, player2),
+        TeamId.B: Team(TeamId.B, player3, player4),
+    }
+    
+    match = Match(
+        teams=teams,
+        starting_server_team=TeamId.A,
+        set_starting_servers={1: {TeamId.A: player1, TeamId.B: player3}}
+    )
+    
+    # Start of game 1: served by A1 from Deuce side to B3 (Deuce side receiver)
+    score = match.history.get_current_score()
+    assert score.server is not None
+    assert score.server.player == player1
+    assert score.server.receiver is not None
+    assert score.server.receiver == player3
+    assert score.server.court_side == "right"
+    
+    # Win point 1 for A (score 15-0): served from Ad side to B4 (Ad side receiver)
+    match.history.add_point(TeamId.A)
+    score = match.history.get_current_score()
+    assert score.server.player == player1
+    assert score.server.receiver == player4
+    assert score.server.court_side == "left"
+    
+    # Win point 2 for B (score 15-15): served from Deuce side to B3
+    match.history.add_point(TeamId.B)
+    score = match.history.get_current_score()
+    assert score.server.player == player1
+    assert score.server.receiver == player3
+    assert score.server.court_side == "right"
