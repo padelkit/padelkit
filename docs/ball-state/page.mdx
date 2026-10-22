@@ -1,0 +1,144 @@
+# BallState & BallTrajectory
+
+`BallState`, `BallTrajectory`, and `BounceEvent` represent the instantaneous 9D state of the padel ball, its simulated time-series trajectory, and detailed impact diagnostics across court surfaces. {{ className: 'lead' }}
+
+## BallState
+
+Represents the 9D state `[x, y, z, vx, vy, vz, wx, wy, wz]` of the ball at a single instant.
+
+<Properties>
+  <Property name="position" type="tuple[float, float, float]" optional default="(0.0, 0.0, 1.0)">
+    3D position `(x, y, z)` in meters (`CENTERED` court frame).
+  </Property>
+  <Property name="velocity" type="tuple[float, float, float]" optional default="(0.0, 0.0, 0.0)">
+    3D linear velocity `(vx, vy, vz)` in `m/s`.
+  </Property>
+  <Property name="angular_velocity" type="tuple[float, float, float]" optional default="(0.0, 0.0, 0.0)">
+    3D angular velocity `(wx, wy, wz)` in `rad/s`.
+  </Property>
+  <Property name="speed" type="float">
+    Scalar linear speed `|v|` in `m/s`.
+  </Property>
+  <Property name="speed_kmh" type="float">
+    Scalar linear speed in `km/h`.
+  </Property>
+  <Property name="spin_rpm" type="float">
+    Total spin rate in revolutions per minute (`RPM`).
+  </Property>
+  <Property name="vector_9d" type="np.ndarray">
+    NumPy float64 array of shape `(9,)` containing `[x, y, z, vx, vy, vz, wx, wy, wz]`.
+  </Property>
+</Properties>
+
+---
+
+## Construct a Shot with RPM Spin {{ tag: 'classmethod', label: 'BallState.from_shot()' }}
+
+<Row>
+  <Col>
+
+    Creates a `BallState` by decomposing intuitive `topspin_rpm` and `sidespin_rpm` values into the 3D angular velocity vector `(wx, wy, wz)` relative to the horizontal direction of travel.
+
+    ### Arguments
+
+    <Properties>
+      <Property name="position" type="tuple[float, float, float] | Sequence[float]">
+        Initial 3D position `(x, y, z)` in meters.
+      </Property>
+      <Property name="velocity" type="tuple[float, float, float] | Sequence[float]">
+        Initial 3D velocity `(vx, vy, vz)` in `m/s`.
+      </Property>
+      <Property name="topspin_rpm" type="float" optional default="0.0">
+        Topspin (`> 0`) or backspin (`< 0`) in revolutions per minute.
+      </Property>
+      <Property name="sidespin_rpm" type="float" optional default="0.0">
+        Sidespin in `RPM` around the vertical `+Z` axis.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Create Shot" tag="classmethod" label="from_shot">
+
+    ```python
+    from padelkit import BallState
+
+    state = BallState.from_shot(
+        position=(0.0, -6.5, 2.4),
+        velocity=(0.0, 25.0, -3.5),
+        topspin_rpm=2400.0,
+        sidespin_rpm=-300.0,
+    )
+
+    print(f"Speed: {state.speed_kmh:.1f} km/h | Spin: {state.spin_rpm:.0f} RPM")
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output' }}
+    Speed: 90.9 km/h | Spin: 2419 RPM
+    ```
+
+  </Col>
+</Row>
+
+---
+
+## BallTrajectory
+
+Returned by [`BallPhysicsEngine.simulate()`](/ball-physics-engine#simulate-a-trajectory). Stores the full 9D state history and provides interpolation, DataFrame/CSV export, and 3D visualizer conversion.
+
+<Properties>
+  <Property name="times" type="np.ndarray">
+    1D array of shape `(N,)` with timestamps in seconds.
+  </Property>
+  <Property name="states" type="np.ndarray">
+    2D array of shape `(N, 9)` containing `[x, y, z, vx, vy, vz, wx, wy, wz]`.
+  </Property>
+  <Property name="bounces" type="tuple[BounceEvent, ...]">
+    Chronological tuple of [`BounceEvent`](#bounceevent) records.
+  </Property>
+  <Property name="positions / velocities / angular_velocities" type="np.ndarray">
+    2D views of shape `(N, 3)` for 3D positions (`m`), velocities (`m/s`), and spins (`rad/s`).
+  </Property>
+  <Property name="speeds / spin_rpms" type="np.ndarray">
+    1D arrays of shape `(N,)` with instantaneous speed (`m/s`) and spin (`RPM`).
+  </Property>
+  <Property name="state_at(t)" type="BallState">
+    Linearly interpolates the 9D `BallState` at any timestamp `t` (in seconds).
+  </Property>
+  <Property name="to_dataframe() / to_csv(path)" type="pd.DataFrame / Path">
+    Exports the trajectory (including `speed_mps`, `spin_rpm`, and `bounce_surface`) to a Pandas DataFrame or CSV file.
+  </Property>
+  <Property name="to_timeline(fps=60.0)" type="MatchTimeline">
+    Resamples the trajectory at `fps` into a [`MatchTimeline`](/visualization-3d) ready for `PadelVisualizer`.
+  </Property>
+</Properties>
+
+---
+
+## BounceEvent & Enums
+
+Each impact during a simulation produces an immutable `BounceEvent` with full pre- and post-impact kinematics:
+
+<Properties>
+  <Property name="time" type="float">
+    Timestamp of impact in seconds.
+  </Property>
+  <Property name="position" type="tuple[float, float, float]">
+    3D contact position `(x, y, z)` in meters.
+  </Property>
+  <Property name="surface" type="SurfaceType">
+    Impacted court surface: `SurfaceType.FLOOR`, `BACK_GLASS`, `SIDE_GLASS`, `BACK_WALL`, `SIDE_WALL`, `BACK_FENCE`, `SIDE_FENCE`, or `NET`.
+  </Property>
+  <Property name="regime" type="ContactRegime">
+    Tangential contact regime: `ContactRegime.SLIDING`, `ContactRegime.ROLLING`, or `ContactRegime.DAMPED`.
+  </Property>
+  <Property name="pre_velocity / post_velocity" type="tuple[float, float, float]">
+    Linear velocity `(vx, vy, vz)` in `m/s` immediately before and after impact.
+  </Property>
+  <Property name="pre_spin / post_spin" type="tuple[float, float, float]">
+    Angular velocity `(wx, wy, wz)` in `rad/s` immediately before and after impact.
+  </Property>
+</Properties>

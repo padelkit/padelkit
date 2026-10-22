@@ -1,0 +1,161 @@
+# Physics Parameters
+
+`BallProperties`, `EnvironmentConditions`, and `SurfaceMaterials` configure the physical constants of the ball, atmosphere, and court surfaces in [`BallPhysicsEngine`](/ball-physics-engine). All three are immutable dataclasses with standardized factory presets. {{ className: 'lead' }}
+
+## BallProperties
+
+Defines the physical mass, radius, aerodynamic drag, and felt condition of a padel ball.
+
+<Row>
+  <Col>
+
+    <Properties>
+      <Property name="mass" type="float" optional default="0.0577">
+        Ball mass in kilograms (`57.7 g` FIP midpoint between `56.0 g` and `59.4 g`).
+      </Property>
+      <Property name="radius" type="float" optional default="0.0325">
+        Outer radius in meters (`3.25 cm` / `6.50 cm` diameter).
+      </Property>
+      <Property name="base_drag_coeff" type="float" optional default="0.507">
+        Base aerodynamic drag coefficient (`Cd0`) prior to felt nap contribution.
+      </Property>
+      <Property name="fuzz_factor" type="float" optional default="0.04">
+        Additional drag coefficient from raised felt nap (`0.04` new, `0.075` fluffed/worn).
+      </Property>
+      <Property name="cor_scale" type="float" optional default="1.0">
+        Internal pressure multiplier scaling normal restitution (`< 1.0` for depressurized/worn balls).
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Ball Presets" tag="classmethod" label="BallProperties">
+
+    ```python
+    from padelkit import BallProperties
+
+    # New pressurized FIP tournament ball
+    ball_new = BallProperties.fip_standard()
+
+    # Fluffed felt & slightly depressurized after 2 sets
+    ball_worn = BallProperties.worn()
+
+    # Heavy humid/wet outdoor ball (61.5g)
+    ball_wet = BallProperties.wet()
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## EnvironmentConditions
+
+Defines gravity, air density, temperature, altitude, and ambient wind velocity.
+
+<Row>
+  <Col>
+
+    <Properties>
+      <Property name="gravity" type="float" optional default="9.80665">
+        Gravitational acceleration in `m/s^2`.
+      </Property>
+      <Property name="air_density" type="float" optional default="1.204">
+        Air density `rho` in `kg/m^3` (`1.204 kg/m^3` at sea level, `20°C`).
+      </Property>
+      <Property name="temperature_c" type="float" optional default="20.0">
+        Ambient temperature in degrees Celsius.
+      </Property>
+      <Property name="altitude_m" type="float" optional default="0.0">
+        Elevation above sea level in meters.
+      </Property>
+      <Property name="relative_humidity" type="float" optional default="0.5">
+        Relative humidity in `[0.0, 1.0]`.
+      </Property>
+      <Property name="wind_velocity" type="tuple[float, float, float]" optional default="(0.0, 0.0, 0.0)">
+        Ambient 3D wind vector `(wx, wy, wz)` in `m/s`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Atmospheric Density" tag="classmethod" label="EnvironmentConditions">
+
+    ```python
+    from padelkit import EnvironmentConditions
+
+    # Sea-level standard conditions (rho = 1.204 kg/m^3)
+    env_sea = EnvironmentConditions.standard()
+
+    # High-altitude warm conditions (e.g. Madrid summer, 650m, 32°C)
+    # Automatically computes barometric + Tetens humid air density
+    env_madrid = EnvironmentConditions.from_atmosphere(
+        temperature_c=32.0,
+        altitude_m=650.0,
+        relative_humidity=0.30,
+    )
+    print(f"Madrid air density: {env_madrid.air_density:.3f} kg/m^3")
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output' }}
+    Madrid air density: 1.064 kg/m^3
+    ```
+
+  </Col>
+</Row>
+
+---
+
+## SurfaceMaterials
+
+Defines the normal Coefficient of Restitution (`cor_*`) and tangential Coulomb friction (`friction_*`) for each court surface type.
+
+<Row>
+  <Col>
+
+    <Properties>
+      <Property name="cor_floor / friction_floor" type="float" optional default="0.78 / 0.65">
+        Textured synthetic turf floor restitution and friction.
+      </Property>
+      <Property name="cor_glass / friction_glass" type="float" optional default="0.82 / 0.20">
+        Tempered glass walls (`10-12 mm`): high restitution and low friction (`SLIDING` regime).
+      </Property>
+      <Property name="cor_wall / friction_wall" type="float" optional default="0.80 / 0.55">
+        Concrete or masonry wall segments (`VenueVariant.TRADITIONAL`).
+      </Property>
+      <Property name="cor_fence / friction_fence" type="float" optional default="0.45 / 0.50">
+        Electro-welded metallic mesh fence segments.
+      </Property>
+      <Property name="cor_net / friction_net" type="float" optional default="0.22 / 0.75">
+        Tensioned net mesh energy absorption.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Surface Presets" tag="classmethod" label="SurfaceMaterials">
+
+    ```python
+    from padelkit import SurfaceMaterials
+
+    # Standard FIP textured turf + tempered glass
+    surf_std = SurfaceMaterials.fip_standard()
+
+    # Fast indoor tournament turf (higher bounce, lower friction)
+    surf_fast = SurfaceMaterials.fast_indoor()
+
+    # Slow sandy outdoor turf (lower bounce, higher grip)
+    surf_slow = SurfaceMaterials.slow_sandy()
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

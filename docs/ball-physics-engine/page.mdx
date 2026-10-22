@@ -1,0 +1,194 @@
+# BallPhysicsEngine
+
+`BallPhysicsEngine` is the 9-Dimensional aerodynamic and multi-surface contact simulator in PadelKit. It integrates gravity, felt-adjusted quadratic air drag, and non-linear Spindt Magnus lift via 4th-order Runge-Kutta (`RK4`), and resolves collisions against the floor, stepped walls/fences, and catenary net of a [`Court`](/court). {{ className: 'lead' }}
+
+## Properties
+
+<Properties>
+  <Property name="court" type="Court" optional default="Court.fip_standard()">
+    The [`Court`](/court) geometry defining floor bounds, stepped wall/glass heights (`3m` vs `4m`), metallic fences, and net profile.
+  </Property>
+  <Property name="ball" type="BallProperties" optional default="BallProperties.fip_standard()">
+    Physical ball specification (mass, radius, drag and felt fuzz coefficients). See [`BallProperties`](/physics-parameters#ballproperties).
+  </Property>
+  <Property name="environment" type="EnvironmentConditions" optional default="EnvironmentConditions.standard()">
+    Atmospheric conditions (gravity, air density, temperature, altitude, wind velocity). See [`EnvironmentConditions`](/physics-parameters#environmentconditions).
+  </Property>
+  <Property name="surfaces" type="SurfaceMaterials" optional default="SurfaceMaterials.fip_standard()">
+    Coefficients of restitution (`COR`) and Coulomb friction (`mu`) for floor, glass, wall, fence, and net. See [`SurfaceMaterials`](/physics-parameters#surfacematerials).
+  </Property>
+</Properties>
+
+---
+
+## Simulate a Trajectory {{ tag: 'method', label: 'engine.simulate()' }}
+
+<Row>
+  <Col>
+
+    Integrates a [`BallState`](/ball-state) forward in time using RK4 (`dt = 0.002s` by default), resolving all court surface rebounds and recording every [`BounceEvent`](/ball-state#bounceevent). Returns a [`BallTrajectory`](/ball-state#balltrajectory).
+
+    ### Arguments
+
+    <Properties>
+      <Property name="initial_state" type="BallState">
+        Initial 9D state `[x, y, z, vx, vy, vz, wx, wy, wz]`.
+      </Property>
+      <Property name="duration" type="float" optional default="3.0">
+        Maximum simulation duration in seconds.
+      </Property>
+      <Property name="dt" type="float" optional default="0.002">
+        Integration time step in seconds (`500 Hz` default).
+      </Property>
+      <Property name="stop_on_net" type="bool" optional default="False">
+        If `True`, stops the simulation immediately after a net collision.
+      </Property>
+      <Property name="max_bounces" type="int | None" optional default="None">
+        Optional maximum number of bounces before terminating early.
+      </Property>
+      <Property name="stop_below_speed" type="float" optional default="0.05">
+        Stops simulation when ball speed drops below this threshold (`m/s`) on the floor.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Usage" tag="method" label="simulate">
+
+    ```python
+    from padelkit import BallPhysicsEngine, BallState
+
+    engine = BallPhysicsEngine()
+    shot = BallState.from_shot(
+        position=(0.0, -7.0, 1.1),
+        velocity=(1.5, 19.0, 3.2),
+        topspin_rpm=2200.0,
+    )
+
+    trajectory = engine.simulate(shot, duration=2.5, max_bounces=3)
+    print(f"Samples: {len(trajectory.times)}, Bounces: {len(trajectory.bounces)}")
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output' }}
+    Samples: 842, Bounces: 3
+    ```
+
+  </Col>
+</Row>
+
+---
+
+## Vectorized Batch Simulation {{ tag: 'method', label: 'engine.simulate_batch()' }}
+
+<Row>
+  <Col>
+
+    Simulates `N` independent 9D ball trajectories simultaneously using vectorized NumPy arrays. Ideal for Monte Carlo shot dispersion analysis, reinforcement learning rollouts, and synthetic dataset generation.
+
+    ### Arguments
+
+    <Properties>
+      <Property name="initial_states" type="np.ndarray | Sequence[BallState]">
+        Array of shape `(N, 9)` or sequence of `N` [`BallState`](/ball-state) instances.
+      </Property>
+      <Property name="duration" type="float" optional default="2.5">
+        Total simulation duration in seconds.
+      </Property>
+      <Property name="dt" type="float" optional default="0.002">
+        RK4 integration time step in seconds.
+      </Property>
+    </Properties>
+
+    ### Returns
+
+    <Properties>
+      <Property name="times" type="np.ndarray">
+        1D array of timestamps in seconds of shape `(T,)`.
+      </Property>
+      <Property name="states" type="np.ndarray">
+        3D float64 tensor of shape `(N, T, 9)` containing `[x, y, z, vx, vy, vz, wx, wy, wz]` for all `N` trajectories across all `T` steps.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Batch Simulation" tag="method" label="simulate_batch">
+
+    ```python
+    import numpy as np
+    from padelkit import BallPhysicsEngine
+
+    engine = BallPhysicsEngine()
+
+    # 100 shots with randomized launch angles and topspin
+    n_shots = 100
+    states_0 = np.zeros((n_shots, 9), dtype=np.float64)
+    states_0[:, 1] = -8.0                        # y0 = -8m
+    states_0[:, 2] = 1.2                         # z0 = 1.2m
+    states_0[:, 4] = np.linspace(14.0, 22.0, n_shots)  # vy
+    states_0[:, 5] = 3.5                         # vz
+    states_0[:, 6] = 200.0                       # topspin wx (rad/s)
+
+    times, batch_states = engine.simulate_batch(states_0, duration=2.0)
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output' }}
+    # batch_states.shape
+    (100, 1001, 9)
+    ```
+
+  </Col>
+</Row>
+
+---
+
+## Single-Step & Collision Primitives {{ tag: 'method', label: 'engine.step() / resolve_collision()' }}
+
+<Row>
+  <Col>
+
+    For custom control loops or frame-by-frame interactive games, `BallPhysicsEngine` exposes its low-level physics primitives directly:
+
+    <Properties>
+      <Property name="step(state, dt=0.002, t=0.0)" type="tuple[BallState, BounceEvent | None]">
+        Advances a `BallState` by a single timestep `dt` using RK4 and resolves any court surface collision.
+      </Property>
+      <Property name="compute_acceleration(velocity, angular_velocity)" type="np.ndarray">
+        Computes the instantaneous 3D acceleration vector `(ax, ay, az)` in `m/s^2` combining gravity, quadratic drag, and Spindt Magnus lift.
+      </Property>
+      <Property name="resolve_collision(velocity, angular_velocity, normal, surface)" type="tuple[np.ndarray, np.ndarray, ContactRegime]">
+        Computes post-impact linear velocity `v'`, angular velocity `w'`, and [`ContactRegime`](/ball-state#enums) (`SLIDING`, `ROLLING`, or `DAMPED`) against a unit surface normal `n`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Low-Level Step" tag="method" label="step">
+
+    ```python
+    import numpy as np
+    from padelkit import BallPhysicsEngine, SurfaceType
+
+    engine = BallPhysicsEngine()
+
+    # Inspect post-bounce velocity & spin on turf floor
+    v_in = np.array([0.0, 15.0, -8.0])
+    w_in = np.array([-250.0, 0.0, 0.0])  # heavy backspin
+    normal = np.array([0.0, 0.0, 1.0])
+
+    v_out, w_out, regime = engine.resolve_collision(
+        v_in, w_in, normal, SurfaceType.FLOOR
+    )
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

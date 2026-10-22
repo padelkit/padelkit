@@ -1,6 +1,6 @@
 # Quickstart
 
-This guide will get you up and running with PadelKit. You'll learn how to install the package and start using the Court Geometry, Camera Projection, 3D Visualization, and Scoring modules. {{ className: 'lead' }}
+This guide will get you up and running with PadelKit. You'll learn how to install the package and start using the Court Geometry, Camera Projection, 9D Ball Physics, 3D Visualization, and Scoring modules. {{ className: 'lead' }}
 
 ## Installation
 
@@ -12,7 +12,7 @@ pip install padelkit
 
 ## Basic Usage
 
-Once installed, you can easily import the necessary classes to map a court, project 3D points to a camera, visualize rallies in 3D, or track a match score.
+Once installed, you can easily import the necessary classes to map a court, project 3D points to a camera, simulate 9D ball trajectories with spin, visualize rallies in 3D, or track a match score.
 
 ### Working with Court Geometry
 
@@ -28,6 +28,23 @@ court = Court.fip_standard()
 net_center = court.point("center")
 print(f"Net center: {net_center}")
 # Output: Net center: (0.0, 0.0)
+```
+
+### Simulating 9D Ball Aerodynamics & Bounces
+
+You can simulate realistic 3D trajectories with topspin/backspin, air drag, Spindt Magnus lift, and multi-surface rebounds:
+
+```python
+from padelkit import BallPhysicsEngine, BallState
+
+engine = BallPhysicsEngine()
+shot = BallState.from_shot(
+    position=(-2.5, -2.0, 2.3),
+    velocity=(3.5, 16.0, -2.5),
+    topspin_rpm=-1800.0,
+)
+trajectory = engine.simulate(shot, duration=2.5)
+print(f"Bounces: {[b.surface.value for b in trajectory.bounces]}")
 ```
 
 ### Tracking Match Score

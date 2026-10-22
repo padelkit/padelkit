@@ -1,0 +1,104 @@
+# Ball Aerodynamics & Contact Physics
+
+The `padelkit.physics` module provides a high-fidelity 9-Dimensional (`9D`) physics engine for simulating padel ball flight, spin-dependent aerodynamics, and multi-surface rebound dynamics inside any [`Court`](/court) enclosure. {{ className: 'lead' }}
+
+## 9D State & Aerodynamic Forces
+
+Unlike simplified parabolic models, `padelkit.physics` tracks the complete translational and rotational state of the ball at every step via [`BallState`](/ball-state):
+
+<Properties>
+  <Property name="1. Position & Velocity (6D)" type="(x, y, z) & (vx, vy, vz)">
+    3D position in meters and linear velocity in `m/s` in the standard centered court frame (`(0, 0, 0)` at the center of the net on the floor, `+Z` up).
+  </Property>
+  <Property name="2. Spin Vector (3D)" type="(wx, wy, wz)">
+    Angular velocity vector in `rad/s`, decomposed naturally into **topspin / backspin** (transverse horizontal axis) and **sidespin** (vertical `+Z` axis).
+  </Property>
+  <Property name="3. Aerodynamic Drag (Fuzz Factor)" type="F_drag">
+    Quadratic air resistance combining base sphere drag (`Cd0 = 0.507` with high-speed boundary-layer transition) and felt nap resistance (`fuzz_factor = 0.04`). Supports atmospheric air density scaling via [`EnvironmentConditions.from_atmosphere()`](/physics-parameters).
+  </Property>
+  <Property name="4. Magnus Lift (Spindt Model)" type="F_magnus">
+    Non-linear spin lift coefficient `Cl = 1 / (2.022 + 0.981 / S)` where `S = (r * |w|) / |v|` is the spin ratio. Accurately reproduces topspin dive (`vibora`, `topspin smash`) and backspin float (`bandeja`, `chiquita`).
+  </Property>
+</Properties>
+
+---
+
+## Impulse Contact Dynamics: Sliding vs. Rolling
+
+When the ball impacts the turf floor, tempered glass walls, metallic mesh fence, or catenary net, [`BallPhysicsEngine`](/ball-physics-engine) resolves the rebound using an analytical **Coulomb Sliding-to-Rolling transition model**:
+
+<Properties>
+  <Property name="ContactRegime.SLIDING" type="High Slip / Low Friction">
+    When tangential entry velocity and spin exceed the critical Coulomb threshold (`mu < mu_crit`), the ball slides throughout the entire contact duration (`v_t' = v_t - s * mu * (1 + e) * v_n`), losing partial tangential speed while picking up spin.
+  </Property>
+  <Property name="ContactRegime.ROLLING" type="Grip / Bite">
+    When surface friction is sufficient (`mu >= mu_crit`), the ball grips the surface before leaving (`v_t' = 5/7 * v_t + 2/7 * r * (w x n)`). Heavy backspin grips sandy turf to produce a low, slow bounce (`drop shot / bandeja`), whereas low-friction glass (`mu = 0.20`) lets spin slide off the wall.
+  </Property>
+  <Property name="ContactRegime.DAMPED" type="Net & Fence Absorption">
+    Elastic-plastic energy absorption when impacting the tensioned net mesh (`e = 0.22`) or galvanized metallic fence (`e = 0.45`).
+  </Property>
+</Properties>
+
+---
+
+## Quick Example: Simulating a Bandeja off the Back Glass
+
+<Row>
+  <Col>
+
+    Create a shot using intuitive parameters (`position`, `velocity`, `topspin_rpm`, `sidespin_rpm`), simulate its full 3D trajectory with RK4 integration (`dt = 0.002s`), inspect every [`BounceEvent`](/ball-state), and convert the result directly into a [`MatchTimeline`](/visualization-3d) for interactive 3D replay.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Simulate & Replay" tag="guide" label="BallPhysicsEngine">
+
+    ```python
+    from padelkit import BallPhysicsEngine, BallState
+
+    engine = BallPhysicsEngine()
+
+    # Cross-court bandeja with 1,800 RPM backspin
+    initial = BallState.from_shot(
+        position=(-2.5, -2.0, 2.3),
+        velocity=(3.5, 16.0, -2.5),
+        topspin_rpm=-1800.0,
+        sidespin_rpm=400.0,
+    )
+
+    traj = engine.simulate(initial, duration=2.5, dt=0.002)
+
+    for b in traj.bounces:
+        print(f"{b.time:.2f}s | {b.surface.value} ({b.regime.value})")
+
+    # Export to DataFrame or 3D MatchTimeline
+    df = traj.to_dataframe()
+    timeline = traj.to_timeline(fps=60.0)
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output' }}
+    0.45s | floor (rolling)
+    0.72s | back_glass (sliding)
+    1.18s | floor (rolling)
+    ```
+
+  </Col>
+</Row>
+
+---
+
+## Core Physics Components
+
+<Properties>
+  <Property name="BallPhysicsEngine" type="class">
+    Main 9D physics engine with RK4 integration, multi-surface collision resolution, single-trajectory `simulate()`, and vectorized NumPy `simulate_batch()`. See [`BallPhysicsEngine`](/ball-physics-engine).
+  </Property>
+  <Property name="BallState & BallTrajectory" type="dataclass">
+    9D instantaneous ball state (`from_shot`, `speed_kmh`, `spin_rpm`), full trajectory history (`positions`, `velocities`, `state_at`, `to_timeline`), and [`BounceEvent`](/ball-state) records. See [`BallState & BallTrajectory`](/ball-state).
+  </Property>
+  <Property name="Physics Parameters" type="dataclass">
+    Physical configuration dataclasses: [`BallProperties`](/physics-parameters) (`fip_standard`, `worn`, `wet`), [`EnvironmentConditions`](/physics-parameters) (`from_atmosphere`), and [`SurfaceMaterials`](/physics-parameters) (`fip_standard`, `fast_indoor`, `slow_sandy`).
+  </Property>
+</Properties>

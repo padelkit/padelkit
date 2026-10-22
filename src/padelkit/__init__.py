@@ -20,6 +20,17 @@ from padelkit.court.enums import (
 )
 from padelkit.court.landmarks import CourtLandmark
 from padelkit.court.location import CourtLocation
+from padelkit.physics import (
+    BallPhysicsEngine,
+    BallProperties,
+    BallState,
+    BallTrajectory,
+    BounceEvent,
+    ContactRegime,
+    EnvironmentConditions,
+    SurfaceMaterials,
+    SurfaceType,
+)
 from padelkit.scoring import (
     Match,
     MatchConfiguration,
@@ -57,6 +68,16 @@ __all__ = [
     "CameraDistortion",
     "CameraPreset",
     "DistortionModel",
+    # Physics & Aerodynamics
+    "BallPhysicsEngine",
+    "BallProperties",
+    "EnvironmentConditions",
+    "SurfaceMaterials",
+    "BallState",
+    "BallTrajectory",
+    "BounceEvent",
+    "SurfaceType",
+    "ContactRegime",
     # 3D Visualization & Replay Timeline
     "PadelVisualizer",
     "MatchTimeline",

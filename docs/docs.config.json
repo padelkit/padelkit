@@ -31,6 +31,30 @@
       "icon": "ShapesIcon",
       "min": "0.1.0"
     },
+    "/ball-physics": {
+      "title": "Ball Aerodynamics & Contact Physics",
+      "description": "Learn how the 9D aerodynamic model (Drag, Spindt Magnus lift) and Coulomb Sliding/Rolling rebound physics work.",
+      "icon": "BoltIcon",
+      "min": "0.1.0"
+    },
+    "/ball-physics-engine": {
+      "title": "BallPhysicsEngine",
+      "description": "API reference for the 9D RK4 ball physics simulator and vectorized batch trajectory engine.",
+      "icon": "BoltIcon",
+      "min": "0.1.0"
+    },
+    "/ball-state": {
+      "title": "BallState & BallTrajectory",
+      "description": "API reference for BallState, BallTrajectory, BounceEvent, SurfaceType, and ContactRegime.",
+      "icon": "PaperAirplaneIcon",
+      "min": "0.1.0"
+    },
+    "/physics-parameters": {
+      "title": "Physics Parameters",
+      "description": "API reference for BallProperties, EnvironmentConditions, and SurfaceMaterials dataclasses.",
+      "icon": "CogIcon",
+      "min": "0.1.0"
+    },
     "/court-dimensions": {
       "title": "CourtDimensions",
       "description": "API reference for the CourtDimensions dataclass."
@@ -118,6 +142,7 @@
         "/scoring-system",
         "/court-geometry",
         "/camera-system",
+        "/ball-physics",
         "/visualization-3d"
       ]
     },
@@ -137,6 +162,14 @@
         "/camera-intrinsics",
         "/camera-extrinsics",
         "/camera-distortion"
+      ]
+    },
+    {
+      "title": "Physics & Dynamics",
+      "links": [
+        "/ball-physics-engine",
+        "/ball-state",
+        "/physics-parameters"
       ]
     },
     {
@@ -163,11 +196,15 @@
       "/scoring-system",
       "/court-geometry",
       "/camera-system",
+      "/ball-physics",
       "/visualization-3d"
     ],
     "resources": [
       "/court-landmark",
       "/camera",
+      "/ball-physics-engine",
+      "/ball-state",
+      "/physics-parameters",
       "/visualization-3d",
       "/match",
       "/team",

@@ -47,7 +47,14 @@ Provides the temporal state contract (`FrameState`, `PlayerPose`, `MatchTimeline
   3. **Standalone HTML & Jupyter Notebook Mode** (`export_html()` and `_repr_html_()`).
   4. **Computer Vision Render Passes** (`RGB`, `Semantic Segmentation ID`, `Depth Map`, and `17 Court Landmarks` overlay).
 
-### 4. `scoring` Module (`src/padelkit/scoring/`)
+### 4. `physics` Module (`src/padelkit/physics/`)
+Provides a 9-Dimensional (`9D`) aerodynamic and contact physics engine for padel balls (`[x, y, z, vx, vy, vz, wx, wy, wz]`).
+
+- **`BallProperties`, `EnvironmentConditions`, `SurfaceMaterials`:** Immutable physical configuration dataclasses with presets (`BallProperties.fip_standard()`, `worn()`, `wet()`, `EnvironmentConditions.from_atmosphere()` using barometric + Tetens humid air density, `SurfaceMaterials.fip_standard()`, `fast_indoor()`, `slow_sandy()`).
+- **`BallState`, `BallTrajectory`, `BounceEvent`:** `BallState.from_shot()` decomposes `topspin_rpm` and `sidespin_rpm` into 3D angular velocity. `BallTrajectory` stores full 9D history with interpolation (`state_at()`), Pandas/CSV export, and `to_timeline()` conversion for 3D visualization.
+- **`BallPhysicsEngine`:** Integrates gravity, quadratic drag with felt `fuzz_factor`, and non-linear Spindt Magnus lift via 4th-order Runge-Kutta (`RK4`). Resolves collisions with analytical Coulomb `SLIDING` vs `ROLLING` transition across all court surfaces (`FLOOR`, `BACK_GLASS`, `SIDE_GLASS`, `BACK_WALL`, `SIDE_WALL`, `BACK_FENCE`, `SIDE_FENCE`, `NET`). Supports both single-trajectory `simulate()` and vectorized NumPy `simulate_batch()`.
+
+### 5. `scoring` Module (`src/padelkit/scoring/`)
 Implements match rules, event-sourced score progression (`MatchScoreHistory`), `Match`, `MatchScore`, `Team`, `Player`, `ServingState`, and `MatchConfiguration`.
 
 ---
