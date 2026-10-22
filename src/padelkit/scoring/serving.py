@@ -1,8 +1,9 @@
-from .entities import Player, Team, TeamId, ServingState, MatchConfiguration
+from .entities import MatchConfiguration, ServingState, Team, TeamId
 
 
 class ServingEngine:
-    """Pure engine responsible for calculating serving states based on configurations and score metrics."""
+    """Pure engine responsible for calculating serving states based on configurations
+    and score metrics."""
 
     def __init__(self, config: MatchConfiguration):
         self.config = config
@@ -38,10 +39,14 @@ class ServingEngine:
         if teams and server_team is not None:
             team = teams.get(server_team)
             if team:
-                starting_server = self.config.set_starting_servers.get(current_set, {}).get(server_team)
+                starting_server = self.config.set_starting_servers.get(
+                    current_set, {}
+                ).get(server_team)
                 if starting_server not in (team.player1, team.player2):
                     starting_server = team.player1
-                second_server = team.player2 if starting_server == team.player1 else team.player1
+                second_server = (
+                    team.player2 if starting_server == team.player1 else team.player1
+                )
 
                 if in_tiebreak or in_super_tiebreak:
                     # Count points served by server_team in this tie-break
@@ -49,7 +54,9 @@ class ServingEngine:
                     for i in range(points_played):
                         pt_is_odd = ((i + 1) // 2) % 2 != 0
                         if pt_is_odd:
-                            pt_server_team = TeamId.B if tiebreak_starter == TeamId.A else TeamId.A
+                            pt_server_team = (
+                                TeamId.B if tiebreak_starter == TeamId.A else TeamId.A
+                            )
                         else:
                             pt_server_team = tiebreak_starter
                         if pt_server_team == server_team:

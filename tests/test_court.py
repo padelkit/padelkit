@@ -2,14 +2,14 @@ import pytest
 
 from padelkit.court import (
     CoordinateSystem,
+    Court,
     CourtDimensions,
+    CourtLandmark,
     CourtLocation,
     CourtSetting,
     DoorState,
     EnclosureType,
     EnclosureVariant,
-    CourtLandmark,
-    Court,
 )
 from padelkit.court.enums import CourtOrientation
 

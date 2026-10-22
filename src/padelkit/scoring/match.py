@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from ..court.court import Court
-from .entities import Player, Team, TeamId, MatchConfiguration
+from .entities import MatchConfiguration, Player, Team, TeamId
 from .score import MatchScoreHistory
 
 
@@ -106,7 +106,9 @@ class Match:
         self.config.set_starting_servers = value
         self.history._validate_player_membership()
 
-    def set_set_starting_server(self, set_index: int, team_id: TeamId, player: Player) -> None:
+    def set_set_starting_server(
+        self, set_index: int, team_id: TeamId, player: Player
+    ) -> None:
         """Sets the starting server for a specific set (1-indexed) and team."""
         self.history.set_set_starting_server(set_index, team_id, player)
 

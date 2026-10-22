@@ -4,8 +4,10 @@ on:
   push:
     paths:
       - 'docs/**'
+      - '.github/workflows/deploy-docs.yml'
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   trigger-vercel:
@@ -13,4 +15,9 @@ jobs:
     steps:
       - name: Trigger Vercel Deploy Hook
         run: |
-          curl -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
+          if [ -z "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}" ]; then
+            echo "Error: VERCEL_DEPLOY_HOOK_URL secret is empty!"
+            exit 1
+          fi
+          curl --fail-with-body -sS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
+          echo ""

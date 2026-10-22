@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from typing import Optional
-from .entities import TeamId, Team, Player, ServingState, MatchConfiguration
+
+from .entities import MatchConfiguration, Player, ServingState, Team, TeamId
 from .serving import ServingEngine
 
 
@@ -8,12 +8,12 @@ from .serving import ServingEngine
 class MatchScore:
     """An immutable snapshot of the match score at a given point in time."""
 
-    points_A: int | str
-    points_B: int | str
-    games_A: int
-    games_B: int
-    sets_A: int
-    sets_B: int
+    points_A: int | str  # noqa: N815
+    points_B: int | str  # noqa: N815
+    games_A: int  # noqa: N815
+    games_B: int  # noqa: N815
+    sets_A: int  # noqa: N815
+    sets_B: int  # noqa: N815
     completed_sets: list[tuple[int, int]]
     server: ServingState | None = None
     teams: dict[TeamId, Team] | None = None
@@ -50,8 +50,14 @@ class MatchScore:
         serve_a = " *" if self.server and self.server.team == TeamId.A else ""
         serve_b = " *" if self.server and self.server.team == TeamId.B else ""
 
-        a_line = f"{team_a_label} | {sets_str_a} | {self.games_A} | {self.points_A:>2}{serve_a}"
-        b_line = f"{team_b_label} | {sets_str_b} | {self.games_B} | {self.points_B:>2}{serve_b}"
+        a_line = (
+            f"{team_a_label} | {sets_str_a} | {self.games_A} | "
+            f"{self.points_A:>2}{serve_a}"
+        )
+        b_line = (
+            f"{team_b_label} | {sets_str_b} | {self.games_B} | "
+            f"{self.points_B:>2}{serve_b}"
+        )
 
         # Clean double spaces in case of no sets
         a_line = a_line.replace("|  |", "|").strip()
@@ -100,7 +106,10 @@ class MatchScoreHistory:
                     team = self._teams.get(team_id)
                     if team:
                         if player not in (team.player1, team.player2):
-                            raise ValueError(f"Starting server '{player.name}' for set {set_idx} does not belong to Team {team_id}.")
+                            raise ValueError(
+                                f"Starting server '{player.name}' for set {set_idx} "
+                                f"does not belong to Team {team_id}."
+                            )
 
     @property
     def teams(self) -> dict[TeamId, Team] | None:
@@ -174,12 +183,16 @@ class MatchScoreHistory:
         self.config.set_starting_servers = value
         self._validate_player_membership()
 
-    def set_set_starting_server(self, set_index: int, team_id: TeamId, player: Player) -> None:
+    def set_set_starting_server(
+        self, set_index: int, team_id: TeamId, player: Player
+    ) -> None:
         """Sets the starting server for a specific set (1-indexed) and team."""
         if self._teams:
             team = self._teams.get(team_id)
             if team and player not in (team.player1, team.player2):
-                raise ValueError(f"Player '{player.name}' does not belong to Team {team_id}.")
+                raise ValueError(
+                    f"Player '{player.name}' does not belong to Team {team_id}."
+                )
         if set_index not in self.config.set_starting_servers:
             self.config.set_starting_servers[set_index] = {}
         self.config.set_starting_servers[set_index][team_id] = player
@@ -224,7 +237,7 @@ class MatchScoreHistory:
                 break
 
             # Before processing the point, if we are at the start of a set,
-            # check if this is the deciding set and we need to play a tie-break or super tie-break.
+            # check if this is the deciding set and we need a tie-break.
             if (
                 games_a == 0
                 and games_b == 0
@@ -236,7 +249,8 @@ class MatchScoreHistory:
                 is_deciding_set = (
                     sets_a + sets_b == self.config.best_of_sets - 1
                     and sets_a == sets_b
-                    and self.config.deciding_set_format in ["tiebreak", "super_tiebreak"]
+                    and self.config.deciding_set_format
+                    in ["tiebreak", "super_tiebreak"]
                 )
                 if is_deciding_set:
                     if self.config.deciding_set_format == "super_tiebreak":
@@ -244,12 +258,16 @@ class MatchScoreHistory:
                     else:
                         in_tiebreak = True
                     if self.config.starting_server_team == TeamId.A:
-                        tiebreak_starter = TeamId.B if total_games % 2 != 0 else TeamId.A
+                        tiebreak_starter = (
+                            TeamId.B if total_games % 2 != 0 else TeamId.A
+                        )
                     else:
-                        tiebreak_starter = TeamId.A if total_games % 2 != 0 else TeamId.B
+                        tiebreak_starter = (
+                            TeamId.A if total_games % 2 != 0 else TeamId.B
+                        )
                     tiebreak_points_played = 0
 
-            # 1. Processing under a tie-break (either regular set tie-break, or match deciding tie-break)
+            # 1. Processing under a tie-break (regular or match deciding)
             if in_tiebreak or in_super_tiebreak:
                 if team == TeamId.A:
                     points_a += 1
@@ -265,7 +283,7 @@ class MatchScoreHistory:
                     # Tie-break ends! Determine the winner
                     winner_team = TeamId.A if points_a > points_b else TeamId.B
 
-                    # Check if this is a match-deciding tie-break (i.e. games score is 0-0)
+                    # Check if this is a match-deciding tie-break (games score 0-0)
                     if games_a == 0 and games_b == 0:
                         if winner_team == TeamId.A:
                             sets_a += 1
@@ -382,9 +400,13 @@ class MatchScoreHistory:
                     if games_a == limit and games_b == limit:
                         in_tiebreak = True
                         if self.config.starting_server_team == TeamId.A:
-                            tiebreak_starter = TeamId.B if total_games % 2 != 0 else TeamId.A
+                            tiebreak_starter = (
+                                TeamId.B if total_games % 2 != 0 else TeamId.A
+                            )
                         else:
-                            tiebreak_starter = TeamId.A if total_games % 2 != 0 else TeamId.B
+                            tiebreak_starter = (
+                                TeamId.A if total_games % 2 != 0 else TeamId.B
+                            )
                         tiebreak_points_played = 0
                     else:
                         is_set_won_a = False
@@ -406,7 +428,7 @@ class MatchScoreHistory:
                             games_a = 0
                             games_b = 0
 
-        # Check if we should be in a deciding set tie-break or super tie-break after the loop as well
+        # Check if we should be in a deciding set tie-break after the loop as well
         if (
             sets_a < sets_to_win
             and sets_b < sets_to_win

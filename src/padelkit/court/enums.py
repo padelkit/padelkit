@@ -26,7 +26,7 @@ class EnclosureType(str, Enum):
     """Material used for the court enclosure walls."""
 
     GLASS = "glass"  # Tempered glass / methacrylate panels
-    WALL = "wall"    # Concrete or brick wall
+    WALL = "wall"  # Concrete or brick wall
 
 
 class EnclosureVariant(int, Enum):
@@ -63,4 +63,3 @@ class CourtSetting(str, Enum):
     INDOOR = "indoor"
     OUTDOOR = "outdoor"
     SEMI_COVERED = "semi_covered"
-

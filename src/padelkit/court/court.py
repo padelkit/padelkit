@@ -36,7 +36,6 @@ class Court:
     turf_color: str | None = None
     setting: CourtSetting | None = None
 
-
     # Access doors (one per lateral side)
     # "left" and "right" are from the perspective of a player
     # on the NEAR side facing the net.
@@ -113,26 +112,27 @@ class Court:
                 Defaults to ``CoordinateSystem.CENTERED``.
 
         Returns:
-            A dictionary mapping each :class:`CourtLandmark` name to its (X, Y) position.
+            A dictionary mapping each :class:`CourtLandmark` name to its (X, Y)
+            position.
         """
         hw = self.width / 2
         hl = self.length / 2
         svc = hl - self.dimensions.service_line_distance_from_back
 
         raw: dict[str, tuple[float, float]] = {
-            CourtLandmark.FLOOR_NEAR_LEFT.value:      (-hw, -hl),
-            CourtLandmark.FLOOR_NEAR_RIGHT.value:     ( hw, -hl),
-            CourtLandmark.SERVICE_NEAR_LEFT.value:    (-hw, -svc),
-            CourtLandmark.SERVICE_NEAR_CENTER.value:  (0.0, -svc),
-            CourtLandmark.SERVICE_NEAR_RIGHT.value:   ( hw, -svc),
-            CourtLandmark.NET_LEFT.value:             (-hw,  0.0),
-            CourtLandmark.CENTER.value:               (0.0,  0.0),
-            CourtLandmark.NET_RIGHT.value:            ( hw,  0.0),
-            CourtLandmark.SERVICE_FAR_LEFT.value:     (-hw,  svc),
-            CourtLandmark.SERVICE_FAR_CENTER.value:   (0.0,  svc),
-            CourtLandmark.SERVICE_FAR_RIGHT.value:    ( hw,  svc),
-            CourtLandmark.FLOOR_FAR_LEFT.value:       (-hw,  hl),
-            CourtLandmark.FLOOR_FAR_RIGHT.value:      ( hw,  hl),
+            CourtLandmark.FLOOR_NEAR_LEFT.value: (-hw, -hl),
+            CourtLandmark.FLOOR_NEAR_RIGHT.value: (hw, -hl),
+            CourtLandmark.SERVICE_NEAR_LEFT.value: (-hw, -svc),
+            CourtLandmark.SERVICE_NEAR_CENTER.value: (0.0, -svc),
+            CourtLandmark.SERVICE_NEAR_RIGHT.value: (hw, -svc),
+            CourtLandmark.NET_LEFT.value: (-hw, 0.0),
+            CourtLandmark.CENTER.value: (0.0, 0.0),
+            CourtLandmark.NET_RIGHT.value: (hw, 0.0),
+            CourtLandmark.SERVICE_FAR_LEFT.value: (-hw, svc),
+            CourtLandmark.SERVICE_FAR_CENTER.value: (0.0, svc),
+            CourtLandmark.SERVICE_FAR_RIGHT.value: (hw, svc),
+            CourtLandmark.FLOOR_FAR_LEFT.value: (-hw, hl),
+            CourtLandmark.FLOOR_FAR_RIGHT.value: (hw, hl),
         }
 
         return {
@@ -154,7 +154,8 @@ class Court:
                 Defaults to ``CoordinateSystem.CENTERED``.
 
         Returns:
-            A dictionary mapping each :class:`CourtLandmark` name to its (X, Y, Z) position.
+            A dictionary mapping each :class:`CourtLandmark` name to its (X, Y, Z)
+            position.
         """
         hw = self.width / 2
         hl = self.length / 2
@@ -163,24 +164,24 @@ class Court:
 
         raw: dict[str, tuple[float, float, float]] = {
             # Floor points
-            CourtLandmark.FLOOR_NEAR_LEFT.value:      (-hw, -hl,   0.0),
-            CourtLandmark.FLOOR_NEAR_RIGHT.value:     ( hw, -hl,   0.0),
-            CourtLandmark.SERVICE_NEAR_LEFT.value:    (-hw, -svc,  0.0),
-            CourtLandmark.SERVICE_NEAR_CENTER.value:  (0.0, -svc,  0.0),
-            CourtLandmark.SERVICE_NEAR_RIGHT.value:   ( hw, -svc,  0.0),
-            CourtLandmark.NET_LEFT.value:             (-hw,  0.0,  0.0),
-            CourtLandmark.CENTER.value:               (0.0,  0.0,  0.0),
-            CourtLandmark.NET_RIGHT.value:            ( hw,  0.0,  0.0),
-            CourtLandmark.SERVICE_FAR_LEFT.value:     (-hw,  svc,  0.0),
-            CourtLandmark.SERVICE_FAR_CENTER.value:   (0.0,  svc,  0.0),
-            CourtLandmark.SERVICE_FAR_RIGHT.value:    ( hw,  svc,  0.0),
-            CourtLandmark.FLOOR_FAR_LEFT.value:       (-hw,  hl,   0.0),
-            CourtLandmark.FLOOR_FAR_RIGHT.value:      ( hw,  hl,   0.0),
+            CourtLandmark.FLOOR_NEAR_LEFT.value: (-hw, -hl, 0.0),
+            CourtLandmark.FLOOR_NEAR_RIGHT.value: (hw, -hl, 0.0),
+            CourtLandmark.SERVICE_NEAR_LEFT.value: (-hw, -svc, 0.0),
+            CourtLandmark.SERVICE_NEAR_CENTER.value: (0.0, -svc, 0.0),
+            CourtLandmark.SERVICE_NEAR_RIGHT.value: (hw, -svc, 0.0),
+            CourtLandmark.NET_LEFT.value: (-hw, 0.0, 0.0),
+            CourtLandmark.CENTER.value: (0.0, 0.0, 0.0),
+            CourtLandmark.NET_RIGHT.value: (hw, 0.0, 0.0),
+            CourtLandmark.SERVICE_FAR_LEFT.value: (-hw, svc, 0.0),
+            CourtLandmark.SERVICE_FAR_CENTER.value: (0.0, svc, 0.0),
+            CourtLandmark.SERVICE_FAR_RIGHT.value: (hw, svc, 0.0),
+            CourtLandmark.FLOOR_FAR_LEFT.value: (-hw, hl, 0.0),
+            CourtLandmark.FLOOR_FAR_RIGHT.value: (hw, hl, 0.0),
             # Back wall top points
-            CourtLandmark.WALL_TOP_NEAR_LEFT.value:   (-hw, -hl,   wh),
-            CourtLandmark.WALL_TOP_NEAR_RIGHT.value:  ( hw, -hl,   wh),
-            CourtLandmark.WALL_TOP_FAR_LEFT.value:    (-hw,  hl,   wh),
-            CourtLandmark.WALL_TOP_FAR_RIGHT.value:   ( hw,  hl,   wh),
+            CourtLandmark.WALL_TOP_NEAR_LEFT.value: (-hw, -hl, wh),
+            CourtLandmark.WALL_TOP_NEAR_RIGHT.value: (hw, -hl, wh),
+            CourtLandmark.WALL_TOP_FAR_LEFT.value: (-hw, hl, wh),
+            CourtLandmark.WALL_TOP_FAR_RIGHT.value: (hw, hl, wh),
         }
 
         return {
@@ -206,7 +207,6 @@ class Court:
         landmarks = self.landmarks_2d(coordinate_system=coordinate_system)
         if name not in landmarks:
             raise ValueError(
-                f"Unknown landmark: '{name}'. "
-                f"Available: {sorted(landmarks.keys())}"
+                f"Unknown landmark: '{name}'. Available: {sorted(landmarks.keys())}"
             )
         return landmarks[name]
