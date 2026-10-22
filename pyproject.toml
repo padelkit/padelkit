@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "padelkit"
-version = "0.0.1"
+version = "0.1.0"
 description = "Open source toolkit for padel analytics and computer vision"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -31,7 +31,10 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Scientific/Engineering",
 ]
-dependencies = []
+dependencies = [
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -39,6 +42,9 @@ dev = [
     "ruff",
     "build",
     "twine"
+]
+blender = [
+    "bpy>=4.0.0; python_version == '3.11' or python_version == '3.13'"
 ]
 
 [project.urls]

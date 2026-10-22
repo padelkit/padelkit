@@ -3,46 +3,52 @@
 This document serves as the single source of truth regarding the architecture, infrastructure, and current business logic of the **PadelKit** project. Its goal is to keep the context aligned for future development sessions.
 
 ## Overview
-**PadelKit** is an open-source Python library designed for padel analytics. The goal of the initial version (`0.0.1`) is to establish a modern package structure and provide the most basic domain models, such as court geometry and the scoring system, without yet including heavy inference logic or large dependencies (like OpenCV or PyTorch).
+**PadelKit** is an open-source Python library designed for padel analytics, 3D computer vision, physics-informed simulation, and synthetic data generation.
 
 ## Infrastructure and Technology Stack
-- **Language:** Python >= 3.10
+- **Language:** Python >= 3.10 (managed via `uv`)
 - **Build Backend:** `hatchling` (configured in `pyproject.toml`)
+- **Core Runtime Dependencies:** `numpy>=1.24.0`, `pandas>=2.0.0`
+- **Optional Dependencies:**
+  - `padelkit[dev]`: `pytest`, `ruff`, `build`, `twine`
+  - `padelkit[blender]`: `bpy>=4.0.0` (for headless photorealistic synthetic dataset rendering)
 - **Testing:** `pytest` (tests located in the `tests/` directory)
 - **Linting and Formatting:** `ruff` (strict configuration validated in CI)
-- **Continuous Integration (CI):** GitHub Actions (`.github/workflows/ci.yml`) configured to run linting, tests, and package builds on Python 3.10, 3.11, and 3.12.
-- **Distribution:** Standard packaging using `build` and `twine`, generating an `sdist` (.tar.gz) and a `wheel` (.whl) ready for PyPI.
 
 ## Code Architecture (`src/padelkit/`)
 
-The library exposes its functionality through very specific submodules. The initial public API exposes the `Court` and `MatchScore` classes directly from the root (`padelkit`).
+The library exposes its functionality through modular subpackages and re-exports core classes at the root (`padelkit`).
 
-### 1. `court` Module (Court Geometry)
+### 1. `court` Module (`src/padelkit/court/`)
 Defines the dimensions, landmarks, and coordinate system of an official padel court.
 
-- **`CourtDimensions`:** Dataclass housing the official measurements. The `fip_standard()` method returns the measurements established by the International Padel Federation (20.0m length x 10.0m width).
-- **Coordinate System:** 
-  - The origin `(0.0, 0.0)` is exactly at the **center** of the court.
-  - The **X** axis represents the width (left to right, from `-5.0` to `5.0`).
-  - The **Y** axis represents the length (back to back, from `-10.0` to `10.0`).
-  - All units are in **meters**.
-- **`CourtLandmark`:** Enumeration for standardized 2D positions (e.g., `CENTER`, `TOP_LEFT`, `NET_RIGHT`).
-- **`Court`:** Main geometry class. It can be instantiated via `Court.fip_standard()`. It provides methods like `landmarks_2d()` (a dictionary with all coordinates) and `point(name)` (specific coordinates of a landmark).
+- **`CourtDimensions`:** Dataclass housing the official FIP measurements (`20.0m x 10.0m`, `4.0m` back wall, `3.0m`/`4.0m` side wall, `0.88m`/`0.92m` net height).
+- **Coordinate System (`CoordinateSystem`):**
+  - `CENTERED` (default): Origin `(0.0, 0.0, 0.0)` at the center of the net on the floor, `X` in `[-5, 5]`, `Y` in `[-10, 10]`, `Z` height in meters.
+  - `CORNER_BASED`: Origin `(0.0, 0.0, 0.0)` at the bottom-left (`FLOOR_NEAR_LEFT`) corner.
+- **`CourtLandmark`:** Enumeration for the 17 standardized 2D/3D positions (13 floor points + 4 back-wall top corners).
+- **`Court`:** Main geometry class providing `landmarks_2d()`, `landmarks_3d()`, and `point(name)`.
 
-### 2. `scoring` Module (Scoring System)
-Implements the logic of the match state and score progression.
+### 2. `camera` Module (`src/padelkit/camera/`)
+Provides projective camera geometry, optical lens distortion, and 3D-to-2D / 2D-to-3D transformations.
 
-- **`TeamId`:** Enumeration to identify teams (`A` and `B`).
-- **`MatchScore`:** Handles the full state of the match.
-  - **Points:** Traditional sequence (`0`, `15`, `30`, `40`).
-  - **Deuce/Advantage:** Supports the classic advantage rule (if both reach 40, winning the advantage point is required, or it goes back to deuce if the opposing team ties).
-  - **Games and Sets:** Automatic game advancement. The current system considers a set won upon reaching 6 games with a difference of 2, or upon reaching 7. There is no tie-break implementation in this first iteration.
-  - **Match:** Configured as best of 3 sets (the first to win 2 sets wins the match).
+- **`CameraIntrinsics`:** Sensor resolution (`width_px`, `height_px`), focal lengths (`fx`, `fy`), principal point (`cx`, `cy`), and calibration matrix `K`. Includes `from_fov()`, `from_sensor()`, `full_hd()`, and `uhd_4k()`.
+- **`CameraDistortion` & `DistortionModel`:** Supports `NONE`, `BROWN_CONRADY` (`k1, k2, p1, p2, k3`), and `FISHEYE` (`k1, k2, k3, k4`) forward distortion and iterative undistortion.
+- **`CameraExtrinsics`:** 6-DoF camera pose in 3D court coordinates (`from_look_at()`, `from_euler()`, `from_rt()`), exposing both OpenCV (`world_to_camera_matrix`) and OpenGL/Three.js/Blender (`opengl_camera_to_world_matrix`) matrices.
+- **`Camera` & `CameraPreset`:** Full camera model with presets (`broadcast_near`, `broadcast_far`, `overhead_zenith`, corners, side net) and methods `world_to_image()`, `project_points()`, `project_court_landmarks()`, `image_to_ray()`, `project_pixel_to_plane()`, and `frustum_corners_world()`.
 
-## Dependencies
-- Currently, the main package **has no external runtime dependencies**.
-- Development dependencies (`[dev]`) include: `pytest`, `ruff`, `build`, and `twine`.
-- Any future inclusion of dependencies like NumPy, OpenCV, Pandas, etc., must be rigorously justified to keep the package as lightweight as possible.
+### 3. `viz` Module (`src/padelkit/viz/`)
+Provides the temporal state contract (`FrameState`, `PlayerPose`, `MatchTimeline`) and the interactive Three.js 3D studio (`PadelVisualizer`).
+
+- **`MatchTimeline`:** Time-indexed sequence of `FrameState` snapshots with lossless CSV and Pandas DataFrame serialization (`to_csv()`, `from_csv()`, `to_dataframe()`, `from_dataframe()`, `demo_rally()`).
+- **`PadelVisualizer`:** Generates a Three.js 3D padel court studio supporting:
+  1. **CSV / Timeline Replay Mode** (interactive timeline scrubber and browser drag-and-drop CSV loader).
+  2. **Live Real-Time Streaming Mode** (`serve()` + `push_frame()` over Server-Sent Events).
+  3. **Standalone HTML & Jupyter Notebook Mode** (`export_html()` and `_repr_html_()`).
+  4. **Computer Vision Render Passes** (`RGB`, `Semantic Segmentation ID`, `Depth Map`, and `17 Court Landmarks` overlay).
+
+### 4. `scoring` Module (`src/padelkit/scoring/`)
+Implements match rules, event-sourced score progression (`MatchScoreHistory`), `Match`, `MatchScore`, `Team`, `Player`, `ServingState`, and `MatchConfiguration`.
 
 ---
 *Note: This file must be updated whenever architectural changes, new entities in the domain model, or significant changes to the technology stack are introduced.*

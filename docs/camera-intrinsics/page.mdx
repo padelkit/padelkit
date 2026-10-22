@@ -1,0 +1,149 @@
+# CameraIntrinsics
+
+`CameraIntrinsics` is an immutable dataclass holding the pinhole intrinsic calibration matrix `K` and sensor dimensions in pixels. {{ className: 'lead' }}
+
+## Properties
+
+<Properties>
+  <Property name="width_px" type="int">
+    Horizontal sensor resolution in pixels.
+  </Property>
+  <Property name="height_px" type="int">
+    Vertical sensor resolution in pixels.
+  </Property>
+  <Property name="fx" type="float">
+    Horizontal focal length in pixels.
+  </Property>
+  <Property name="fy" type="float">
+    Vertical focal length in pixels.
+  </Property>
+  <Property name="cx" type="float">
+    Horizontal principal point offset in pixels.
+  </Property>
+  <Property name="cy" type="float">
+    Vertical principal point offset in pixels.
+  </Property>
+  <Property name="skew" type="float">
+    Axis skew coefficient. Defaults to `0.0`.
+  </Property>
+  <Property name="fov_horizontal_deg" type="float">
+    Computed horizontal field of view in degrees.
+  </Property>
+  <Property name="fov_vertical_deg" type="float">
+    Computed vertical field of view in degrees.
+  </Property>
+  <Property name="matrix" type="np.ndarray">
+    The `3x3` upper-triangular intrinsic calibration matrix `K`.
+  </Property>
+  <Property name="inverse_matrix" type="np.ndarray">
+    The analytical `3x3` inverse intrinsic matrix `K^-1`.
+  </Property>
+</Properties>
+
+---
+
+## From Field of View {{ tag: 'classmethod', label: 'CameraIntrinsics.from_fov()' }}
+
+<Row>
+  <Col>
+
+    Creates a `CameraIntrinsics` instance from a desired horizontal field of view in degrees, assuming square pixels (`fx == fy`).
+
+    ### Keyword Arguments
+
+    <Properties>
+      <Property name="width_px" type="int" default="1920">
+        Image width in pixels.
+      </Property>
+      <Property name="height_px" type="int" default="1080">
+        Image height in pixels.
+      </Property>
+      <Property name="horizontal_fov_deg" type="float" default="80.0">
+        Horizontal field of view in degrees (`[1.0, 179.0)`).
+      </Property>
+      <Property name="cx" type="float | None" optional default="None">
+        Principal point X coordinate (defaults to `width_px / 2`).
+      </Property>
+      <Property name="cy" type="float | None" optional default="None">
+        Principal point Y coordinate (defaults to `height_px / 2`).
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Usage" tag="classmethod" label="from_fov">
+
+    ```python
+    from padelkit import CameraIntrinsics
+
+    intr = CameraIntrinsics.from_fov(
+        width_px=1920,
+        height_px=1080,
+        horizontal_fov_deg=90.0,
+    )
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output' }}
+    CameraIntrinsics(
+      width_px=1920,
+      height_px=1080,
+      fx=960.0,
+      fy=960.0,
+      cx=960.0,
+      cy=540.0,
+      skew=0.0
+    )
+    ```
+
+  </Col>
+</Row>
+
+---
+
+## From Physical Lens & Sensor {{ tag: 'classmethod', label: 'CameraIntrinsics.from_sensor()' }}
+
+<Row>
+  <Col>
+
+    Creates a `CameraIntrinsics` instance directly from physical camera specifications (focal length in millimeters and sensor width/height in millimeters).
+
+    ### Keyword Arguments
+
+    <Properties>
+      <Property name="width_px" type="int" default="1920">
+        Image width in pixels.
+      </Property>
+      <Property name="height_px" type="int" default="1080">
+        Image height in pixels.
+      </Property>
+      <Property name="focal_length_mm" type="float" default="18.0">
+        Physical lens focal length in millimeters.
+      </Property>
+      <Property name="sensor_width_mm" type="float" default="36.0">
+        Physical sensor width in millimeters (defaults to 36mm full-frame).
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Usage" tag="classmethod" label="from_sensor">
+
+    ```python
+    from padelkit import CameraIntrinsics
+
+    intr = CameraIntrinsics.from_sensor(
+        width_px=1920,
+        height_px=1080,
+        focal_length_mm=18.0,
+        sensor_width_mm=36.0,
+    )
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

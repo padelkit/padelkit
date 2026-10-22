@@ -1,0 +1,245 @@
+# Camera
+
+`Camera` is the primary projective camera model in PadelKit. It combines [`CameraIntrinsics`](/camera-intrinsics), [`CameraExtrinsics`](/camera-extrinsics), and [`CameraDistortion`](/camera-distortion) to project 3D world coordinates onto 2D image sensors and unproject 2D pixel detections back into 3D rays and court planes. {{ className: 'lead' }}
+
+## Properties
+
+<Properties>
+  <Property name="intrinsics" type="CameraIntrinsics">
+    The internal sensor and focal length parameters. See [`CameraIntrinsics`](/camera-intrinsics).
+  </Property>
+  <Property name="extrinsics" type="CameraExtrinsics">
+    The 3D position and rotation pose of the camera. See [`CameraExtrinsics`](/camera-extrinsics).
+  </Property>
+  <Property name="distortion" type="CameraDistortion">
+    The optical lens distortion configuration. Defaults to `CameraDistortion.none()`. See [`CameraDistortion`](/camera-distortion).
+  </Property>
+  <Property name="name" type="str">
+    Identifier string for the camera (e.g., `"broadcast_near"`).
+  </Property>
+</Properties>
+
+---
+
+## Preset Initialization {{ tag: 'classmethod', label: 'Camera.from_preset()' }}
+
+<Row>
+  <Col>
+
+    Creates a `Camera` from any standardized [`CameraPreset`](#camerapreset) around a regulation padel court, or via dedicated shortcuts such as `Camera.broadcast_near()`, `Camera.broadcast_far()`, and `Camera.overhead_zenith()`.
+
+    ### Arguments
+
+    <Properties>
+      <Property name="preset" type="CameraPreset | str">
+        The preset identifier (e.g., `CameraPreset.BROADCAST_NEAR`, `"overhead_zenith"`, `"corner_near_left"`).
+      </Property>
+      <Property name="court" type="Court | None" optional default="None">
+        Optional [`Court`](/court) instance used to compute wall offsets. Defaults to `Court.fip_standard()`.
+      </Property>
+      <Property name="width_px" type="int" optional default="1920">
+        Image width in pixels.
+      </Property>
+      <Property name="height_px" type="int" optional default="1080">
+        Image height in pixels.
+      </Property>
+      <Property name="distortion" type="CameraDistortion | None" optional default="None">
+        Optional lens distortion model.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Presets" tag="classmethod" label="from_preset">
+
+    ```python
+    from padelkit import Camera, CameraPreset
+
+    # Standard broadcast view behind the near glass wall
+    cam_broadcast = Camera.broadcast_near()
+
+    # Overhead zenith tactical camera (14.5m above the net)
+    cam_zenith = Camera.overhead_zenith()
+
+    # High corner action-camera view
+    cam_corner = Camera.from_preset(CameraPreset.CORNER_NEAR_LEFT)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Project a 3D point {{ tag: 'method', label: 'camera.world_to_image()' }}
+
+<Row>
+  <Col>
+
+    Projects a single 3D world point `(X, Y, Z)` (in meters) onto `(u, v)` pixel coordinates, applying lens distortion automatically. Returns `None` if the point lies behind the camera (`Z_cam <= 0`).
+
+    ### Arguments
+
+    <Properties>
+      <Property name="point_3d" type="tuple[float, float, float] | Sequence[float]">
+        The 3D point `(X, Y, Z)` in meters.
+      </Property>
+      <Property name="coordinate_system" type="CoordinateSystem" optional default="CoordinateSystem.CENTERED">
+        Reference frame of `point_3d` (`CENTERED` or `CORNER_BASED`).
+      </Property>
+      <Property name="clip_to_sensor" type="bool" optional default="False">
+        If `True`, returns `None` when `(u, v)` falls outside `[0, width_px] x [0, height_px]`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Usage" tag="method" label="world_to_image">
+
+    ```python
+    from padelkit import Camera
+
+    cam = Camera.broadcast_near()
+    uv = cam.world_to_image((0.0, 0.0, 0.88))
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output' }}
+    (960.0, 521.48)
+    ```
+
+  </Col>
+</Row>
+
+---
+
+## Vectorized 3D Batch Projection {{ tag: 'method', label: 'camera.project_points()' }}
+
+<Row>
+  <Col>
+
+    Vectorized NumPy projection of an array of `(N, 3)` 3D points. Returns `(uv_pixels, visible_mask)`.
+
+    ### Arguments
+
+    <Properties>
+      <Property name="points_3d" type="np.ndarray | Sequence[Sequence[float]]">
+        Array of 3D points with shape `(N, 3)`.
+      </Property>
+      <Property name="coordinate_system" type="CoordinateSystem" optional default="CoordinateSystem.CENTERED">
+        Reference frame of `points_3d`.
+      </Property>
+    </Properties>
+
+    ### Returns
+
+    <Properties>
+      <Property name="uv_pixels" type="np.ndarray">
+        Float64 array of shape `(N, 2)` containing `(u, v)` pixel coordinates.
+      </Property>
+      <Property name="visible_mask" type="np.ndarray">
+        Boolean array of shape `(N,)` indicating points in front of the camera and inside the sensor frame.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Usage" tag="method" label="project_points">
+
+    ```python
+    import numpy as np
+    from padelkit import Camera
+
+    cam = Camera.broadcast_near()
+    trajectory_3d = np.array([
+        [0.0, -5.0, 1.2],
+        [0.0,  0.0, 1.8],
+        [0.0,  5.0, 0.5],
+    ])
+    uv, visible = cam.project_points(trajectory_3d)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Project 17 Court Landmarks {{ tag: 'method', label: 'camera.project_court_landmarks()' }}
+
+<Row>
+  <Col>
+
+    Projects all 17 standardized 3D [`CourtLandmark`](/court-landmark) positions onto the camera's 2D image sensor.
+
+    ### Keyword Arguments
+
+    <Properties>
+      <Property name="court" type="Court | None" optional default="None">
+        The [`Court`](/court) instance to project. Defaults to `Court.fip_standard()`.
+      </Property>
+      <Property name="only_visible" type="bool" optional default="False">
+        If `True`, omits landmarks that fall outside the image frame.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Usage" tag="method" label="project_court_landmarks">
+
+    ```python
+    from padelkit import Camera, Court
+
+    court = Court.fip_standard()
+    cam = Camera.broadcast_near(court=court)
+    landmarks_2d = cam.project_court_landmarks(court=court)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Unproject Pixel to 3D Plane {{ tag: 'method', label: 'camera.project_pixel_to_plane()' }}
+
+<Row>
+  <Col>
+
+    Removes lens distortion from a 2D pixel `(u, v)`, casts a 3D ray from the camera center, and computes its exact intersection `(X, Y, plane_z)` with any horizontal plane `Z = plane_z` (such as the court floor `Z = 0.0`).
+
+    ### Arguments
+
+    <Properties>
+      <Property name="pixel_2d" type="tuple[float, float] | Sequence[float]">
+        The `(u, v)` pixel coordinate in the image.
+      </Property>
+      <Property name="plane_z" type="float" optional default="0.0">
+        Height `Z` (in meters) of the horizontal intersection plane.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Usage" tag="method" label="project_pixel_to_plane">
+
+    ```python
+    from padelkit import Camera
+
+    cam = Camera.broadcast_near()
+    floor_xyz = cam.project_pixel_to_plane((960.0, 567.42), plane_z=0.0)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

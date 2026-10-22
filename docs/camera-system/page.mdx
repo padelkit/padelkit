@@ -1,0 +1,79 @@
+# Camera System & 3D Projection
+
+The `padelkit.camera` module provides a mathematically rigorous, vectorized projective camera engine designed for padel computer vision, synthetic dataset generation, and 3D state estimation. {{ className: 'lead' }}
+
+## Coordinate Systems Overview
+
+PadelKit connects three coordinate frames seamlessly:
+
+<Properties>
+  <Property name="1. World Frame (Meters)" type="(X, Y, Z)">
+    Matches the standard [`Court`](/court) geometry system (`CoordinateSystem.CENTERED` by default): `(0, 0, 0)` lies at the center of the net on the floor, `+X` points right across the court width, `+Y` points forward towards the far back wall, and `+Z` points vertically upwards.
+  </Property>
+  <Property name="2. Camera Frame (OpenCV / CV)" type="(X_cam, Y_cam, Z_cam)">
+    Origin at the optical center of the lens. `+X_cam` points right across image columns, `+Y_cam` points down across image rows, and `+Z_cam` points forward along the optical axis into the court. Also exposes `opengl_camera_to_world_matrix` (`+Y` up, `-Z` forward) for direct compatibility with Three.js and Blender.
+  </Property>
+  <Property name="3. Image Sensor Plane (Pixels)" type="(u, v)">
+    Origin `(0, 0)` at the top-left corner of the image sensor, with `u` in `[0, width_px]` and `v` in `[0, height_px]`.
+  </Property>
+</Properties>
+
+---
+
+## Quick Example: Projecting the 17 Court Landmarks
+
+<Row>
+  <Col>
+
+    Using a built-in broadcast camera preset, you can project all 17 3D [`CourtLandmark`](/court-landmark) points onto a 1080p image sensor in two lines of code, and unproject any 2D pixel detection back onto the 3D court floor (`Z = 0`).
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="3D-to-2D & 2D-to-3D" tag="guide" label="Camera">
+
+    ```python
+    from padelkit import Camera, Court
+
+    court = Court.fip_standard()
+    cam = Camera.broadcast_near(court=court)
+
+    # 1. Project all 17 3D landmarks to 2D image pixels
+    landmarks_px = cam.project_court_landmarks(court=court)
+    center_uv = landmarks_px["center"]
+
+    # 2. Intersect a 2D pixel ray with the court floor (Z = 0.0)
+    floor_xyz = cam.project_pixel_to_plane(center_uv, plane_z=0.0)
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output' }}
+    # center_uv (pixels)
+    (960.0, 567.42)
+
+    # floor_xyz (meters)
+    (0.0, 0.0, 0.0)
+    ```
+
+  </Col>
+</Row>
+
+---
+
+## Core Camera Components
+
+<Properties>
+  <Property name="Camera" type="class">
+    Top-level camera model combining [`CameraIntrinsics`](/camera-intrinsics), [`CameraExtrinsics`](/camera-extrinsics), and [`CameraDistortion`](/camera-distortion). Provides presets and projection/unprojection methods. See [`Camera`](/camera).
+  </Property>
+  <Property name="CameraIntrinsics" type="dataclass">
+    Sensor resolution (`width_px`, `height_px`), focal lengths (`fx`, `fy`), principal point (`cx`, `cy`), and calibration matrix `K`. See [`CameraIntrinsics`](/camera-intrinsics).
+  </Property>
+  <Property name="CameraExtrinsics" type="dataclass">
+    6-DoF position and orientation in 3D space, constructible via `from_look_at()`, `from_euler()`, or `from_rt()`. See [`CameraExtrinsics`](/camera-extrinsics).
+  </Property>
+  <Property name="CameraDistortion" type="dataclass">
+    Forward and iterative inverse optical distortion supporting Pinhole, Brown-Conrady (`k1, k2, p1, p2, k3`), and Kannala-Brandt Fisheye (`k1, k2, k3, k4`) lenses. See [`CameraDistortion`](/camera-distortion).
+  </Property>
+</Properties>

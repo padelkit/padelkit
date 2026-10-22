@@ -1,0 +1,121 @@
+# 3D Visualization & Replay Studio
+
+The `padelkit.viz` module provides an interactive Three.js 3D court visualizer, multi-camera inspector, and synthetic pass viewer (`RGB`, `Semantic Segmentation`, `Depth`, and `17 Court Landmarks`) powered by a unified temporal state contract (`MatchTimeline`). {{ className: 'lead' }}
+
+## Operating Modes
+
+<Properties>
+  <Property name="1. CSV / Timeline Replay Mode" type="MatchTimeline.from_csv()">
+    Load any saved match or rally CSV file and scrub through time at `0.25x`–`2.0x` speed, switch between [`Camera`](/camera) presets, or drag-and-drop a `.csv` file directly into the browser window.
+  </Property>
+  <Property name="2. Real-Time Live Streaming Mode" type="visualizer.serve()">
+    Launch a local HTTP + Server-Sent Events (SSE) server and push `FrameState` objects in real time from a Python simulation loop or live tracking pipeline using `visualizer.push_frame(frame)`.
+  </Property>
+  <Property name="3. Standalone HTML & Jupyter Mode" type="visualizer.export_html()">
+    Export a self-contained `.html` file that runs in any browser with zero server dependencies, or render the 3D studio directly inside a Jupyter / Google Colab notebook cell.
+  </Property>
+</Properties>
+
+---
+
+## Quickstart: Generate a Rally CSV & Launch the 3D Studio
+
+<Row>
+  <Col>
+
+    `MatchTimeline.demo_rally()` generates a complete 60 FPS 3D rally with realistic ball parabolas, floor and glass-wall rebounds, and 4 articulated players moving and swinging rackets. You can export it to CSV and inspect it in 3D immediately.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="CSV Replay & HTML Export" tag="guide" label="PadelVisualizer">
+
+    ```python
+    from padelkit import Court, MatchTimeline, PadelVisualizer
+
+    court = Court(
+        dimensions=Court.fip_standard().dimensions,
+        turf_color="blue",
+    )
+
+    # 1. Generate a 3D rally timeline and save it to CSV
+    timeline = MatchTimeline.demo_rally(court=court, fps=60.0)
+    timeline.to_csv("demo_rally.csv")
+
+    # 2. Load the CSV into the Three.js 3D Visualizer
+    viz = PadelVisualizer.from_csv("demo_rally.csv", court=court)
+
+    # 3. Export standalone HTML or launch interactive server
+    viz.export_html("padel_studio.html")
+    # viz.serve(port=8765, open_browser=True)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Real-Time Streaming Mode {{ tag: 'method', label: 'visualizer.push_frame()' }}
+
+<Row>
+  <Col>
+
+    When running `viz.serve(background=True)`, your Python code can stream live `FrameState` updates to all connected browser tabs in real time.
+
+    ### FrameState Properties
+
+    <Properties>
+      <Property name="timestamp" type="float">
+        Elapsed time in seconds.
+      </Property>
+      <Property name="ball_position" type="tuple[float, float, float]">
+        3D ball coordinates `(X, Y, Z)` in meters.
+      </Property>
+      <Property name="players" type="dict[str, PlayerPose]">
+        Dictionary mapping `"P1"`..`"P4"` to their `PlayerPose(player_id, x, y, z, yaw_deg, animation, team, swing_phase)`.
+      </Property>
+      <Property name="score" type="str">
+        Formatted match score string displayed on the 3D HUD.
+      </Property>
+      <Property name="event" type="str | None">
+        Optional event tag (`"serve"`, `"bounce_floor"`, `"bounce_glass"`, `"shot_smash"`).
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Live Streaming" tag="method" label="push_frame">
+
+    ```python
+    import time
+    from padelkit import PadelVisualizer, FrameState, PlayerPose
+
+    viz = PadelVisualizer()
+    viz.serve(port=8765, open_browser=True, background=True)
+
+    for step in range(120):
+        t = step / 60.0
+        viz.push_frame(
+            FrameState(
+                timestamp=t,
+                ball_position=(0.0, -5.0 + 5.0 * t, 1.2),
+                players={
+                    "P1": PlayerPose("P1", x=1.8, y=-6.5, yaw_deg=0.0, team="A"),
+                    "P2": PlayerPose("P2", x=-2.0, y=-3.0, yaw_deg=0.0, team="A"),
+                    "P3": PlayerPose("P3", x=-2.2, y=7.0, yaw_deg=180.0, team="B"),
+                    "P4": PlayerPose("P4", x=2.2, y=7.0, yaw_deg=180.0, team="B"),
+                },
+                score="0-0 | 15-0 *",
+                event="live_tracking",
+            )
+        )
+        time.sleep(1 / 60)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

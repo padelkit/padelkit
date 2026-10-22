@@ -1,0 +1,63 @@
+# CameraDistortion
+
+`CameraDistortion` models optical lens distortion and iterative undistortion for both standard rectilinear lenses (`Brown-Conrady`) and ultra-wide action cameras (`Fisheye`) mounted inside or near a padel court. {{ className: 'lead' }}
+
+## Properties
+
+<Properties>
+  <Property name="model" type="DistortionModel">
+    The active optical distortion model (`NONE`, `BROWN_CONRADY`, or `FISHEYE`).
+  </Property>
+  <Property name="k1, k2, k3, k4" type="float">
+    Radial / equidistant polynomial distortion coefficients.
+  </Property>
+  <Property name="p1, p2" type="float">
+    Tangential decentering distortion coefficients (used by `BROWN_CONRADY`).
+  </Property>
+  <Property name="coefficients" type="tuple[float, ...]">
+    Returns `(k1, k2, p1, p2, k3)` for `BROWN_CONRADY`, `(k1, k2, k3, k4)` for `FISHEYE`, or `()` for `NONE`.
+  </Property>
+</Properties>
+
+---
+
+## Factory Constructors
+
+<Row>
+  <Col>
+
+    Instantiate distortion models cleanly using dedicated classmethods:
+
+    - `CameraDistortion.none()`: Ideal distortion-free pinhole lens.
+    - `CameraDistortion.brown_conrady(k1, k2, p1, p2, k3)`: Standard OpenCV 5-parameter radial + tangential distortion.
+    - `CameraDistortion.fisheye(k1, k2, k3, k4)`: Kannala-Brandt equidistant fisheye model.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Distortion Models" tag="classmethod" label="CameraDistortion">
+
+    ```python
+    from padelkit import CameraDistortion
+
+    # Standard rectilinear wide lens
+    rect_dist = CameraDistortion.brown_conrady(
+        k1=-0.15,
+        k2=0.03,
+        p1=0.0005,
+        p2=-0.0005,
+    )
+
+    # Wide-angle action camera mounted on the back glass
+    fisheye_dist = CameraDistortion.fisheye(
+        k1=-0.06,
+        k2=0.015,
+        k3=-0.002,
+        k4=0.0003,
+    )
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

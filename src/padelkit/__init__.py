@@ -1,5 +1,13 @@
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 
+from padelkit.camera import (
+    Camera,
+    CameraDistortion,
+    CameraExtrinsics,
+    CameraIntrinsics,
+    CameraPreset,
+    DistortionModel,
+)
 from padelkit.court.court import Court
 from padelkit.court.dimensions import CourtDimensions
 from padelkit.court.enums import (
@@ -12,7 +20,23 @@ from padelkit.court.enums import (
 )
 from padelkit.court.landmarks import CourtLandmark
 from padelkit.court.location import CourtLocation
-from padelkit.scoring import Match, MatchScore, MatchScoreHistory, Player, Team, TeamId, ServingState, MatchConfiguration, ServingEngine
+from padelkit.scoring import (
+    Match,
+    MatchConfiguration,
+    MatchScore,
+    MatchScoreHistory,
+    Player,
+    ServingEngine,
+    ServingState,
+    Team,
+    TeamId,
+)
+from padelkit.viz import (
+    FrameState,
+    MatchTimeline,
+    PadelVisualizer,
+    PlayerPose,
+)
 
 __all__ = [
     # Court geometry
@@ -26,7 +50,18 @@ __all__ = [
     "CourtOrientation",
     "DoorState",
     "CourtSetting",
-
+    # Camera & 3D Projection
+    "Camera",
+    "CameraIntrinsics",
+    "CameraExtrinsics",
+    "CameraDistortion",
+    "CameraPreset",
+    "DistortionModel",
+    # 3D Visualization & Replay Timeline
+    "PadelVisualizer",
+    "MatchTimeline",
+    "FrameState",
+    "PlayerPose",
     # Scoring
     "MatchScore",
     "MatchScoreHistory",

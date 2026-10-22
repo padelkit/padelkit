@@ -1,9 +1,7 @@
 {
   "versions": [
-    "1.0.0",
-    "1.1.0",
-    "2.0.0",
-    "2.0.1"
+    "0.0.1",
+    "0.1.0"
   ],
   "pages": {
     "/": {
@@ -16,21 +14,26 @@
     },
     "/scoring-system": {
       "title": "Scoring System",
-      "description": "Learn how the padel scoring system works, including concepts like event sourcing.",
-      "min": "1.1.0"
+      "description": "Learn how the padel scoring system works, including concepts like event sourcing."
     },
     "/court-geometry": {
       "title": "Court Geometry",
       "description": "Understand coordinate systems, enclosure variants, and the 17-point landmark model."
     },
+    "/camera-system": {
+      "title": "Camera System & 3D Projection",
+      "description": "Learn how to configure projective cameras, lens distortion, and 3D-to-2D landmark projections.",
+      "min": "0.1.0"
+    },
+    "/visualization-3d": {
+      "title": "3D Visualization & Replay Studio",
+      "description": "Interactive Three.js 3D court visualizer, CSV match replay, live streaming, and synthetic CV passes.",
+      "icon": "ShapesIcon",
+      "min": "0.1.0"
+    },
     "/court-dimensions": {
       "title": "CourtDimensions",
-      "description": "API reference for the CourtDimensions dataclass.",
-      "max": "1.1.0",
-      "supersededBy": {
-        "title": "Court",
-        "href": "/court"
-      }
+      "description": "API reference for the CourtDimensions dataclass."
     },
     "/court": {
       "title": "Court",
@@ -46,23 +49,44 @@
       "title": "CourtLocation",
       "description": "API reference for the CourtLocation dataclass."
     },
+    "/camera": {
+      "title": "Camera",
+      "description": "API reference for the projective Camera class and court presets.",
+      "icon": "ViewfinderCircleIcon",
+      "min": "0.1.0"
+    },
+    "/camera-intrinsics": {
+      "title": "CameraIntrinsics",
+      "description": "API reference for the CameraIntrinsics calibration matrix dataclass.",
+      "icon": "CogIcon",
+      "min": "0.1.0"
+    },
+    "/camera-extrinsics": {
+      "title": "CameraExtrinsics",
+      "description": "API reference for the CameraExtrinsics 6-DoF pose dataclass.",
+      "icon": "MapPinIcon",
+      "min": "0.1.0"
+    },
+    "/camera-distortion": {
+      "title": "CameraDistortion",
+      "description": "API reference for Brown-Conrady and Fisheye lens distortion models.",
+      "icon": "ViewfinderCircleIcon",
+      "min": "0.1.0"
+    },
     "/match": {
       "title": "Match",
       "description": "API reference for the Match class, which manages metadata and completion conditions.",
-      "icon": "TrophyIcon",
-      "min": "2.0.0"
+      "icon": "TrophyIcon"
     },
     "/match-score-history": {
       "title": "MatchScoreHistory",
       "description": "API reference for tracking points through event sourcing.",
-      "icon": "ChatBubbleIcon",
-      "min": "1.1.0"
+      "icon": "ChatBubbleIcon"
     },
     "/match-score": {
       "title": "MatchScore",
       "description": "API reference for the immutable snapshot of a match's current score.",
-      "icon": "ChatBubbleIcon",
-      "min": "1.1.0"
+      "icon": "ChatBubbleIcon"
     },
     "/team": {
       "title": "Team",
@@ -77,14 +101,12 @@
     "/serving-state": {
       "title": "ServingState",
       "description": "API reference for the ServingState dataclass representing server state.",
-      "icon": "UserIcon",
-      "min": "2.0.1"
+      "icon": "UserIcon"
     },
     "/match-configuration": {
       "title": "MatchConfiguration",
       "description": "API reference for the MatchConfiguration dataclass representing match configuration parameters.",
-      "icon": "CogIcon",
-      "min": "2.0.1"
+      "icon": "CogIcon"
     }
   },
   "navigation": [
@@ -94,7 +116,9 @@
         "/",
         "/quickstart",
         "/scoring-system",
-        "/court-geometry"
+        "/court-geometry",
+        "/camera-system",
+        "/visualization-3d"
       ]
     },
     {
@@ -104,6 +128,15 @@
         "/court-dimensions",
         "/court-landmark",
         "/court-location"
+      ]
+    },
+    {
+      "title": "Camera & Vision",
+      "links": [
+        "/camera",
+        "/camera-intrinsics",
+        "/camera-extrinsics",
+        "/camera-distortion"
       ]
     },
     {
@@ -128,10 +161,14 @@
     "guides": [
       "/quickstart",
       "/scoring-system",
-      "/court-geometry"
+      "/court-geometry",
+      "/camera-system",
+      "/visualization-3d"
     ],
     "resources": [
       "/court-landmark",
+      "/camera",
+      "/visualization-3d",
       "/match",
       "/team",
       "/player",

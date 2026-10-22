@@ -1,13 +1,9 @@
 # PadelKit 🎾
 
-The open-source core foundations for padel analytics.
-
-PadelKit is a lightweight Python library that powers [Padelamix](https://padelamix.com), the upcoming video-analysis platform for professional and amateur padel clubs.
+**An End-to-End 3D Computer Vision, Camera Calibration, Match Scoring & Synthetic Data Engine for Padel.**
 
 ![PyPI - Version](https://img.shields.io/pypi/v/padelkit)
 ![License](https://img.shields.io/github/license/padelkit/padelkit)
-
-> **Status:** Early Alpha. This is a very early version focusing on core domain models.
 
 ## Installation
 
@@ -15,34 +11,51 @@ PadelKit is a lightweight Python library that powers [Padelamix](https://padelam
 pip install padelkit
 ```
 
+For optional headless Blender synthetic rendering:
+```bash
+pip install "padelkit[blender]"
+```
+
 ## Quickstart
 
 ```python
-from padelkit.court import Court
-from padelkit.scoring import MatchScore
+from padelkit import (
+    Camera,
+    Court,
+    Match,
+    MatchTimeline,
+    PadelVisualizer,
+    TeamId,
+)
 
-# Court Geometry
+# 1. 3D Court Geometry & 17 Official Landmarks
 court = Court.fip_standard()
-print(f"Court dimensions: {court.length}m x {court.width}m")
+landmarks_3d = court.landmarks_3d()
 
-# Scoring
-score = MatchScore()
-score.point_won_by("A")
-print(score)
+# 2. Projective Camera & 3D-to-2D / 2D-to-3D Transformations
+camera = Camera.broadcast_near(court=court)
+landmarks_2d = camera.project_court_landmarks(court=court)
+floor_xyz = camera.project_pixel_to_plane(landmarks_2d["center"], plane_z=0.0)
+
+# 3. 3D Visualization, CSV Replay & Synthetic CV Passes (Three.js)
+timeline = MatchTimeline.demo_rally(court=court, fps=60.0)
+timeline.to_csv("demo_rally.csv")
+
+viz = PadelVisualizer.from_csv("demo_rally.csv", court=court)
+viz.export_html("padel_studio.html")
+
+# 4. Event-Sourced Match Scoring Engine
+match = Match(best_of_sets=3, advantage_method="gold_point")
+match.history.add_point(TeamId.A)
+print(match.history.get_current_score())
 ```
 
 ## Features
 
-- **Court Geometry:** Official dimensions and 2D/3D coordinate system.
-- **Scoring System:** Basic match, set and game scoring logic.
-
-## Roadmap
-
-- Extended landmarks and 3D geometries.
-- Event structures (serve, rally, impact, etc.).
-- Camera calibration and world-to-image projections.
-- Trajectory representations for players and ball movement.
-- Tools for visualization and analysis (e.g. heatmaps, impact maps, etc.).
+- **Court Geometry (`padelkit.court`):** Official FIP dimensions, enclosure variants, and 17-point 2D/3D landmark coordinate systems (`CENTERED` and `CORNER_BASED`).
+- **Camera & 3D Projection (`padelkit.camera`):** Intrinsics (`FOV` & physical sensor models), 6-DoF extrinsics (`look_at`, `euler`, OpenCV/OpenGL matrices), lens distortion (`Brown-Conrady` & `Fisheye`), vectorized 3D-to-2D projection, and 2D-to-3D ray/plane intersection.
+- **3D Visualizer & Replay Studio (`padelkit.viz`):** Interactive Three.js 3D court studio supporting CSV match replay, real-time live streaming (`serve()` + `push_frame()`), standalone HTML/Jupyter export, and CV render passes (`RGB`, `Semantic Segmentation`, `Depth`, and `17 Landmarks`).
+- **Scoring System (`padelkit.scoring`):** Full event-sourced match, set, game, tie-break, and serving rotation engine.
 
 ## License
 

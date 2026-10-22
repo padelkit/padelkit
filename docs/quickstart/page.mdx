@@ -1,15 +1,10 @@
-export const metadata = {
-  title: "Quickstart",
-  description: "Learn how to install and use PadelKit in minutes.",
-}
-
 # Quickstart
 
-This guide will get you up and running with PadelKit. You'll learn how to install the package and start using the Court Geometry and Scoring modules. {{ className: 'lead' }}
+This guide will get you up and running with PadelKit. You'll learn how to install the package and start using the Court Geometry, Camera Projection, 3D Visualization, and Scoring modules. {{ className: 'lead' }}
 
 ## Installation
 
-To install PadelKit, simply use pip. The library is designed to be lightweight and has zero external dependencies by default.
+To install PadelKit, simply use `pip` or `uv`:
 
 ```bash
 pip install padelkit
@@ -17,11 +12,11 @@ pip install padelkit
 
 ## Basic Usage
 
-Once installed, you can easily import the necessary classes to start mapping a court or tracking a match.
+Once installed, you can easily import the necessary classes to map a court, project 3D points to a camera, visualize rallies in 3D, or track a match score.
 
 ### Working with Court Geometry
 
-You can instantiate a standard FIP padel court and query for coordinates.
+You can instantiate a standard FIP padel court and query for 2D or 3D landmark coordinates:
 
 ```python
 from padelkit import Court
@@ -30,14 +25,14 @@ from padelkit import Court
 court = Court.fip_standard()
 
 # Get the coordinates of the center of the net
-net_center = court.point("NET_CENTER")
+net_center = court.point("center")
 print(f"Net center: {net_center}")
 # Output: Net center: (0.0, 0.0)
 ```
 
 ### Tracking Match Score
 
-You can use the scoring module to track a match's state using the event-sourcing architecture.
+You can use the scoring module to track a match's state using the event-sourcing architecture:
 
 ```python
 from padelkit import Match, TeamId
@@ -48,18 +43,12 @@ match = Match()
 # Team A wins the first point
 match.history.add_point(TeamId.A)
 
-<AddedIn version="1.1.0">
-# You can easily undo a point in case of a mistake (added in 1.1.0)
+# You can easily undo a point in case of a mistake
 match.history.undo_point()
-</AddedIn>
 
 # Print the cleanly formatted current state
 print(match.history.get_current_score())
 ```
-
-<Version min="1.0.0" max="1.0.0">
-*Note: In version 1.0.0, to undo a point you must rebuild the MatchScoreHistory without the last event.*
-</Version>
 
 ## Next steps
 
