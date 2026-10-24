@@ -17,7 +17,72 @@
   <Property name="name" type="str">
     Identifier string for the camera (e.g., `"broadcast_near"`).
   </Property>
+  <Property name="floor_homography" type="np.ndarray">
+    Analytical `3x3` homography matrix mapping centered court floor coordinates `(X, Y, 1)` in meters to `(u, v, 1)` image pixels.
+  </Property>
+  <Property name="inverse_floor_homography" type="np.ndarray">
+    Analytical `3x3` inverse homography mapping `(u, v, 1)` image pixels directly to `(X, Y, 1)` court floor coordinates in meters.
+  </Property>
 </Properties>
+
+---
+
+## Calibrate from 2D Video Landmarks {{ tag: 'classmethod', label: 'Camera.from_landmarks()' }}
+
+<Row>
+  <Col>
+
+    Calibrates a complete 3D `Camera` (`CameraIntrinsics` + 6-DoF `CameraExtrinsics`) directly from 4 or more 2D [`CourtLandmark`](/court-landmark) pixel coordinates observed in a video frame.
+
+    If `intrinsics` is omitted, `Camera.from_landmarks()` automatically estimates the focal length from the court's perspective vanishing points and jointly refines focal length and 6-DoF camera pose via Levenberg-Marquardt reprojection minimization.
+
+    ### Arguments
+
+    <Properties>
+      <Property name="landmarks_2d" type="Mapping[str | CourtLandmark, Sequence[float]]">
+        Dictionary mapping at least 4 landmark names (e.g., `"floor_near_left"`, `"floor_near_right"`, `"floor_far_right"`, `"floor_far_left"`, or 3D wall corners `"wall_top_far_left"`) to their `(u, v)` pixel coordinates.
+      </Property>
+      <Property name="court" type="Court | None" optional default="None">
+        Reference [`Court`](/court) instance. Defaults to `Court.fip_standard()`.
+      </Property>
+      <Property name="intrinsics" type="CameraIntrinsics | None" optional default="None">
+        Optional known [`CameraIntrinsics`](/camera-intrinsics). If `None`, focal length is estimated automatically.
+      </Property>
+      <Property name="width_px" type="int" optional default="1920">
+        Video frame width in pixels (used when `intrinsics` is `None`).
+      </Property>
+      <Property name="height_px" type="int" optional default="1080">
+        Video frame height in pixels (used when `intrinsics` is `None`).
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Calibrate from 4 Corners" tag="classmethod" label="from_landmarks">
+
+    ```python
+    from padelkit import Camera, Court
+
+    court = Court.fip_standard()
+
+    # 4 court floor corners labeled on a 1920x1080 broadcast video
+    corners_px = {
+        "floor_near_left":  (228.5, 924.1),
+        "floor_near_right": (1691.5, 924.1),
+        "floor_far_right":  (1274.2, 342.8),
+        "floor_far_left":   (645.8, 342.8),
+    }
+
+    cam = Camera.from_landmarks(corners_px, court=court)
+    rmse = cam.reprojection_error(corners_px, court=court)
+    print(f"Position: {cam.extrinsics.position} | RMSE: {rmse:.4f} px")
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
 
 ---
 

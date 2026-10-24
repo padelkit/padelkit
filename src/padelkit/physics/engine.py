@@ -431,8 +431,12 @@ class BallPhysicsEngine:
         dt: float = 1.0 / 240.0,
         stop_on_second_floor_bounce: bool = False,
         seed: int | None = None,
+        *,
+        duration: float | None = None,
     ) -> BallTrajectory:
         """Simulates a 3D ball trajectory and records all :class:`BounceEvent`s."""
+        if duration is not None:
+            duration_s = duration
         if duration_s <= 0.0 or dt <= 0.0:
             raise ValueError("duration_s and dt must be strictly positive.")
 

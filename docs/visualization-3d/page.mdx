@@ -73,6 +73,12 @@ The `padelkit.viz` module provides an interactive Three.js 3D court visualizer, 
       <Property name="ball_position" type="tuple[float, float, float]">
         3D ball coordinates `(X, Y, Z)` in meters.
       </Property>
+      <Property name="ball_velocity" type="tuple[float, float, float]" optional default="(0.0, 0.0, 0.0)">
+        3D linear ball velocity `(vx, vy, vz)` in `m/s`. Exposes `.ball_speed_kmh`.
+      </Property>
+      <Property name="ball_spin" type="tuple[float, float, float]" optional default="(0.0, 0.0, 0.0)">
+        3D angular velocity `(wx, wy, wz)` in `rad/s`. Exposes `.ball_spin_rpm` and drives 3D ball seam rotation in the studio.
+      </Property>
       <Property name="players" type="dict[str, PlayerPose]">
         Dictionary mapping `"P1"`..`"P4"` to their `PlayerPose(player_id, x, y, z, yaw_deg, animation, team, swing_phase)`.
       </Property>

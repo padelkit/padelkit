@@ -35,7 +35,7 @@ Provides projective camera geometry, optical lens distortion, and 3D-to-2D / 2D-
 - **`CameraIntrinsics`:** Sensor resolution (`width_px`, `height_px`), focal lengths (`fx`, `fy`), principal point (`cx`, `cy`), and calibration matrix `K`. Includes `from_fov()`, `from_sensor()`, `full_hd()`, and `uhd_4k()`.
 - **`CameraDistortion` & `DistortionModel`:** Supports `NONE`, `BROWN_CONRADY` (`k1, k2, p1, p2, k3`), and `FISHEYE` (`k1, k2, k3, k4`) forward distortion and iterative undistortion.
 - **`CameraExtrinsics`:** 6-DoF camera pose in 3D court coordinates (`from_look_at()`, `from_euler()`, `from_rt()`), exposing both OpenCV (`world_to_camera_matrix`) and OpenGL/Three.js/Blender (`opengl_camera_to_world_matrix`) matrices.
-- **`Camera` & `CameraPreset`:** Full camera model with presets (`broadcast_near`, `broadcast_far`, `overhead_zenith`, corners, side net) and methods `world_to_image()`, `project_points()`, `project_court_landmarks()`, `image_to_ray()`, `project_pixel_to_plane()`, and `frustum_corners_world()`.
+- **`Camera` & `CameraPreset`:** Full camera model with presets (`broadcast_near`, `broadcast_far`, `overhead_zenith`, corners, side net), 2D-to-3D calibration from video landmarks (`Camera.from_landmarks()`, `Camera.compute_homography()`, `floor_homography`, `inverse_floor_homography`, `reprojection_error()`), and projection/unprojection methods (`world_to_image()`, `project_points()`, `project_court_landmarks()`, `image_to_ray()`, `project_pixel_to_plane()`, `frustum_corners_world()`).
 
 ### 3. `viz` Module (`src/padelkit/viz/`)
 Provides the temporal state contract (`FrameState`, `PlayerPose`, `MatchTimeline`) and the interactive Three.js 3D studio (`PadelVisualizer`).

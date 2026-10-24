@@ -48,9 +48,27 @@ class FrameState:
     timestamp: float
     ball_position: tuple[float, float, float]
     ball_velocity: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    ball_spin: tuple[float, float, float] = (0.0, 0.0, 0.0)
     players: dict[str, PlayerPose] = field(default_factory=dict)
     score: str = "0-0 | 0-0"
     event: str | None = None
+
+    @property
+    def ball_speed_ms(self) -> float:
+        """Linear ball speed in ``m/s``."""
+        vx, vy, vz = self.ball_velocity
+        return math.sqrt(vx * vx + vy * vy + vz * vz)
+
+    @property
+    def ball_speed_kmh(self) -> float:
+        """Linear ball speed in ``km/h``."""
+        return self.ball_speed_ms * 3.6
+
+    @property
+    def ball_spin_rpm(self) -> float:
+        """Ball angular speed in revolutions per minute (``RPM``)."""
+        wx, wy, wz = self.ball_spin
+        return (math.sqrt(wx * wx + wy * wy + wz * wz) * 60.0) / (2.0 * math.pi)
 
     def to_dict(self) -> dict[str, Any]:
         """Serializes the frame state for JSON / WebSocket / Three.js consumption."""
@@ -66,6 +84,13 @@ class FrameState:
                 round(self.ball_velocity[1], 3),
                 round(self.ball_velocity[2], 3),
             ],
+            "ball_spin": [
+                round(self.ball_spin[0], 2),
+                round(self.ball_spin[1], 2),
+                round(self.ball_spin[2], 2),
+            ],
+            "ball_speed_kmh": round(self.ball_speed_kmh, 1),
+            "ball_spin_rpm": round(self.ball_spin_rpm, 0),
             "players": {pid: p.to_dict() for pid, p in self.players.items()},
             "score": self.score,
             "event": self.event,
@@ -124,6 +149,9 @@ class MatchTimeline:
                 "ball_vx": f.ball_velocity[0],
                 "ball_vy": f.ball_velocity[1],
                 "ball_vz": f.ball_velocity[2],
+                "ball_wx": f.ball_spin[0],
+                "ball_wy": f.ball_spin[1],
+                "ball_wz": f.ball_spin[2],
                 "score": f.score,
                 "event": f.event if f.event is not None else "",
             }
@@ -181,6 +209,9 @@ class MatchTimeline:
             bvx = float(row.get("ball_vx", 0.0))
             bvy = float(row.get("ball_vy", 0.0))
             bvz = float(row.get("ball_vz", 0.0))
+            bwx = float(row.get("ball_wx", 0.0))
+            bwy = float(row.get("ball_wy", 0.0))
+            bwz = float(row.get("ball_wz", 0.0))
             score_val = str(row.get("score", "0-0 | 0-0"))
             raw_event = row.get("event", "")
             event_val = (
@@ -210,6 +241,7 @@ class MatchTimeline:
                     timestamp=t,
                     ball_position=(bx, by, bz),
                     ball_velocity=(bvx, bvy, bvz),
+                    ball_spin=(bwx, bwy, bwz),
                     players=players,
                     score=score_val,
                     event=event_val,
@@ -246,7 +278,7 @@ class MatchTimeline:
         }
 
     # ------------------------------------------------------------------ #
-    # Physics-informed Demo Rally Generator
+    # 9D Physics-Driven Demo Rally Generator
     # ------------------------------------------------------------------ #
 
     @classmethod
@@ -255,197 +287,222 @@ class MatchTimeline:
         court: Court | None = None,
         fps: float = 60.0,
     ) -> "MatchTimeline":
-        """Generates a realistic 3D padel rally with ball physics and 4 moving players.
+        """Generates a 3D padel rally simulated with :class:`BallPhysicsEngine`.
 
-        The rally includes:
-        1. Underhand diagonal serve from ``P1`` (Team A right side) into the
-           FAR left service box.
-        2. Cross-court return by ``P3`` (Team B) after floor bounce.
-        3. Net volley by ``P2`` (Team A) deep into the FAR corner.
-        4. Floor + back glass wall rebound defended with a high lob by ``P4``.
-        5. Overhead *bandeja/smash* by ``P1`` bouncing off the FAR glass wall,
-           winning the point for Team A.
+        Each shot in the rally is integrated using 9D RK4 aerodynamics (gravity,
+        felt drag, Spindt Magnus lift) and Coulomb Sliding/Rolling rebounds:
+
+        1. **Serve (P1, Team A):** Underhand slice serve into the FAR-left box.
+        2. **Forehand Return (P3, Team B):** Topspin cross-court return after bounce.
+        3. **Bandeja Volley (P2, Team A):** Heavy backspin cross-court volley
+           bouncing on the floor (``ROLLING``) and off the back glass (``SLIDING``).
+        4. **Defensive Lob (P4, Team B):** High lob off the back glass over the net.
+        5. **Topspin Smash (P1, Team A):** Overhead smash bouncing deep, kicking
+           high off the FAR back glass and returning towards the net to win the point.
         """
+        from ..physics.engine import BallPhysicsEngine
+        from ..physics.models import BallState
+
         c = court or Court.fip_standard()
+        engine = BallPhysicsEngine(court=c)
         dt = 1.0 / fps
 
-        # Waypoints: (time_s, ball_xyz, hitting_player_or_event)
-        segments: list[
+        # Shot specifications:
+        # (duration_s, shot_event, hitter_id, pos_override, vel_xyz, topspin, sidespin)
+        shot_specs: list[
             tuple[
                 float,
-                float,
+                str,
+                str,
+                tuple[float, float, float] | None,
                 tuple[float, float, float],
-                tuple[float, float, float],
                 float,
-                str | None,
-                str | None,
+                float,
             ]
         ] = [
-            # (t0, t1, start_xyz, end_xyz, arc_z_boost, event_at_start, hitter_id)
-            (0.0, 0.85, (1.8, -7.2, 0.95), (-2.1, 4.8, 0.04), 0.75, "serve", "P1"),
+            # 1. P1 Serve: diagonal slice serve from right near box to far left box
             (
-                0.85,
                 1.35,
-                (-2.1, 4.8, 0.04),
-                (-3.1, 7.8, 0.92),
-                0.35,
-                "bounce_floor",
-                None,
+                "serve",
+                "P1",
+                (1.8, -7.1, 0.95),
+                (-4.3, 13.8, 3.3),
+                -950.0,
+                380.0,
             ),
+            # 2. P3 Return: topspin drive back towards P2 at the net
             (
-                1.35,
-                2.35,
-                (-3.1, 7.8, 0.92),
-                (-1.8, -2.5, 1.15),
-                1.05,
+                1.00,
                 "shot_forehand",
                 "P3",
+                None,
+                (1.5, -12.6, 4.4),
+                1650.0,
+                -150.0,
             ),
+            # 3. P2 Bandeja: sliced cross-court into far right corner + back glass
             (
-                2.35,
-                3.15,
-                (-1.8, -2.5, 1.15),
-                (2.8, 7.6, 0.04),
-                0.55,
-                "shot_volley",
+                1.60,
+                "shot_bandeja",
                 "P2",
-            ),
-            (
-                3.15,
-                3.55,
-                (2.8, 7.6, 0.04),
-                (3.4, 9.95, 1.45),
-                0.28,
-                "bounce_floor",
                 None,
+                (4.1, 12.2, 2.2),
+                -2100.0,
+                -420.0,
             ),
+            # 4. P4 Defensive Lob: high trajectory over P1
             (
-                3.55,
-                3.95,
-                (3.4, 9.95, 1.45),
-                (2.7, 7.9, 1.10),
-                0.20,
-                "bounce_glass",
+                1.60,
+                "shot_lob",
+                "P4",
                 None,
+                (-1.0, -9.2, 9.6),
+                850.0,
+                0.0,
             ),
-            (3.95, 5.55, (2.7, 7.9, 1.10), (1.6, -4.2, 2.45), 3.60, "shot_lob", "P4"),
+            # 5. P1 Power Topspin Smash: bounces deep, kicks high off back glass
             (
-                5.55,
-                6.20,
-                (1.6, -4.2, 2.45),
-                (-2.6, 6.5, 0.04),
-                0.15,
+                1.95,
                 "shot_smash",
                 "P1",
-            ),
-            (
-                6.20,
-                6.65,
-                (-2.6, 6.5, 0.04),
-                (-3.3, 9.95, 2.65),
-                0.45,
-                "bounce_floor",
                 None,
-            ),
-            (
-                6.65,
-                7.50,
-                (-3.3, 9.95, 2.65),
-                (-1.2, 1.5, 0.04),
-                0.85,
-                "bounce_glass",
-                None,
+                (-2.8, 19.5, -3.2),
+                2900.0,
+                250.0,
             ),
         ]
 
-        # Keyframed tactical player paths: dict[pid, list[(t, x, y)]]
+        # Simulate each shot sequentially with BallPhysicsEngine
+        shot_trajectories = []
+        shot_start_times: list[float] = []
+        hit_events: list[tuple[float, str, str, tuple[float, float, float]]] = []
+
+        t_cursor = 0.0
+        last_pos = (1.8, -7.1, 0.95)
+
+        for (
+            dur,
+            ev_name,
+            hitter,
+            pos_override,
+            vel,
+            topspin,
+            sidespin,
+        ) in shot_specs:
+            start_pos = pos_override if pos_override is not None else last_pos
+            # Clamp start_pos height to playable strike height if needed
+            strike_pos = (
+                float(np.clip(start_pos[0], -4.6, 4.6)),
+                float(np.clip(start_pos[1], -9.6, 9.6)),
+                float(np.clip(start_pos[2], 0.55, 2.75)),
+            )
+            init_state = BallState.from_shot(
+                position=strike_pos,
+                velocity=vel,
+                topspin_rpm=topspin,
+                sidespin_rpm=sidespin,
+            )
+            traj = engine.simulate(init_state, duration_s=dur, dt=0.002)
+            shot_trajectories.append((t_cursor, traj))
+            shot_start_times.append(t_cursor)
+            hit_events.append((t_cursor, ev_name, hitter, strike_pos))
+
+            end_state = traj.state_at(traj.duration_seconds)
+            last_pos = end_state.position
+            t_cursor += dur
+
+        total_t = t_cursor
+
+        # Build tactical player tracks anchored to exact ball interception positions
+        p1_hit_0 = hit_events[0][3]
+        p3_hit_1 = hit_events[1][3]
+        p2_hit_2 = hit_events[2][3]
+        p4_hit_3 = hit_events[3][3]
+        p1_hit_4 = hit_events[4][3]
+
         player_tracks: dict[str, list[tuple[float, float, float]]] = {
             "P1": [
-                (0.0, 1.9, -7.4),
-                (0.8, 1.8, -6.5),
-                (2.2, 1.5, -3.0),
-                (4.0, 1.8, -2.4),
-                (5.55, 1.6, -4.3),
-                (7.5, 1.7, -2.8),
+                (0.0, p1_hit_0[0], p1_hit_0[1] - 0.25),
+                (0.9, 1.8, -6.2),
+                (2.3, 1.6, -2.8),
+                (4.0, 1.7, -2.5),
+                (5.55, p1_hit_4[0] + 0.25, p1_hit_4[1] - 0.2),
+                (total_t, 1.6, -2.8),
             ],
             "P2": [
                 (0.0, -2.1, -3.2),
-                (1.5, -2.0, -2.6),
-                (2.35, -1.8, -2.5),
+                (1.35, -1.9, -2.7),
+                (2.35, p2_hit_2[0] - 0.25, p2_hit_2[1] - 0.15),
                 (4.2, -1.9, -3.5),
                 (5.6, -2.1, -4.0),
-                (7.5, -1.8, -2.8),
+                (total_t, -1.8, -2.8),
             ],
             "P3": [
-                (0.0, -2.6, 7.6),
-                (1.35, -3.1, 7.9),
-                (2.8, -2.4, 7.4),
+                (0.0, -2.6, 7.5),
+                (1.35, p3_hit_1[0] - 0.25, p3_hit_1[1] + 0.2),
+                (2.8, -2.3, 7.2),
                 (4.5, -2.2, 6.8),
-                (6.2, -2.8, 7.8),
-                (7.5, -2.0, 4.5),
+                (6.2, -2.6, 7.5),
+                (total_t, -1.8, 3.8),
             ],
             "P4": [
-                (0.0, 2.4, 7.4),
+                (0.0, 2.3, 7.4),
                 (2.0, 2.2, 7.2),
-                (3.5, 3.1, 8.4),
-                (3.95, 2.7, 8.0),
+                (3.95, p4_hit_3[0] + 0.25, p4_hit_3[1] + 0.2),
                 (5.5, 2.3, 7.2),
-                (7.5, 2.1, 6.8),
+                (total_t, 2.1, 6.6),
             ],
         }
 
-        total_t = segments[-1][1]
         num_steps = int(round(total_t * fps)) + 1
         frames: list[FrameState] = []
 
         for step in range(num_steps):
             t = min(step * dt, total_t)
-            bx, by, bz = (0.0, 0.0, 0.5)
-            vx, vy, vz = (0.0, 0.0, 0.0)
+            ball_state = BallState()
             frame_event: str | None = None
 
-            for t0, t1, p_start, p_end, arc_z, ev_name, _ in segments:
-                if t0 <= t <= t1 + 1e-9:
-                    span = max(t1 - t0, 1e-6)
-                    u = np.clip((t - t0) / span, 0.0, 1.0)
-                    bx = p_start[0] + (p_end[0] - p_start[0]) * u
-                    by = p_start[1] + (p_end[1] - p_start[1]) * u
-                    bz = (
-                        p_start[2]
-                        + (p_end[2] - p_start[2]) * u
-                        + 4.0 * arc_z * u * (1.0 - u)
-                    )
-                    vx = (p_end[0] - p_start[0]) / span
-                    vy = (p_end[1] - p_start[1]) / span
-                    vz = (
-                        (p_end[2] - p_start[2]) + 4.0 * arc_z * (1.0 - 2.0 * u)
-                    ) / span
-                    if abs(t - t0) < dt * 0.6:
-                        frame_event = ev_name
+            # Locate active shot segment
+            for seg_idx, (t0, traj) in enumerate(shot_trajectories):
+                t1 = t0 + traj.duration_seconds
+                if t0 <= t <= t1 + 1e-9 or seg_idx == len(shot_trajectories) - 1:
+                    local_t = float(np.clip(t - t0, 0.0, traj.duration_seconds))
+                    ball_state = traj.state_at(local_t)
+
+                    # Check shot start event
+                    if abs(t - t0) < dt * 0.55:
+                        frame_event = hit_events[seg_idx][1]
+                    else:
+                        # Check bounce events within this shot
+                        for b in traj.bounces:
+                            if abs(b.timestamp - local_t) <= dt * 0.55:
+                                frame_event = (
+                                    f"bounce_{b.surface.value}_{b.regime.value}"
+                                )
+                                break
                     break
 
             if step == num_steps - 1:
                 frame_event = "point_won_A"
 
             score_str = "0-0 | 15-0 *" if step == num_steps - 1 else "0-0 | 0-0 *"
+            bx, by, bz = ball_state.position
 
             players_dict: dict[str, PlayerPose] = {}
             for pid, waypoints in player_tracks.items():
                 px, py, pvx, pvy = _interp_player_xy(waypoints, t)
                 speed = math.hypot(pvx, pvy)
 
-                # Look towards the ball horizontally
                 dx_ball = bx - px
                 dy_ball = by - py
                 yaw_deg = math.degrees(math.atan2(dx_ball, dy_ball))
 
-                # Check if player is swinging near a shot timestamp
                 swing_phase = 0.0
                 anim = "run" if speed > 0.6 else "idle"
-                for t0, _, _, _, _, ev_name, hitter in segments:
-                    if hitter == pid and abs(t - t0) <= 0.28:
-                        swing_phase = float(1.0 - min(abs(t - t0) / 0.28, 1.0))
-                        anim = ev_name or "swing"
+                for hit_t, ev_name, hitter, _ in hit_events:
+                    if hitter == pid and abs(t - hit_t) <= 0.28:
+                        swing_phase = float(1.0 - min(abs(t - hit_t) / 0.28, 1.0))
+                        anim = ev_name
                         break
 
                 players_dict[pid] = PlayerPose(
@@ -462,8 +519,9 @@ class MatchTimeline:
             frames.append(
                 FrameState(
                     timestamp=round(t, 4),
-                    ball_position=(float(bx), float(by), float(max(bz, 0.033))),
-                    ball_velocity=(float(vx), float(vy), float(vz)),
+                    ball_position=(float(bx), float(by), float(max(bz, 0.0325))),
+                    ball_velocity=ball_state.velocity,
+                    ball_spin=ball_state.angular_velocity,
                     players=players_dict,
                     score=score_str,
                     event=frame_event,
@@ -488,7 +546,6 @@ def _interp_player_xy(
         if t0 <= t <= t1:
             span = max(t1 - t0, 1e-6)
             u = (t - t0) / span
-            # Smoothstep interpolation for natural human acceleration/deceleration
             s = u * u * (3.0 - 2.0 * u)
             ds_dt = 6.0 * u * (1.0 - u) / span
             x = x0 + (x1 - x0) * s

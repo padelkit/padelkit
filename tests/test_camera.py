@@ -182,3 +182,57 @@ def test_camera_presets_and_frustum():
         assert len(frustum["far"]) == 4
         data = cam.to_dict()
         assert data["name"] == preset.value
+
+
+def test_camera_floor_homography_and_from_landmarks():
+    court = Court.fip_standard()
+    gt_cam = Camera.broadcast_near(court=court)
+
+    # 1. Verify analytical floor_homography matches world_to_image on Z=0
+    h_mat = gt_cam.floor_homography
+    h_inv = gt_cam.inverse_floor_homography
+    p_floor = np.array([2.5, -4.0, 1.0], dtype=np.float64)
+    p_px_hom = h_mat @ p_floor
+    u_h, v_h = p_px_hom[0] / p_px_hom[2], p_px_hom[1] / p_px_hom[2]
+    uv_proj = gt_cam.world_to_image((2.5, -4.0, 0.0))
+    assert uv_proj is not None
+    assert (u_h, v_h) == pytest.approx(uv_proj, abs=1e-6)
+
+    p_rec = h_inv @ np.array([u_h, v_h, 1.0])
+    assert (p_rec[0] / p_rec[2], p_rec[1] / p_rec[2]) == pytest.approx(
+        (2.5, -4.0), abs=1e-6
+    )
+
+    # 2. Calibrate Camera.from_landmarks from only the 4 floor corners (unknown focal!)
+    all_lm = gt_cam.project_court_landmarks(court=court)
+    four_corners = {
+        "floor_near_left": all_lm["floor_near_left"],
+        "floor_near_right": all_lm["floor_near_right"],
+        "floor_far_right": all_lm["floor_far_right"],
+        "floor_far_left": all_lm["floor_far_left"],
+    }
+    cal_cam = Camera.from_landmarks(four_corners, court=court)  # type: ignore[arg-type]
+    assert cal_cam.reprojection_error(four_corners, court=court) < 1e-3  # type: ignore[arg-type]
+    assert cal_cam.intrinsics.fx == pytest.approx(gt_cam.intrinsics.fx, rel=1e-3)
+    assert cal_cam.extrinsics.position == pytest.approx(
+        gt_cam.extrinsics.position, abs=1e-2
+    )
+
+    # 3. Calibrate with 3D wall corners included + known intrinsics
+    eight_pts = {
+        **four_corners,
+        "service_near_center": all_lm["service_near_center"],
+        "service_far_center": all_lm["service_far_center"],
+        "wall_top_far_left": all_lm["wall_top_far_left"],
+        "wall_top_far_right": all_lm["wall_top_far_right"],
+    }
+    cal_3d = Camera.from_landmarks(
+        eight_pts,  # type: ignore[arg-type]
+        court=court,
+        intrinsics=gt_cam.intrinsics,
+    )
+    assert cal_3d.reprojection_error(eight_pts, court=court) < 1e-4  # type: ignore[arg-type]
+    assert cal_3d.extrinsics.position == pytest.approx(
+        gt_cam.extrinsics.position, abs=1e-4
+    )
+

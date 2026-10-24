@@ -228,8 +228,8 @@ class BallState:
     ``(vx, vy, vz)`` in ``m/s``, and angular velocity ``(wx, wy, wz)`` in ``rad/s``.
     """
 
-    position: tuple[float, float, float]
-    velocity: tuple[float, float, float]
+    position: tuple[float, float, float] = (0.0, 0.0, 1.0)
+    velocity: tuple[float, float, float] = (0.0, 0.0, 0.0)
     angular_velocity: tuple[float, float, float] = (0.0, 0.0, 0.0)
 
     def __post_init__(self) -> None:

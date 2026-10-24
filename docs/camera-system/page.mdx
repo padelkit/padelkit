@@ -44,6 +44,14 @@ PadelKit connects three coordinate frames seamlessly:
 
     # 2. Intersect a 2D pixel ray with the court floor (Z = 0.0)
     floor_xyz = cam.project_pixel_to_plane(center_uv, plane_z=0.0)
+
+    # 3. Or calibrate a Camera directly from 4+ labeled 2D landmarks in a video
+    cal_cam = Camera.from_landmarks({
+        "floor_near_left":  landmarks_px["floor_near_left"],
+        "floor_near_right": landmarks_px["floor_near_right"],
+        "floor_far_right":  landmarks_px["floor_far_right"],
+        "floor_far_left":   landmarks_px["floor_far_left"],
+    })
     ```
 
     </CodeGroup>

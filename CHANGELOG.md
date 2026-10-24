@@ -8,9 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - Unreleased
 
 ### Added
-- `padelkit.camera` module (`Camera`, `CameraIntrinsics`, `CameraExtrinsics`, `CameraDistortion`, `CameraPreset`, `DistortionModel`) for 3D-to-2D projection, lens distortion (Brown-Conrady & Fisheye), and 2D-to-3D ray/plane intersection.
+- `padelkit.camera` module (`Camera`, `CameraIntrinsics`, `CameraExtrinsics`, `CameraDistortion`, `CameraPreset`, `DistortionModel`) for 3D-to-2D projection, lens distortion (Brown-Conrady & Fisheye), 2D-to-3D ray/plane intersection, and automatic 6-DoF camera calibration from 2D court landmarks (`Camera.from_landmarks()`, `floor_homography`).
 - `padelkit.physics` module (`BallPhysicsEngine`, `BallState`, `BallTrajectory`, `BounceEvent`, `BallProperties`, `EnvironmentConditions`, `SurfaceMaterials`, `SurfaceType`, `ContactRegime`) with 9D RK4 aerodynamics (quadratic drag with felt fuzz factor + Spindt Magnus lift), Coulomb Sliding/Rolling rebound physics across all padel court surfaces, and vectorized batch simulation.
-- `padelkit.viz` module (`PadelVisualizer`, `MatchTimeline`, `FrameState`, `PlayerPose`) with an interactive Three.js 3D court studio, CSV replay mode, real-time SSE streaming mode, and computer vision render passes (RGB, Semantic Segmentation, Depth, and 17 Court Landmarks).
+- `padelkit.viz` module (`PadelVisualizer`, `MatchTimeline`, `FrameState`, `PlayerPose`) with an interactive Three.js 3D court studio, 9D physics telemetry HUD, Hawk-Eye bounce markers, CSV replay mode, real-time SSE streaming mode, and computer vision render passes (RGB, Semantic Segmentation, Depth, and 17 Court Landmarks).
 
 ## [0.0.1] - 2026-05-14
 

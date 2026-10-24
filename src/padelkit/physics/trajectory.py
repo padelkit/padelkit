@@ -206,7 +206,7 @@ class BallTrajectory:
             ev_str: str | None = None
             for b in self.bounces:
                 if abs(b.timestamp - t) <= dt * 0.55:
-                    ev_str = f"bounce_{b.surface.value}"
+                    ev_str = f"bounce_{b.surface.value}_{b.regime.value}"
                     break
 
             frames.append(
@@ -214,6 +214,7 @@ class BallTrajectory:
                     timestamp=round(t, 4),
                     ball_position=pos,
                     ball_velocity=bs.velocity,
+                    ball_spin=bs.angular_velocity,
                     players={},
                     score=f"{bs.speed_kmh:.0f} km/h | {bs.spin_rpm:.0f} RPM",
                     event=ev_str,
