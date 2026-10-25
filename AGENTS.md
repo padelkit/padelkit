@@ -72,4 +72,19 @@ Provides the temporal state contract (`FrameState`, `PlayerPose`, `MatchTimeline
 Implements match rules, event-sourced score progression (`MatchScoreHistory`), `Match`, `MatchScore`, `Team`, `Player`, `ServingState`, `ServingEngine`, and `MatchConfiguration`.
 
 ---
+
+## Roadmap & Upcoming Integrations (For Future Sessions)
+
+1. **Physics-Informed 3D State Estimation (`padelkit.tracking` / `padelkit.estimation`):**
+   - Port and adapt the particle filter & trajectory reconstructor from `padelamix` (`pipeline/physics/particle_filter.py`) into pure vectorized NumPy on top of `BallPhysicsEngine.simulate_batch()` and `Camera.project_points()`.
+   - Include bootstrap particle filtering (supporting 2D `(u, v)` detections and heatmap likelihoods), mixture process noise for racket hits, and offline Rauch-Tung-Striebel (`RTS`) backward smoothing.
+2. **Photorealistic Synthetic Data & 3D Assets (`padelkit.viz` & `padelkit[blender]`):**
+   - Integrate high-resolution 3D assets (court, ball, racket from `padel_3d_assets` / GLTF/GLB support in `PadelVisualizer` and animated rigged player avatars).
+   - Build `padelkit.synth` / Blender headless renderer (`bpy`) consuming `MatchTimeline` and `Camera` to export photorealistic RGB, depth, segmentation masks, and 2D/3D ground-truth annotations for training CV models.
+3. **Batch Match & Rally Simulation (`padelkit.sim`):**
+   - High-speed headless rally and match generator combining `BallPhysicsEngine`, tactical shot selection, and `MatchScoreHistory` to synthesize large-scale tabular/trajectory datasets.
+4. **Optional AI Vision & Audio Inference Wrapper (`padelkit[vision]`):**
+   - Lightweight optional wrappers (ONNX / PyTorch) for ball tracking (`TrackNet` / `MiniTrackNet`), 2D/3D player pose estimation (`RTMPose`), and audio shot-impact detection, feeding directly into the state estimator and `MatchTimeline`.
+
+---
 *Keep this file (`AGENTS.md`) updated whenever architectural changes, new entities in the domain model, or changes to the development stack are introduced.*
