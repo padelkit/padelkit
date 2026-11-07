@@ -25,7 +25,8 @@ This document serves as the single source of truth regarding the architecture, d
   - **MDX Rules:**
     1. Do **not** include `export const metadata = { ... }` at the top of new `.mdx` files (`padelkit-docs/scripts/sync-docs.mjs` injects it automatically from `docs/docs.config.json`).
     2. Register every new page in `docs/docs.config.json` under `"pages"` (with `"min": "0.1.0"` for `0.1.0` features), `"navigation"`, and optionally `"intro_cards"`.
-    3. Follow the modular 2-column layout (`<Row>`, `<Col>`, `<Col sticky>`, `<Properties>`, `<Property>`, `<CodeGroup>`).
+    3. Follow the modular 2-column layout (`<Row>`, `<Col>`, `<Col sticky>`, `<Properties>`, `<Property>`, `<CodeGroup>`, `<Schematic>`).
+    4. Static light/dark vector schematics in `docs/images/schematics/` are generated deterministically via `.venv/bin/python scripts/generate_schematics.py` (and verified via `--check` in `tests/test_docs_schematics.py`).
 
 ---
 

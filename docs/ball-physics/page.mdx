@@ -21,6 +21,12 @@ Unlike simplified parabolic models, `padelkit.physics` tracks the complete trans
   </Property>
 </Properties>
 
+<Schematic
+  name="physics-forces-9d"
+  alt="9D Ball Aerodynamic Free-Body Forces"
+  caption="Free-body diagram of a spinning padel ball in flight showing velocity v, angular velocity ω, quadratic felt drag F_drag, gravity F_g, and Spindt Magnus lift F_magnus."
+/>
+
 ---
 
 ## Impulse Contact Dynamics: Sliding vs. Rolling
@@ -39,9 +45,21 @@ When the ball impacts the turf floor, tempered glass walls, metallic mesh fence,
   </Property>
 </Properties>
 
+<Schematic
+  name="physics-rebound-regimes"
+  alt="Impulse Contact Rebound Regimes: SLIDING vs ROLLING vs DAMPED"
+  caption="Comparison of ContactRegime.SLIDING on low-friction glass, ContactRegime.ROLLING grip on sandy turf, and ContactRegime.DAMPED energy absorption on net/fence."
+/>
+
 ---
 
 ## Quick Example: Simulating a Bandeja off the Back Glass
+
+<Schematic
+  name="physics-trajectories"
+  alt="RK4 Spin Trajectory Comparison (Topspin Smash, Flat Drive, Backspin Bandeja)"
+  caption="Side-elevation trajectories simulated via BallPhysicsEngine.simulate() comparing Topspin Smash (+2400 RPM), Flat Drive (0 RPM), and Backspin Bandeja (-1800 RPM)."
+/>
 
 <Row>
   <Col>
@@ -69,7 +87,7 @@ When the ball impacts the turf floor, tempered glass walls, metallic mesh fence,
     traj = engine.simulate(initial, duration=2.5, dt=0.002)
 
     for b in traj.bounces:
-        print(f"{b.time:.2f}s | {b.surface.value} ({b.regime.value})")
+        print(f"{b.timestamp:.2f}s | {b.surface.value} ({b.regime.value})")
 
     # Export to DataFrame or 3D MatchTimeline
     df = traj.to_dataframe()

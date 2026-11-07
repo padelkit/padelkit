@@ -2,6 +2,12 @@
 
 `BallProperties`, `EnvironmentConditions`, and `SurfaceMaterials` configure the physical constants of the ball, atmosphere, and court surfaces in [`BallPhysicsEngine`](/ball-physics-engine). All three are immutable dataclasses with standardized factory presets. {{ className: 'lead' }}
 
+<Schematic
+  name="physics-rebound-regimes"
+  alt="SurfaceMaterials Rebound Regimes: SLIDING, ROLLING, DAMPED"
+  caption="Effect of SurfaceMaterials friction (μ) and restitution (COR) across glass, sandy turf, and net/fence."
+/>
+
 ## BallProperties
 
 Defines the physical mass, radius, aerodynamic drag, and felt condition of a padel ball.

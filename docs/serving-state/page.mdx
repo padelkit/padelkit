@@ -1,11 +1,12 @@
-export const metadata = {
-  title: "ServingState",
-  description: "API reference for the ServingState dataclass representing server state.",
-}
-
 # ServingState
 
 The `ServingState` dataclass encapsulates the serving team, player, receiver, and court side for the upcoming/next point in the match. It is exposed through the `server` property of the [`MatchScore`](/match-score). {{ className: 'lead' }}
+
+<Schematic
+  name="serving-rotations"
+  alt="Serving Geometry and 4-Game Rotation Cycle"
+  caption="Deuce ('right') and Ad ('left') diagonal serving boxes and the 4-game server/receiver rotation state machine."
+/>
 
 ## Properties
 

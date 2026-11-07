@@ -2,6 +2,12 @@
 
 `BallState`, `BallTrajectory`, and `BounceEvent` represent the instantaneous 9D state of the padel ball, its simulated time-series trajectory, and detailed impact diagnostics across court surfaces. {{ className: 'lead' }}
 
+<Schematic
+  name="physics-forces-9d"
+  alt="9D BallState and Aerodynamic Forces"
+  caption="9D kinematic state vector [x, y, z, vx, vy, vz, wx, wy, wz] and active aerodynamic force vectors."
+/>
+
 ## BallState
 
 Represents the 9D state `[x, y, z, vx, vy, vz, wx, wy, wz]` of the ball at a single instant.

@@ -1,8 +1,3 @@
-export const metadata = {
-  title: "CourtLandmark",
-  description: "API reference for the CourtLandmark enum, including all 17 standard court positions and their coordinates.",
-}
-
 # CourtLandmark
 
 `CourtLandmark` is a string enum that enumerates the 17 standard positions on a padel court used for geometry calculations and camera calibration. {{ className: 'lead' }}
@@ -40,7 +35,11 @@ list(CourtLandmark)
 | 16 | `CourtLandmark.WALL_TOP_FAR_LEFT` | `"wall_top_far_left"` |
 | 17 | `CourtLandmark.WALL_TOP_FAR_RIGHT` | `"wall_top_far_right"` |
 
-![3D Padel Court Landmarks](/images/court-landmarks-3d.png)
+<Schematic
+  name="court-landmarks-3d"
+  alt="17 Standardized 3D Padel Court Landmarks"
+  caption="Standard 17 FIP court landmarks: floor points 1–13 (Z = 0.0 m) and elevated back-wall corners 14–17 (Z = 4.0 m)."
+/>
 
 ---
 

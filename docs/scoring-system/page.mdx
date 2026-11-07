@@ -1,11 +1,12 @@
-export const metadata = {
-  title: "Scoring System",
-  description: "Learn how the padel scoring system works, including concepts like event sourcing.",
-}
-
 # Scoring System
 
 PadelKit implements a robust Event Sourcing architecture for scoring, ensuring state consistency and enabling historical point tracking. This guide explores the core concepts of the scoring system. {{ className: 'lead' }}
+
+<Schematic
+  name="serving-rotations"
+  alt="Serving Geometry and 4-Game Rotation Cycle"
+  caption="Diagonal serving boxes ('right' Deuce vs 'left' Ad) and deterministic 4-game server rotation managed by ServingEngine."
+/>
 
 ## Event Sourcing Architecture
 

@@ -13,6 +13,7 @@ You should place your files inside this folder (e.g., `my-feature/page.mdx`).
 - Do **not** use Next.js `export const metadata = { ... }` blocks at the top of your markdown files.
 - Write pure markdown (e.g., start directly with `# My Feature Title`).
 - Code blocks can be wrapped in `<CodeGroup>` components for tabbed interfaces if needed.
+- Technical schematics can be embedded with `<Schematic name="court-landmarks-3d" alt="..." caption="..." />`, which automatically switches between `/images/schematics/{name}-light.svg` and `/images/schematics/{name}-dark.svg` based on the active theme. Regenerate schematics with `.venv/bin/python scripts/generate_schematics.py`.
 
 ### 🏷️ Multi-Version Documentation
 

@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" width="100%" height="auto" role="img">
+  <title>PadelKit Official FIP CourtDimensions Blueprint</title>
+  <desc>2D top-down dimension schematic and side/net elevation profile for CourtDimensions.</desc>
+  <defs>
+    <marker id="arrow-fg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#0f172a" />
+    </marker>
+    <marker id="arrow-muted" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#475569" />
+    </marker>
+    <marker id="arrow-primary" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#059669" />
+    </marker>
+    <marker id="arrow-secondary" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#0284c7" />
+    </marker>
+    <marker id="arrow-tertiary" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#d97706" />
+    </marker>
+    <marker id="arrow-danger" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#e11d48" />
+    </marker>
+  </defs>
+  <rect x="0.00" y="0.00" width="960.00" height="520.00" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.50" rx="14.00" />
+  <text x="28.00" y="28.00" fill="#09090b" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="15.00" font-weight="700" text-anchor="start" dominant-baseline="middle">Official FIP CourtDimensions Blueprint (Meters)</text>
+  <text x="28.00" y="48.00" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11.50" font-weight="400" text-anchor="start" dominant-baseline="middle">length = 20.0m  |  width = 10.0m  |  service_line_distance_from_back = 3.0m  |  net = 0.88m / 0.92m</text>
+  <rect x="24.00" y="64.00" width="550.00" height="432.00" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.00" rx="10.00" />
+  <text x="42.00" y="88.00" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11.50" font-weight="700" text-anchor="start" dominant-baseline="middle">A. TOP-DOWN FLOOR PLAN (20.0m × 10.0m)</text>
+  <rect x="76.00" y="145.00" width="420.00" height="210.00" fill="#f1f5f9" stroke="#0f172a" stroke-width="2.20" />
+  <line x1="139.00" y1="145.00" x2="139.00" y2="355.00" stroke="#0f172a" stroke-width="1.60" stroke-linecap="round" />
+  <line x1="433.00" y1="145.00" x2="433.00" y2="355.00" stroke="#0f172a" stroke-width="1.60" stroke-linecap="round" />
+  <line x1="139.00" y1="250.00" x2="433.00" y2="250.00" stroke="#0f172a" stroke-width="1.60" stroke-linecap="round" />
+  <line x1="286.00" y1="137.00" x2="286.00" y2="363.00" stroke="#0284c7" stroke-width="2.60" stroke-linecap="round" stroke-dasharray="5 3" />
+  <line x1="76.00" y1="119.00" x2="496.00" y2="119.00" stroke="#059669" stroke-width="1.50" stroke-linecap="round" marker-start="url(#arrow-primary)" marker-end="url(#arrow-primary)" />
+  <rect x="230.00" y="110.00" width="112.00" height="18.00" fill="#ffffff" stroke="#059669" stroke-width="1.00" rx="4.00" />
+  <text x="286.00" y="119.50" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10.50" font-weight="700" text-anchor="middle" dominant-baseline="middle">length = 20.0 m</text>
+  <line x1="530.00" y1="145.00" x2="530.00" y2="355.00" stroke="#0284c7" stroke-width="1.50" stroke-linecap="round" marker-start="url(#arrow-secondary)" marker-end="url(#arrow-secondary)" />
+  <rect x="477.40" y="241.00" width="105.20" height="18.00" fill="#ffffff" stroke="#0284c7" stroke-width="1.00" rx="4.00" />
+  <text x="530.00" y="250.50" fill="#0284c7" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10.50" font-weight="700" text-anchor="middle" dominant-baseline="middle">width = 10.0 m</text>
+  <line x1="76.00" y1="385.00" x2="139.00" y2="385.00" stroke="#d97706" stroke-width="1.50" stroke-linecap="round" marker-start="url(#arrow-tertiary)" marker-end="url(#arrow-tertiary)" />
+  <rect x="70.50" y="376.00" width="146.00" height="18.00" fill="#ffffff" stroke="#d97706" stroke-width="1.00" rx="4.00" />
+  <text x="143.50" y="385.50" fill="#d97706" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10.50" font-weight="700" text-anchor="middle" dominant-baseline="middle">service_line = 3.0 m</text>
+  <line x1="139.00" y1="417.00" x2="286.00" y2="417.00" stroke="#475569" stroke-width="1.50" stroke-linecap="round" marker-start="url(#arrow-muted)" marker-end="url(#arrow-muted)" />
+  <rect x="142.90" y="408.00" width="139.20" height="18.00" fill="#ffffff" stroke="#475569" stroke-width="1.00" rx="4.00" />
+  <text x="212.50" y="417.50" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10.50" font-weight="700" text-anchor="middle" dominant-baseline="middle">service box = 7.0 m</text>
+  <rect x="590.00" y="64.00" width="346.00" height="210.00" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.00" rx="10.00" />
+  <text x="608.00" y="88.00" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11.50" font-weight="700" text-anchor="start" dominant-baseline="middle">B. WALL ELEVATION (V1 vs V2)</text>
+  <rect x="626.00" y="130.00" width="250.00" height="104.00" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.30" opacity="0.25" stroke-dasharray="4 3" />
+  <polygon points="626.00,234.00 626.00,130.00 651.00,130.00 651.00,156.00 851.00,156.00 851.00,130.00 876.00,130.00 876.00,234.00" fill="#e0f2fe" stroke="#059669" stroke-width="2.00" stroke-linejoin="round" fill-opacity="0.35" />
+  <line x1="900.00" y1="130.00" x2="900.00" y2="234.00" stroke="#059669" stroke-width="1.50" stroke-linecap="round" marker-start="url(#arrow-primary)" marker-end="url(#arrow-primary)" />
+  <rect x="881.40" y="173.00" width="37.20" height="18.00" fill="#ffffff" stroke="#059669" stroke-width="1.00" rx="4.00" />
+  <text x="900.00" y="182.50" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10.50" font-weight="700" text-anchor="middle" dominant-baseline="middle">4.0m</text>
+  <text x="751.00" y="146.00" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.50" font-weight="600" text-anchor="middle" dominant-baseline="middle">side_wall_height: 3.0m (V1) / 4.0m (V2)</text>
+  <text x="751.00" y="250.00" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.50" font-weight="500" text-anchor="middle" dominant-baseline="middle">back_wall_height = 4.0m (Both V1 &amp; V2)</text>
+  <rect x="590.00" y="286.00" width="346.00" height="210.00" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.00" rx="10.00" />
+  <text x="608.00" y="310.00" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11.50" font-weight="700" text-anchor="start" dominant-baseline="middle">C. NET CATENARY PROFILE (WIDTH = 10.0m)</text>
+  <path d="M 636.00 364.00 Q 761.00 396.00 886.00 364.00 L 886.00 456.00 L 636.00 456.00 Z" fill="#e0f2fe" stroke="#0284c7" stroke-width="2.00" stroke-linecap="round" stroke-linejoin="round" opacity="0.45" />
+  <line x1="624.00" y1="456.00" x2="898.00" y2="456.00" stroke="#0f172a" stroke-width="2.00" stroke-linecap="round" />
+  <line x1="636.00" y1="364.00" x2="654.00" y2="346.00" stroke="#0284c7" stroke-width="1.10" stroke-linecap="round" stroke-dasharray="2 2" opacity="0.85" />
+  <circle cx="636.00" cy="364.00" r="3.20" fill="#0284c7" stroke="#ffffff" stroke-width="1.50" />
+  <rect x="609.40" y="336.50" width="89.20" height="19.00" fill="#ffffff" stroke="#0284c7" stroke-width="1.50" rx="9.50" />
+  <text x="654.00" y="346.50" fill="#0284c7" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10.00" font-weight="700" text-anchor="middle" dominant-baseline="middle">posts: 0.92m</text>
+  <line x1="761.00" y1="389.00" x2="761.00" y2="367.00" stroke="#d97706" stroke-width="1.10" stroke-linecap="round" stroke-dasharray="2 2" opacity="0.85" />
+  <circle cx="761.00" cy="389.00" r="3.20" fill="#d97706" stroke="#ffffff" stroke-width="1.50" />
+  <rect x="713.10" y="357.50" width="95.80" height="19.00" fill="#ffffff" stroke="#d97706" stroke-width="1.50" rx="9.50" />
+  <text x="761.00" y="367.50" fill="#d97706" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10.00" font-weight="700" text-anchor="middle" dominant-baseline="middle">center: 0.88m</text>
+</svg>

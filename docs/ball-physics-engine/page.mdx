@@ -2,6 +2,12 @@
 
 `BallPhysicsEngine` is the 9-Dimensional aerodynamic and multi-surface contact simulator in PadelKit. It integrates gravity, felt-adjusted quadratic air drag, and non-linear Spindt Magnus lift via 4th-order Runge-Kutta (`RK4`), and resolves collisions against the floor, stepped walls/fences, and catenary net of a [`Court`](/court). {{ className: 'lead' }}
 
+<Schematic
+  name="physics-trajectories"
+  alt="RK4 Simulated Spin Trajectories"
+  caption="Side-elevation trajectories simulated via BallPhysicsEngine.simulate() contrasting topspin smash, flat drive, and backspin bandeja rebounds."
+/>
+
 ## Properties
 
 <Properties>

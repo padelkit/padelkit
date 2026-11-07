@@ -1,8 +1,3 @@
-export const metadata = {
-  title: "Court",
-  description: "API reference for the main court geometry class.",
-}
-
 # Court
 
 `Court` is the main court geometry model. It combines physical [`CourtDimensions`](/court-dimensions) with optional descriptive metadata (enclosure type, location, door states, etc.) and exposes methods to retrieve standardised landmark positions in either of the two supported [coordinate systems](/court-geometry#coordinate-systems). {{ className: 'lead' }}
@@ -191,6 +186,12 @@ export const metadata = {
 
 ## List 2D landmarks {{ tag: 'method', label: 'court.landmarks_2d()' }}
 
+<Schematic
+  name="court-coordinate-systems"
+  alt="CoordinateSystem.CENTERED vs CoordinateSystem.CORNER_BASED"
+  caption="2D floor landmarks in CoordinateSystem.CENTERED (origin at net center) vs CoordinateSystem.CORNER_BASED (origin at floor_near_left)."
+/>
+
 <Row>
   <Col>
 
@@ -257,6 +258,12 @@ export const metadata = {
 ---
 
 ## List 3D landmarks {{ tag: 'method', label: 'court.landmarks_3d()' }}
+
+<Schematic
+  name="court-landmarks-3d"
+  alt="17 Standardized 3D Court Landmarks"
+  caption="3D court landmark map: points 1–13 on the turf floor (Z = 0.0 m) and points 14–17 on the top corners of the back walls (Z = 4.0 m)."
+/>
 
 <Row>
   <Col>

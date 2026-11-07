@@ -2,6 +2,12 @@
 
 `Camera` is the primary projective camera model in PadelKit. It combines [`CameraIntrinsics`](/camera-intrinsics), [`CameraExtrinsics`](/camera-extrinsics), and [`CameraDistortion`](/camera-distortion) to project 3D world coordinates onto 2D image sensors and unproject 2D pixel detections back into 3D rays and court planes. {{ className: 'lead' }}
 
+<Schematic
+  name="camera-frustum-3d"
+  alt="3D Camera Frustum and Court Presets"
+  caption="Projective Camera model showing the broadcast_near viewing frustum, optical axis ray, and built-in court camera presets."
+/>
+
 ## Properties
 
 <Properties>
