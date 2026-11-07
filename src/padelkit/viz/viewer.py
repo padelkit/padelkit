@@ -1,3 +1,4 @@
+import base64
 import html
 import json
 import queue
@@ -6,6 +7,7 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote
 
 from ..camera.camera import Camera
 from ..camera.enums import CameraPreset
@@ -32,6 +34,7 @@ class PadelVisualizer:
         court: Court | None = None,
         cameras: list[Camera] | None = None,
         timeline: MatchTimeline | None = None,
+        animation_library_dir: str | Path | None = None,
     ) -> None:
         self.court: Court = court or Court.fip_standard()
         if cameras is not None:
@@ -49,6 +52,9 @@ class PadelVisualizer:
             if timeline is not None
             else MatchTimeline.demo_rally(court=self.court)
         )
+        self.animation_library_dir: Path | None = (
+            Path(animation_library_dir) if animation_library_dir is not None else None
+        )
         self._subscribers: list[queue.Queue[str]] = []
         self._server: ThreadingHTTPServer | None = None
 
@@ -62,11 +68,17 @@ class PadelVisualizer:
         csv_path: str | Path,
         court: Court | None = None,
         cameras: list[Camera] | None = None,
+        animation_library_dir: str | Path | None = None,
     ) -> "PadelVisualizer":
         """Creates a :class:`PadelVisualizer` pre-loaded with a CSV match timeline."""
         c = court or Court.fip_standard()
         timeline = MatchTimeline.from_csv(csv_path, court=c)
-        return cls(court=c, cameras=cameras, timeline=timeline)
+        return cls(
+            court=c,
+            cameras=cameras,
+            timeline=timeline,
+            animation_library_dir=animation_library_dir,
+        )
 
     def add_camera(self, camera: Camera) -> "PadelVisualizer":
         """Registers an additional :class:`Camera` viewpoint in the 3D scene."""
@@ -77,6 +89,44 @@ class PadelVisualizer:
         """Replaces the active timeline with data loaded from ``csv_path``."""
         self.timeline = MatchTimeline.from_csv(csv_path, court=self.court)
         return self
+
+    def load_animation_library(
+        self, animation_library_dir: str | Path
+    ) -> "PadelVisualizer":
+        """Attaches a ``padelkit-animator`` GLB animation library directory."""
+        self.animation_library_dir = Path(animation_library_dir)
+        return self
+
+    def _build_animation_library_config(
+        self, live_stream_url: str | None = None
+    ) -> dict[str, Any] | None:
+        if self.animation_library_dir is None:
+            return None
+        manifest_path = self.animation_library_dir / "manifest.json"
+        if not manifest_path.exists():
+            return None
+
+        manifest_data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        glb_sources: dict[str, str] = {}
+        for entry in manifest_data.get("animations", []):
+            clip_id = entry.get("clip_id")
+            glb_rel = entry.get("glb_path")
+            if not clip_id or not glb_rel:
+                continue
+            safe_name = Path(glb_rel).name
+            glb_file = self.animation_library_dir / safe_name
+            if not glb_file.exists():
+                continue
+            if live_stream_url is not None:
+                glb_sources[clip_id] = f"/animations/{safe_name}"
+            else:
+                b64 = base64.b64encode(glb_file.read_bytes()).decode("ascii")
+                glb_sources[clip_id] = f"data:model/gltf-binary;base64,{b64}"
+
+        return {
+            "manifest": manifest_data,
+            "glb_sources": glb_sources,
+        }
 
     def build_config(self, live_stream_url: str | None = None) -> dict[str, Any]:
         """Serializes the court geometry, 17 landmarks, cameras, and timeline."""
@@ -110,6 +160,9 @@ class PadelVisualizer:
             "landmarks_3d": {k: list(v) for k, v in lm_3d.items()},
             "cameras": [cam.to_dict() for cam in self.cameras],
             "timeline": self.timeline.to_dict(),
+            "animation_library": self._build_animation_library_config(
+                live_stream_url=live_stream_url
+            ),
             "live_stream_url": live_stream_url,
         }
 
@@ -192,6 +245,26 @@ class PadelVisualizer:
                     finally:
                         if q in visualizer._subscribers:
                             visualizer._subscribers.remove(q)
+                elif self.path.startswith("/animations/"):
+                    if visualizer.animation_library_dir is None:
+                        self.send_error(404)
+                        return
+                    rel_name = Path(
+                        unquote(self.path.removeprefix("/animations/"))
+                    ).name
+                    glb_path = (visualizer.animation_library_dir / rel_name).resolve()
+                    if (
+                        not glb_path.exists()
+                        or glb_path.parent != visualizer.animation_library_dir.resolve()
+                    ):
+                        self.send_error(404)
+                        return
+                    body = glb_path.read_bytes()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "model/gltf-binary")
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
                 else:
                     self.send_error(404)
 

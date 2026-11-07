@@ -302,6 +302,8 @@ THREEJS_VIEWER_HTML_TEMPLATE = """<!DOCTYPE html>
   <script type="module">
     import * as THREE from "three";
     import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+    import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
 
     const CONFIG = __PADELKIT_CONFIG_JSON__;
 
@@ -911,6 +913,12 @@ THREEJS_VIEWER_HTML_TEMPLATE = """<!DOCTYPE html>
 
     function createArticulatedPlayer(playerId, team) {
       const root = new THREE.Group();
+      const proceduralGroup = new THREE.Group();
+      const glbGroup = new THREE.Group();
+      glbGroup.visible = false;
+      root.add(proceduralGroup);
+      root.add(glbGroup);
+
       const segKey = team === "A" ? "teamA" : "teamB";
       const jerseyColor = team === "A" ? 0x0284c7 : 0xe11d48;
       const trimColor = team === "A" ? 0x38bdf8 : 0xfda4af;
@@ -926,7 +934,7 @@ THREEJS_VIEWER_HTML_TEMPLATE = """<!DOCTYPE html>
       // Upper body group (allows forward athletic lean & torso rotation during swings)
       const upperBody = new THREE.Group();
       upperBody.position.set(0, 0, 0.88);
-      root.add(upperBody);
+      proceduralGroup.add(upperBody);
 
       // Tapered athletic torso
       const torso = registerMesh(
@@ -992,7 +1000,7 @@ THREEJS_VIEWER_HTML_TEMPLATE = """<!DOCTYPE html>
       pelvis.rotation.x = Math.PI / 2;
       pelvis.scale.set(1.08, 1.0, 0.76);
       pelvis.position.z = 0.82;
-      root.add(pelvis);
+      proceduralGroup.add(pelvis);
 
       // Articulated Legs (Hip -> Thigh -> Knee -> Calf -> Court Shoe)
       function buildLeg(sideSign) {
@@ -1037,7 +1045,7 @@ THREEJS_VIEWER_HTML_TEMPLATE = """<!DOCTYPE html>
         shoe.castShadow = true;
         kneePivot.add(shoe);
 
-        root.add(hipPivot);
+        proceduralGroup.add(hipPivot);
         return { hipPivot, kneePivot };
       }
 
@@ -1101,6 +1109,11 @@ THREEJS_VIEWER_HTML_TEMPLATE = """<!DOCTYPE html>
       upperBody.add(rightShoulder);
 
       root.userData = {
+        proceduralGroup,
+        glbGroup,
+        glbMixer: null,
+        glbActions: {},
+        activeGlbKey: null,
         upperBody,
         leftLeg,
         rightLeg,
@@ -1119,6 +1132,112 @@ THREEJS_VIEWER_HTML_TEMPLATE = """<!DOCTYPE html>
       P3: createArticulatedPlayer("P3", "B"),
       P4: createArticulatedPlayer("P4", "B"),
     };
+
+    // ------------------------------------------------------------------ //
+    // GLB Skeletal Animation Library Loader (from padelkit-animator)
+    // ------------------------------------------------------------------ //
+    const loadedGlbClips = {};
+
+    async function initAnimationLibrary() {
+      const libCfg = CONFIG.animation_library;
+      if (!libCfg || !libCfg.manifest || !Array.isArray(libCfg.manifest.animations)) return;
+      const gltfLoader = new GLTFLoader();
+      const entries = libCfg.manifest.animations;
+      const sources = libCfg.glb_sources || {};
+      let firstTemplateScene = null;
+      let defaultSocketBone = "mixamorig:RightHand";
+
+      for (const entry of entries) {
+        const url = sources[entry.clip_id];
+        if (!url) continue;
+        try {
+          const gltf = await gltfLoader.loadAsync(url);
+          if (!gltf.animations || gltf.animations.length === 0) continue;
+          const clip = gltf.animations[0];
+          const record = { clip, meta: entry };
+          loadedGlbClips[entry.clip_id] = record;
+          if (entry.padelkit_animation_id) {
+            loadedGlbClips[entry.padelkit_animation_id] = record;
+          }
+          if (entry.shot_category) {
+            loadedGlbClips[entry.shot_category.toLowerCase()] = record;
+          }
+          if (!firstTemplateScene) {
+            firstTemplateScene = gltf.scene;
+            defaultSocketBone = entry.racket_socket_bone || "mixamorig:RightHand";
+          }
+        } catch (err) {
+          console.warn("Failed to load GLB animation:", entry.clip_id, err);
+        }
+      }
+
+      if (!firstTemplateScene) return;
+
+      // Instantiate cloned Mixamo skeletal rig + 3D carbon racket for P1..P4
+      Object.entries(playerMeshes).forEach(([pid, rootMesh]) => {
+        const team = rootMesh.userData.team;
+        const segKey = team === "A" ? "teamA" : "teamB";
+        const jerseyHex = team === "A" ? 0x0284c7 : 0xe11d48;
+        const clonedScene = SkeletonUtils.clone(firstTemplateScene);
+        // Convert glTF Y-up back to PadelKit Z-up and align forward facing with +Y
+        clonedScene.rotation.x = Math.PI / 2;
+        clonedScene.rotation.z = Math.PI;
+
+        const sanitizedSocket = defaultSocketBone.replace(/:/g, "");
+        let socketNode = null;
+
+        clonedScene.traverse((node) => {
+          if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+            if (node.material) {
+              const clonedMat = node.material.clone();
+              if (clonedMat.name === "JerseyMat") {
+                clonedMat.color.setHex(jerseyHex);
+              }
+              node.material = clonedMat;
+              registerMesh(node, segKey);
+            }
+          }
+          if (
+            node.name === defaultSocketBone ||
+            node.name === sanitizedSocket ||
+            (node.userData && node.userData.name === defaultSocketBone)
+          ) {
+            socketNode = node;
+          }
+        });
+
+        if (socketNode) {
+          const glbRacket = createPadelRacketMesh(team);
+          glbRacket.rotation.x = -Math.PI / 2;
+          glbRacket.position.set(0, 0.06, 0);
+          socketNode.add(glbRacket);
+        }
+
+        const mixer = new THREE.AnimationMixer(clonedScene);
+        const actions = {};
+        Object.entries(loadedGlbClips).forEach(([key, rec]) => {
+          const act = mixer.clipAction(rec.clip);
+          act.clampWhenFinished = true;
+          act.loop = THREE.LoopOnce;
+          actions[key] = act;
+        });
+
+        rootMesh.userData.glbGroup.add(clonedScene);
+        rootMesh.userData.glbMixer = mixer;
+        rootMesh.userData.glbActions = actions;
+      });
+
+      const badge = document.getElementById("mode-badge");
+      if (badge && !CONFIG.live_stream_url) {
+        badge.textContent = `9D PHYSICS + ${entries.length} GLB CLIPS`;
+      }
+      if (timelineFrames.length > 0) {
+        applyFrameState(timelineFrames[currentFrameIdx], currentFrameIdx);
+      }
+    }
+    initAnimationLibrary();
 
     // ------------------------------------------------------------------ //
     // Virtual Cameras Setup & Frustum Helpers (from padelkit.camera)
@@ -1306,19 +1425,54 @@ THREEJS_VIEWER_HTML_TEMPLATE = """<!DOCTYPE html>
 
         // Subtle athletic ready bounce and forward torso lean
         const sw = p.swing_phase || 0;
-        mesh.userData.upperBody.rotation.x = isRunning ? 0.16 : 0.10;
-        mesh.userData.upperBody.rotation.z = sw * 0.55;
-
-        // Overhead vs groundstroke arm kinematics
         const animName = p.animation || "idle";
-        if (animName.includes("smash") || animName.includes("bandeja")) {
-          mesh.userData.rightShoulder.rotation.x = -Math.PI * 0.65 * sw + Math.sin(sw * Math.PI) * 1.1;
-          mesh.userData.rightElbow.rotation.x = 0.4 * (1 - sw);
-          mesh.userData.leftShoulder.rotation.x = -0.6 * sw;
+        const glbRecord = loadedGlbClips[animName];
+
+        if (glbRecord && mesh.userData.glbMixer && mesh.userData.glbActions[animName]) {
+          mesh.userData.glbGroup.visible = true;
+          mesh.userData.proceduralGroup.visible = false;
+
+          // Determine if swing_phase is pre-impact (rising) or post-impact (falling)
+          let isPostImpact = false;
+          if (typeof frameIdx === "number" && frameIdx + 1 < timelineFrames.length) {
+            const nextP = (timelineFrames[frameIdx + 1].players || {})[pid];
+            if (nextP && (nextP.swing_phase || 0) < sw - 1e-4) {
+              isPostImpact = true;
+            }
+          }
+          const contactPhase =
+            glbRecord.meta && typeof glbRecord.meta.contact_swing_phase === "number"
+              ? glbRecord.meta.contact_swing_phase
+              : 0.5;
+          const normProgress = isPostImpact
+            ? contactPhase + (1.0 - sw) * (1.0 - contactPhase)
+            : sw * contactPhase;
+
+          const action = mesh.userData.glbActions[animName];
+          if (mesh.userData.activeGlbKey !== animName) {
+            Object.values(mesh.userData.glbActions).forEach((a) => a.stop());
+            action.reset();
+            action.play();
+            mesh.userData.activeGlbKey = animName;
+          }
+          const clipDur = Math.max(glbRecord.clip.duration - 1e-4, 0.01);
+          mesh.userData.glbMixer.setTime(Math.min(Math.max(normProgress, 0.0), 1.0) * clipDur);
         } else {
-          mesh.userData.rightShoulder.rotation.x = sw * 1.45 - (isRunning ? Math.sin(phase) * 0.25 : 0);
-          mesh.userData.rightElbow.rotation.x = 0.25 * sw;
-          mesh.userData.leftShoulder.rotation.x = isRunning ? Math.sin(phase) * 0.3 : 0.1;
+          mesh.userData.glbGroup.visible = false;
+          mesh.userData.proceduralGroup.visible = true;
+          mesh.userData.upperBody.rotation.x = isRunning ? 0.16 : 0.10;
+          mesh.userData.upperBody.rotation.z = sw * 0.55;
+
+          // Overhead vs groundstroke arm kinematics
+          if (animName.includes("smash") || animName.includes("bandeja")) {
+            mesh.userData.rightShoulder.rotation.x = -Math.PI * 0.65 * sw + Math.sin(sw * Math.PI) * 1.1;
+            mesh.userData.rightElbow.rotation.x = 0.4 * (1 - sw);
+            mesh.userData.leftShoulder.rotation.x = -0.6 * sw;
+          } else {
+            mesh.userData.rightShoulder.rotation.x = sw * 1.45 - (isRunning ? Math.sin(phase) * 0.25 : 0);
+            mesh.userData.rightElbow.rotation.x = 0.25 * sw;
+            mesh.userData.leftShoulder.rotation.x = isRunning ? Math.sin(phase) * 0.3 : 0.1;
+          }
         }
       });
 

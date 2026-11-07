@@ -500,8 +500,8 @@ class MatchTimeline:
                 swing_phase = 0.0
                 anim = "run" if speed > 0.6 else "idle"
                 for hit_t, ev_name, hitter, _ in hit_events:
-                    if hitter == pid and abs(t - hit_t) <= 0.28:
-                        swing_phase = float(1.0 - min(abs(t - hit_t) / 0.28, 1.0))
+                    if hitter == pid and abs(t - hit_t) <= 0.38:
+                        swing_phase = float(1.0 - min(abs(t - hit_t) / 0.38, 1.0))
                         anim = ev_name
                         break
 

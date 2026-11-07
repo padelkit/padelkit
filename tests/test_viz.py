@@ -65,3 +65,52 @@ def test_padel_visualizer_html_and_config(tmp_path: Path):
 
     jupyter_iframe = viz._repr_html_()
     assert "<iframe" in jupyter_iframe
+
+
+def test_padel_visualizer_with_animation_library(tmp_path: Path):
+    import json
+
+    anim_dir = tmp_path / "animations"
+    anim_dir.mkdir(parents=True, exist_ok=True)
+    glb_file = anim_dir / "forehand_drive.glb"
+    glb_file.write_bytes(b"glTF\x02\x00\x00\x00\x14\x00\x00\x00\x02\x00\x00\x00JSON{}")
+
+    manifest = {
+        "schema_version": "1.0.0",
+        "armature_convention": "mixamo",
+        "animations": [
+            {
+                "clip_id": "forehand_drive",
+                "glb_path": "forehand_drive.glb",
+                "padelkit_animation_id": "shot_forehand",
+                "shot_category": "FOREHAND",
+                "shot_variant": "STANDARD",
+                "spin": "FLAT",
+                "handedness": "RIGHT",
+                "racket_socket_bone": "mixamorig:RightHand",
+                "in_place": True,
+                "fps": 60.0,
+                "total_frames": 48,
+                "duration_s": 0.8,
+                "contact_frame_relative": 29,
+                "contact_swing_phase": 0.617,
+            }
+        ],
+    }
+    (anim_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+
+    viz = PadelVisualizer(animation_library_dir=anim_dir)
+
+    # 1. Standalone config embeds Base64 GLB data URI
+    standalone_cfg = viz.build_config(live_stream_url=None)
+    assert standalone_cfg["animation_library"] is not None
+    assert standalone_cfg["animation_library"]["glb_sources"][
+        "forehand_drive"
+    ].startswith("data:model/gltf-binary;base64,")
+
+    # 2. Server config uses /animations/<filename>.glb route
+    server_cfg = viz.build_config(live_stream_url="/events")
+    assert (
+        server_cfg["animation_library"]["glb_sources"]["forehand_drive"]
+        == "/animations/forehand_drive.glb"
+    )

@@ -1,0 +1,158 @@
+# Padel Stroke & Skeletal Animation Library
+
+PadelKit unifies **9D ball aerodynamics** (`BallState.from_shot`) with **3D Mixamo skeletal animations** (`padelkit-animator` `.glb` assets) through a standardized stroke taxonomy and impact-phase synchronization contract (`contact_swing_phase`). {{ className: 'lead' }}
+
+---
+
+## Stroke Taxonomy & Physics Reference
+
+Every stroke in a simulated or reconstructed padel rally maps to a canonical `padelkit_animation_id` on `PlayerPose.animation` and a physical launch signature (`velocity`, `topspin_rpm`, `sidespin_rpm`) in `BallState.from_shot()`.
+
+<Properties>
+  <Property name="serve" type="SERVE · Underhand Slice">
+    Executed below waist height (`z ≈ 0.85–0.98 m`) after a single floor bounce in the server's box. Typically imparted with carved backspin (`-600` to `-1200 RPM`) and sidespin (`+300` to `+500 RPM`) so the ball stays low (`SLIDING` regime) after rebounding off the receiver's side or back glass.
+  </Property>
+  <Property name="shot_forehand" type="FOREHAND · Groundstroke & Wall Exit">
+    Standard right-side drive or *bajada de pared* struck at `z ≈ 0.75–1.10 m`. Flat or topspin (`+800` to `+1800 RPM`) produces a dipping parabola over the net that kicks forward upon floor contact (`ROLLING` transition).
+  </Property>
+  <Property name="shot_backhand" type="BACKHAND · Groundstroke & Defensive Slice">
+    Left-side groundstroke or defensive backhand slice off the back glass. Uses either flat/topspin (`+500` to `+1400 RPM`) for passing drives or backspin (`-900 RPM`) for low cross-court chiquitas to the opponent's feet.
+  </Property>
+  <Property name="shot_volley" type="VOLLEY · Net Intercept">
+    Compact punch stroke executed close to the net (`y ≈ ±2.5–3.8 m`) with minimal backswing and crisp underspin (`-800` to `-1500 RPM`) to keep the ball skidding deep into the corners.
+  </Property>
+  <Property name="shot_bandeja" type="BANDEJA · Defensive/Tactical Overhead">
+    Signature padel overhead struck at shoulder-to-head height (`z ≈ 1.75–2.10 m`) with a flat-to-open racket face and heavy backspin (`-1800` to `-2500 RPM`). Designed to retain net position by producing a low, slow rebound off the back glass.
+  </Property>
+  <Property name="shot_vibora" type="VIBORA · Aggressive Side-Spin Overhead">
+    Whipped lateral overhead struck with combined underspin (`-1200 RPM`) and heavy sidespin (`±1800` to `±2600 RPM`). After hitting the corner glass, the lateral tangential velocity causes the ball to bite sideways away from the defender.
+  </Property>
+  <Property name="shot_lob" type="LOB · High Tactical Reset">
+    High launch angle (`vz ≈ 8.5–10.5 m/s`, apex `z > 5.5 m`) struck from behind the service line to push the net players back to the baseline without hitting the `4.0 m` back glass on the fly.
+  </Property>
+  <Property name="shot_smash" type="SMASH · Power Flat / Kick X3 / X4">
+    High-point overhead (`z ≈ 2.35–2.75 m`) struck with either flat power (`> 130 km/h`) to bring the ball back to the hitter's side or heavy topspin (`+2600` to `+3400 RPM`) so the ball kicks high off the `3.0 m` back glass and exits over the `3.0 m` side fence (*por 3*).
+  </Property>
+</Properties>
+
+---
+
+## MotionBERT Captured Stroke Previews
+
+<Row>
+  <Col>
+
+    Animations in the library are extracted from real padel footage using **padelkit-animator** (`RTMPose` 2D tracking $\rightarrow$ `MotionBERT` 243-frame 3D lifting $\rightarrow$ `1.78 m` metric normalization $\rightarrow$ `Mixamo` 18-bone `.glb` retargeting).
+
+    Each preview card below shows the normalized `Z-up` in-place skeleton (`in_place=True`), the dominant hitting arm & 3D racket trajectory, and the exact **ball contact frame** (`contact_swing_phase`, highlighted by the emerald flash ring and bottom timeline tick).
+
+    ### 1. Underhand Slice Serve (`forehand_serve.glb`)
+    <video
+      src="/images/strokes/forehand_serve.mp4"
+      autoPlay
+      loop
+      muted
+      playsInline
+      style={{ width: '100%', borderRadius: '12px', border: '1px solid rgba(148, 163, 184, 0.22)', marginTop: '8px', marginBottom: '20px' }}
+    />
+
+    ### 2. Forehand Drive (`forehand_drive.glb`)
+    <video
+      src="/images/strokes/forehand_drive.mp4"
+      autoPlay
+      loop
+      muted
+      playsInline
+      style={{ width: '100%', borderRadius: '12px', border: '1px solid rgba(148, 163, 184, 0.22)', marginTop: '8px' }}
+    />
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Loading GLB Animations in PadelVisualizer" tag="guide" label="animation_library_dir">
+
+    ```python
+    from padelkit import Court, MatchTimeline, PadelVisualizer
+
+    court = Court.fip_standard()
+    timeline = MatchTimeline.demo_rally(court=court, fps=60.0)
+
+    # Connect your padelkit-animator GLB library directory
+    viz = PadelVisualizer(
+        court=court,
+        timeline=timeline,
+        animation_library_dir="../padelkit-animator/data/animations",
+    )
+
+    # Export a self-contained HTML studio (embeds GLBs as Data URIs)
+    viz.export_html("rally_with_mixamo_strokes.html")
+
+    # Or launch the local interactive server
+    # viz.serve(port=8765, open_browser=True)
+    ```
+
+    </CodeGroup>
+
+    <CodeGroup title="manifest.json Entry Contract" tag="schema" label="manifest.json">
+
+    ```json
+    {
+      "clip_id": "forehand_drive",
+      "glb_path": "forehand_drive.glb",
+      "padelkit_animation_id": "shot_forehand",
+      "shot_category": "FOREHAND",
+      "shot_variant": "STANDARD",
+      "spin": "FLAT",
+      "handedness": "RIGHT",
+      "racket_socket_bone": "mixamorig:RightHand",
+      "in_place": true,
+      "fps": 60.0,
+      "total_frames": 48,
+      "duration_s": 0.8,
+      "contact_frame_relative": 29,
+      "contact_swing_phase": 0.617
+    }
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Impact-Phase Synchronization (`contact_swing_phase`)
+
+<Row>
+  <Col>
+
+    When simulating a rally in `MatchTimeline`, the physics engine determines the exact timestamp $t_{\text{hit}}$ at which the ball leaves the strings. If a skeletal animation clip were simply triggered at $t_{\text{hit}}$, the player would start their backswing *after* the ball is already in flight.
+
+    To align the 3D racket swing with the physical ball launch:
+    1. Each `.glb` entry in `manifest.json` stores `contact_swing_phase` $\phi_c = \frac{f_{\text{contact}}}{N_{\text{frames}} - 1} \in [0, 1]$.
+    2. During the **preparation / backswing** window ($t \le t_{\text{hit}}$, where `PlayerPose.swing_phase` rises from $0 \to 1$), `PadelVisualizer` scrubs the `.glb` clip from $0 \to \phi_c \cdot T_{\text{clip}}$.
+    3. At the **exact impact frame** ($t = t_{\text{hit}}$, `swing_phase == 1.0`), the skeleton's hand bone (`mixamorig:RightHand`) is guaranteed to be at $f_{\text{contact}}$.
+    4. During the **follow-through** window ($t > t_{\text{hit}}$, where `swing_phase` decays from $1 \to 0$), the clip continues smoothly from $\phi_c \cdot T_{\text{clip}} \to T_{\text{clip}}$.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Generating New Clips with padelkit-animator" tag="cli" label="padelkit-animator">
+
+    ```bash
+    # 1. Launch the browser clipper UI to trim a stroke & mark impact frame
+    uv run padelkit-animator ui --port 8765
+
+    # 2. Run 2D RTMPose -> 3D MotionBERT -> Blender Mixamo GLB export
+    uv run padelkit-animator pipeline --clip-id bandeja_01
+
+    # 3. Export a studio MP4 preview card for documentation
+    uv run padelkit-animator preview-card \
+      --clip-id bandeja_01 \
+      --output ../padelkit/docs/images/strokes/bandeja_01.mp4
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

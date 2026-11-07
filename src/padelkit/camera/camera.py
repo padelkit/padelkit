@@ -317,9 +317,7 @@ class Camera:
 
         floor_mask = np.abs(pts_3d[:, 2]) < 1e-6
         if np.sum(floor_mask) >= 4:
-            h_floor = cls.compute_homography(
-                pts_3d[floor_mask, :2], pts_2d[floor_mask]
-            )
+            h_floor = cls.compute_homography(pts_3d[floor_mask, :2], pts_2d[floor_mask])
         else:
             h_floor = cls.compute_homography(pts_3d[:, :2], pts_2d)
 
@@ -878,4 +876,3 @@ def _refine_camera_lm(
     t_final = params[3:6]
     f_final = float(params[6]) if optimize_focal else float(intr.fx)
     return r_final, t_final, f_final
-

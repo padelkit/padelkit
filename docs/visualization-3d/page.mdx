@@ -43,7 +43,12 @@ The `padelkit.viz` module provides an interactive Three.js 3D court visualizer, 
     timeline.to_csv("demo_rally.csv")
 
     # 2. Load the CSV into the Three.js 3D Visualizer
-    viz = PadelVisualizer.from_csv("demo_rally.csv", court=court)
+    #    (optionally pass animation_library_dir for Mixamo .glb strokes)
+    viz = PadelVisualizer.from_csv(
+        "demo_rally.csv",
+        court=court,
+        animation_library_dir="../padelkit-animator/data/animations",
+    )
 
     # 3. Export standalone HTML or launch interactive server
     viz.export_html("padel_studio.html")

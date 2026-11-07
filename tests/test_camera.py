@@ -235,4 +235,3 @@ def test_camera_floor_homography_and_from_landmarks():
     assert cal_3d.extrinsics.position == pytest.approx(
         gt_cam.extrinsics.position, abs=1e-4
     )
-

@@ -74,7 +74,6 @@ def test_padel_court_with_all_optional_fields():
     assert court.location.latitude == pytest.approx(40.4168)
 
 
-
 # ---------------------------------------------------------------------------
 # landmarks_2d — CENTERED system (default)
 # ---------------------------------------------------------------------------

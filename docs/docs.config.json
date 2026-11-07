@@ -31,6 +31,12 @@
       "icon": "ShapesIcon",
       "min": "0.1.0"
     },
+    "/stroke-library": {
+      "title": "Stroke & Animation Library",
+      "description": "Padel stroke taxonomy, 9D spin/velocity signatures, MotionBERT 3D skeletal animations, and GLB playback in PadelVisualizer.",
+      "icon": "BoltIcon",
+      "min": "0.1.0"
+    },
     "/ball-physics": {
       "title": "Ball Aerodynamics & Contact Physics",
       "description": "Learn how the 9D aerodynamic model (Drag, Spindt Magnus lift) and Coulomb Sliding/Rolling rebound physics work.",
@@ -143,7 +149,8 @@
         "/court-geometry",
         "/camera-system",
         "/ball-physics",
-        "/visualization-3d"
+        "/visualization-3d",
+        "/stroke-library"
       ]
     },
     {
@@ -197,7 +204,8 @@
       "/court-geometry",
       "/camera-system",
       "/ball-physics",
-      "/visualization-3d"
+      "/visualization-3d",
+      "/stroke-library"
     ],
     "resources": [
       "/court-landmark",
