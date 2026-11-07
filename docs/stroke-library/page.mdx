@@ -42,7 +42,7 @@ Every stroke in a simulated or reconstructed padel rally maps to a canonical `pa
 <Row>
   <Col>
 
-    Animations in the library are extracted from real padel footage using **padelkit-animator** (`RTMPose` 2D tracking $\rightarrow$ `MotionBERT` 243-frame 3D lifting $\rightarrow$ `1.78 m` metric normalization $\rightarrow$ `Mixamo` 18-bone `.glb` retargeting).
+    Animations in the library are extracted from real padel footage using **padelkit-animator** (`RTMPose` 2D tracking → `MotionBERT` 243-frame 3D lifting → `1.78 m` metric normalization → `Mixamo` 18-bone `.glb` retargeting).
 
     Each preview card below shows the normalized `Z-up` in-place skeleton (`in_place=True`), the dominant hitting arm & 3D racket trajectory, and the exact **ball contact frame** (`contact_swing_phase`, highlighted by the emerald flash ring and bottom timeline tick).
 
@@ -126,13 +126,13 @@ Every stroke in a simulated or reconstructed padel rally maps to a canonical `pa
 <Row>
   <Col>
 
-    When simulating a rally in `MatchTimeline`, the physics engine determines the exact timestamp $t_{\text{hit}}$ at which the ball leaves the strings. If a skeletal animation clip were simply triggered at $t_{\text{hit}}$, the player would start their backswing *after* the ball is already in flight.
+    When simulating a rally in `MatchTimeline`, the physics engine determines the exact timestamp `t_hit` at which the ball leaves the strings. If a skeletal animation clip were simply triggered at `t_hit`, the player would start their backswing *after* the ball is already in flight.
 
     To align the 3D racket swing with the physical ball launch:
-    1. Each `.glb` entry in `manifest.json` stores `contact_swing_phase` $\phi_c = \frac{f_{\text{contact}}}{N_{\text{frames}} - 1} \in [0, 1]$.
-    2. During the **preparation / backswing** window ($t \le t_{\text{hit}}$, where `PlayerPose.swing_phase` rises from $0 \to 1$), `PadelVisualizer` scrubs the `.glb` clip from $0 \to \phi_c \cdot T_{\text{clip}}$.
-    3. At the **exact impact frame** ($t = t_{\text{hit}}$, `swing_phase == 1.0`), the skeleton's hand bone (`mixamorig:RightHand`) is guaranteed to be at $f_{\text{contact}}$.
-    4. During the **follow-through** window ($t > t_{\text{hit}}$, where `swing_phase` decays from $1 \to 0$), the clip continues smoothly from $\phi_c \cdot T_{\text{clip}} \to T_{\text{clip}}$.
+    1. Each `.glb` entry in `manifest.json` stores `contact_swing_phase` (`phi_c = f_contact / (N_frames - 1)` in `[0, 1]`).
+    2. During the **preparation / backswing** window (`t <= t_hit`, where `PlayerPose.swing_phase` rises from `0 -> 1`), `PadelVisualizer` scrubs the `.glb` clip from `0` to `phi_c * T_clip`.
+    3. At the **exact impact frame** (`t = t_hit`, `swing_phase == 1.0`), the skeleton's hand bone (`mixamorig:RightHand`) is guaranteed to be at `f_contact`.
+    4. During the **follow-through** window (`t > t_hit`, where `swing_phase` decays from `1 -> 0`), the clip continues smoothly from `phi_c * T_clip` to `T_clip`.
 
   </Col>
   <Col sticky>
