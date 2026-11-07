@@ -7,6 +7,7 @@ on:
       - '.github/workflows/deploy-docs.yml'
     branches:
       - main
+      - develop
   workflow_dispatch:
 
 jobs:
@@ -15,9 +16,19 @@ jobs:
     steps:
       - name: Trigger Vercel Deploy Hook
         run: |
-          if [ -z "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}" ]; then
-            echo "Error: VERCEL_DEPLOY_HOOK_URL secret is empty!"
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            HOOK_URL="${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
+            TARGET_ENV="Production (main)"
+          else
+            HOOK_URL="${{ secrets.VERCEL_PREVIEW_DEPLOY_HOOK_URL }}"
+            TARGET_ENV="Preview (develop)"
+          fi
+
+          if [ -z "$HOOK_URL" ]; then
+            echo "Error: Target Deploy Hook secret for $TARGET_ENV is empty!"
             exit 1
           fi
-          curl --fail-with-body -sS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
+
+          echo "Triggering Vercel deployment for $TARGET_ENV..."
+          curl --fail-with-body -sS -X POST "$HOOK_URL"
           echo ""
