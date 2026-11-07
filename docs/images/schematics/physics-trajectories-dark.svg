@@ -2,63 +2,64 @@
   <title>PadelKit RK4 Simulated Spin Trajectories (Y-Z Elevation)</title>
   <desc>Side-elevation comparison of Topspin Smash, Flat Drive, and Backspin Bandeja simulated via BallPhysicsEngine.simulate().</desc>
   <defs>
-    <marker id="arrow-fg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <marker id="arrow-fg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse">
       <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#f8fafc" />
     </marker>
-    <marker id="arrow-muted" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <marker id="arrow-muted" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse">
       <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#94a3b8" />
     </marker>
-    <marker id="arrow-primary" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <marker id="arrow-primary" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse">
       <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#34d399" />
     </marker>
-    <marker id="arrow-secondary" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <marker id="arrow-secondary" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse">
       <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#38bdf8" />
     </marker>
-    <marker id="arrow-tertiary" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <marker id="arrow-tertiary" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse">
       <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#fbbf24" />
     </marker>
-    <marker id="arrow-danger" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <marker id="arrow-danger" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse">
       <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#fb7185" />
     </marker>
   </defs>
-  <rect x="0.00" y="0.00" width="960.00" height="440.00" fill="#090d16" stroke="#1e293b" stroke-width="1.50" rx="14.00" />
-  <text x="28.00" y="28.00" fill="#f4f4f5" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="15.00" font-weight="700" text-anchor="start" dominant-baseline="middle">RK4 Spin Trajectory Comparison (BallPhysicsEngine.simulate)</text>
-  <text x="28.00" y="48.00" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11.50" font-weight="400" text-anchor="start" dominant-baseline="middle">Side Elevation (Y ∈ [-10m, +10m], Z ∈ [0m, 4.5m])  |  dt = 0.002s  |  Sharp bounce cusps preserved</text>
-  <rect x="24.00" y="64.00" width="912.00" height="352.00" fill="#0f172a" stroke="#1e293b" stroke-width="1.00" rx="10.00" />
-  <line x1="80.00" y1="310.00" x2="880.00" y2="310.00" stroke="#1e293b" stroke-width="1.00" stroke-linecap="round" stroke-dasharray="4 4" />
-  <text x="68.00" y="310.00" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.50" font-weight="500" text-anchor="end" dominant-baseline="middle">1m</text>
-  <line x1="80.00" y1="254.00" x2="880.00" y2="254.00" stroke="#1e293b" stroke-width="1.00" stroke-linecap="round" stroke-dasharray="4 4" />
-  <text x="68.00" y="254.00" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.50" font-weight="500" text-anchor="end" dominant-baseline="middle">2m</text>
-  <line x1="80.00" y1="198.00" x2="880.00" y2="198.00" stroke="#1e293b" stroke-width="1.00" stroke-linecap="round" stroke-dasharray="4 4" />
-  <text x="68.00" y="198.00" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.50" font-weight="500" text-anchor="end" dominant-baseline="middle">3m</text>
-  <line x1="80.00" y1="142.00" x2="880.00" y2="142.00" stroke="#1e293b" stroke-width="1.00" stroke-linecap="round" stroke-dasharray="4 4" />
-  <text x="68.00" y="142.00" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.50" font-weight="500" text-anchor="end" dominant-baseline="middle">4m</text>
-  <line x1="80.00" y1="366.00" x2="880.00" y2="366.00" stroke="#f8fafc" stroke-width="2.40" stroke-linecap="round" />
-  <line x1="80.00" y1="366.00" x2="80.00" y2="142.00" stroke="#38bdf8" stroke-width="3.00" stroke-linecap="round" />
-  <line x1="880.00" y1="366.00" x2="880.00" y2="142.00" stroke="#38bdf8" stroke-width="3.00" stroke-linecap="round" />
-  <line x1="480.00" y1="366.00" x2="480.00" y2="316.72" stroke="#fbbf24" stroke-width="3.00" stroke-linecap="round" />
-  <text x="80.00" y="386.00" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.50" font-weight="500" text-anchor="middle" dominant-baseline="middle">Y = -10m (Near Glass)</text>
-  <text x="200.00" y="386.00" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.50" font-weight="500" text-anchor="middle" dominant-baseline="middle">-7m</text>
-  <text x="480.00" y="386.00" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.50" font-weight="500" text-anchor="middle" dominant-baseline="middle">Y = 0m (Net 0.88m)</text>
-  <text x="760.00" y="386.00" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.50" font-weight="500" text-anchor="middle" dominant-baseline="middle">+7m</text>
-  <text x="880.00" y="386.00" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.50" font-weight="500" text-anchor="middle" dominant-baseline="middle">Y = +10m (Far Glass)</text>
-  <polyline points="300.00,223.20 351.00,230.00 402.44,239.97 452.62,252.81 503.13,268.98 550.82,287.37 598.79,309.09 644.06,332.69 669.80,347.52 696.55,364.05 697.94,364.15 720.57,351.35 743.03,339.79 765.31,329.47 788.53,319.94 810.46,312.08 833.29,305.09 854.86,299.61 878.68,294.73 834.13,263.38 812.32,249.68 790.80,237.27 769.55,226.15 748.55,216.32 727.80,207.75 706.46,200.18 686.16,194.18 666.06,189.43 646.15,185.91 625.65,183.57 606.11,182.56 585.97,182.80 566.77,184.27 546.95,187.06" fill="none" stroke="#fb7185" stroke-width="2.40" stroke-linecap="round" stroke-linejoin="round" />
-  <circle cx="300.00" cy="223.20" r="4.50" fill="#fb7185" stroke="#0f172a" stroke-width="1.50" />
-  <circle cx="697.94" cy="364.15" r="5.00" fill="#0f172a" stroke="#fb7185" stroke-width="2.20" />
-  <circle cx="878.68" cy="294.73" r="5.00" fill="#0f172a" stroke="#fb7185" stroke-width="2.20" />
-  <line x1="110.00" y1="92.00" x2="138.00" y2="92.00" stroke="#fb7185" stroke-width="2.80" stroke-linecap="round" />
-  <text x="146.00" y="92.00" fill="#fb7185" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10.50" font-weight="700" text-anchor="start" dominant-baseline="middle">Topspin Smash (+2400 RPM)</text>
-  <polyline points="152.00,301.60 193.62,294.79 234.49,289.47 274.65,285.59 314.12,283.15 352.92,282.11 392.59,282.49 430.10,284.24 468.47,287.48 506.20,292.13 543.33,298.19 579.86,305.62 615.81,314.40 651.20,324.52 686.04,335.96 719.03,348.18 757.98,364.15 787.80,352.26 818.23,342.74 848.31,335.97 878.68,331.83 851.42,321.11 824.54,312.93 798.01,307.24 771.07,303.99 745.18,303.32 718.85,305.17 692.81,309.58 667.03,316.52" fill="none" stroke="#38bdf8" stroke-width="2.40" stroke-linecap="round" stroke-linejoin="round" />
-  <circle cx="152.00" cy="301.60" r="4.50" fill="#38bdf8" stroke="#0f172a" stroke-width="1.50" />
-  <circle cx="757.98" cy="364.15" r="5.00" fill="#0f172a" stroke="#38bdf8" stroke-width="2.20" />
-  <circle cx="878.68" cy="331.83" r="5.00" fill="#0f172a" stroke="#38bdf8" stroke-width="2.20" />
-  <line x1="380.00" y1="92.00" x2="408.00" y2="92.00" stroke="#38bdf8" stroke-width="2.80" stroke-linecap="round" />
-  <text x="416.00" y="92.00" fill="#38bdf8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10.50" font-weight="700" text-anchor="start" dominant-baseline="middle">Flat Drive (0 RPM)</text>
-  <polyline points="340.00,242.80 390.38,247.17 440.86,254.70 489.23,265.01 537.79,278.55 585.47,295.07 632.33,314.54 677.36,336.37 727.83,364.15 746.73,352.29 766.16,342.06 784.79,334.13 803.95,327.92 822.96,323.73 841.82,321.53 860.53,321.31 878.68,323.04 865.72,323.57 852.29,325.42 838.93,328.60 825.65,333.09 812.97,338.63 799.83,345.68 787.80,353.30 772.72,364.15 759.07,353.36" fill="none" stroke="#34d399" stroke-width="2.40" stroke-linecap="round" stroke-linejoin="round" />
-  <circle cx="340.00" cy="242.80" r="4.50" fill="#34d399" stroke="#0f172a" stroke-width="1.50" />
-  <circle cx="727.83" cy="364.15" r="5.00" fill="#0f172a" stroke="#34d399" stroke-width="2.20" />
-  <circle cx="878.68" cy="323.04" r="5.00" fill="#0f172a" stroke="#34d399" stroke-width="2.20" />
-  <circle cx="772.72" cy="364.15" r="5.00" fill="#0f172a" stroke="#34d399" stroke-width="2.20" />
-  <line x1="650.00" y1="92.00" x2="678.00" y2="92.00" stroke="#34d399" stroke-width="2.80" stroke-linecap="round" />
-  <text x="686.00" y="92.00" fill="#34d399" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10.50" font-weight="700" text-anchor="start" dominant-baseline="middle">Backspin Bandeja (-1800 RPM)</text>
+  <rect x="0" y="0" width="960" height="440" fill="#090d16" stroke="#1e293b" stroke-width="1.5" rx="14" />
+  <text x="28" y="27" fill="#f4f4f5" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="15" font-weight="700" text-anchor="start" dominant-baseline="middle">RK4 Spin Trajectory Comparison (BallPhysicsEngine.simulate)</text>
+  <text x="28" y="47" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11" font-weight="400" text-anchor="start" dominant-baseline="middle">Side Elevation (Y ∈ [-10m, +10m], Z ∈ [0m, 4.0m])  |  dt = 0.002s  |  Floor &amp; Back-Glass Rebounds</text>
+  <rect x="24" y="64" width="912" height="352" fill="#0f172a" stroke="#1e293b" stroke-width="1" rx="10" />
+  <line x1="80" y1="310" x2="880" y2="310" stroke="#1e293b" stroke-width="1" stroke-linecap="round" stroke-dasharray="4 4" />
+  <text x="68" y="310" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="500" text-anchor="end" dominant-baseline="middle">1m</text>
+  <line x1="80" y1="254" x2="880" y2="254" stroke="#1e293b" stroke-width="1" stroke-linecap="round" stroke-dasharray="4 4" />
+  <text x="68" y="254" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="500" text-anchor="end" dominant-baseline="middle">2m</text>
+  <line x1="80" y1="198" x2="880" y2="198" stroke="#1e293b" stroke-width="1" stroke-linecap="round" stroke-dasharray="4 4" />
+  <text x="68" y="198" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="500" text-anchor="end" dominant-baseline="middle">3m</text>
+  <line x1="80" y1="142" x2="880" y2="142" stroke="#1e293b" stroke-width="1" stroke-linecap="round" stroke-dasharray="4 4" />
+  <text x="68" y="142" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="500" text-anchor="end" dominant-baseline="middle">4m</text>
+  <line x1="80" y1="366" x2="880" y2="366" stroke="#f8fafc" stroke-width="2.4" stroke-linecap="round" />
+  <line x1="80" y1="366" x2="80" y2="198" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round" />
+  <line x1="80" y1="198" x2="80" y2="142" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="4 3" />
+  <line x1="880" y1="366" x2="880" y2="198" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round" />
+  <line x1="880" y1="198" x2="880" y2="142" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="4 3" />
+  <line x1="480" y1="366" x2="480" y2="316.7" stroke="#fbbf24" stroke-width="3.2" stroke-linecap="round" />
+  <text x="80" y="386" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="500" text-anchor="middle" dominant-baseline="middle">Y = -10m (Near Wall)</text>
+  <text x="200" y="386" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="500" text-anchor="middle" dominant-baseline="middle">-7m</text>
+  <text x="480" y="386" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="500" text-anchor="middle" dominant-baseline="middle">Y = 0m (Net 0.88m)</text>
+  <text x="760" y="386" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="500" text-anchor="middle" dominant-baseline="middle">+7m</text>
+  <text x="880" y="386" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="500" text-anchor="middle" dominant-baseline="middle">Y = +10m (Far Wall)</text>
+  <polyline points="380,217.6 427.3,228.0 473.5,240.5 520.4,255.6 566.2,272.8 610.9,292.1 654.5,313.4 695.5,335.7 743.0,364.2 776.8,345.1 810.2,328.6 843.1,314.5 878.7,301.8 840.9,270.8 805.0,243.7 769.0,219.1 734.7,198.1 701.1,180.0 667.2,164.6 634.9,152.4 602.2,143.0" fill="none" stroke="#fb7185" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-danger)" />
+  <circle cx="380" cy="217.6" r="4.5" fill="#fb7185" stroke="#0f172a" stroke-width="1.5" />
+  <circle cx="743.0" cy="364.2" r="5" fill="#0f172a" stroke="#fb7185" stroke-width="2.2" />
+  <circle cx="878.7" cy="301.8" r="5" fill="#0f172a" stroke="#fb7185" stroke-width="2.2" />
+  <line x1="104" y1="92" x2="132" y2="92" stroke="#fb7185" stroke-width="2.8" stroke-linecap="round" />
+  <text x="140" y="92" fill="#fb7185" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10.5" font-weight="700" text-anchor="start" dominant-baseline="middle">Topspin Smash (+2400 RPM)</text>
+  <polyline points="152,304.4 192.8,296.5 232.9,290.2 272.3,285.4 311.1,282.3 349.2,280.6 388.1,280.5 424.9,281.9 462.6,284.9 499.6,289.4 536.1,295.4 572.0,302.9 607.3,311.9 642.1,322.4 676.3,334.3 708.8,347.0 748.1,364.2 764.2,356.8 781.0,350.0 796.9,344.5 813.5,339.5 830.0,335.5 846.5,332.5 862.8,330.4 878.7,329.2 852.8,319.1 827.4,311.7 802.2,306.9 776.6,304.8" fill="none" stroke="#38bdf8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-secondary)" />
+  <circle cx="152" cy="304.4" r="4.5" fill="#38bdf8" stroke="#0f172a" stroke-width="1.5" />
+  <circle cx="748.1" cy="364.2" r="5" fill="#0f172a" stroke="#38bdf8" stroke-width="2.2" />
+  <circle cx="878.7" cy="329.2" r="5" fill="#0f172a" stroke="#38bdf8" stroke-width="2.2" />
+  <line x1="380" y1="92" x2="408" y2="92" stroke="#38bdf8" stroke-width="2.8" stroke-linecap="round" />
+  <text x="416" y="92" fill="#38bdf8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10.5" font-weight="700" text-anchor="start" dominant-baseline="middle">Flat Drive (0 RPM)</text>
+  <polyline points="320,245.6 345.4,247.0 370.5,249.2 395.4,252.1 420.0,255.9 444.3,260.4 468.4,265.7 492.3,271.7 517.1,278.9 540.6,286.5 564.9,295.3 587.9,304.5 611.8,314.8 634.5,325.5 658.0,337.5 705.4,364.2 727.1,350.5 749.3,339.2 771.2,330.8 793.0,325.1 814.6,322.1 836.0,321.9 846.7,322.8 857.9,324.4 878.7,329.6 869.3,331.1 860.0,333.3 841.4,339.9 823.1,349.3 804.9,361.6" fill="none" stroke="#34d399" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-primary)" />
+  <circle cx="320" cy="245.6" r="4.5" fill="#34d399" stroke="#0f172a" stroke-width="1.5" />
+  <circle cx="705.4" cy="364.2" r="5" fill="#0f172a" stroke="#34d399" stroke-width="2.2" />
+  <circle cx="878.7" cy="329.6" r="5" fill="#0f172a" stroke="#34d399" stroke-width="2.2" />
+  <line x1="656" y1="92" x2="684" y2="92" stroke="#34d399" stroke-width="2.8" stroke-linecap="round" />
+  <text x="692" y="92" fill="#34d399" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10.5" font-weight="700" text-anchor="start" dominant-baseline="middle">Backspin Bandeja (-1800 RPM)</text>
 </svg>

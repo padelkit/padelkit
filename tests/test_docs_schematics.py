@@ -36,7 +36,9 @@ def test_schematics_xml_well_formed_and_bounded() -> None:
     for svg_path in svg_files:
         raw = svg_path.read_text(encoding="utf-8")
         raw_bytes = svg_path.read_bytes()
-        assert len(raw_bytes) <= gen.MAX_SVG_BYTES, f"{svg_path.name} exceeds 30 KB"
+        assert len(raw_bytes) <= gen.MAX_SVG_BYTES, (
+            f"{svg_path.name} exceeds size limit"
+        )
         assert "NaN" not in raw
         assert "inf" not in raw.lower() or "info" in raw.lower()
 

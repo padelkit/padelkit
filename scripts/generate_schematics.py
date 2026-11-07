@@ -1,11 +1,12 @@
 # ruff: noqa: E501
-"""Zero-dependency SVG technical schematic generator for PadelKit documentation.
+"""3D CAD Scene-Graph & Optical Projection SVG Schematic Engine for PadelKit Docs.
 
-Computes 2D orthographic and 3D perspective/axonometric vector schematics directly
-from PadelKit's domain classes (`Court`, `Camera`, `CameraDistortion`,
-`BallPhysicsEngine`, and `ServingEngine`) using only Python's standard library
-and NumPy. Outputs deterministic `-light.svg` and `-dark.svg` pairs into
-`docs/images/schematics/`.
+Uses a true 3D scene-graph renderer (`Scene3D`, `Face3D`, `Segment3D`) backed by
+`padelkit.camera.Camera` (`K`, `R|t`, `CameraDistortion`), depth-sorted painter's
+algorithm, automatic 3D-to-viewport bounding-box fitting, and SVG `<clipPath>`
+isolation to generate publication-grade technical schematics.
+
+Outputs deterministic `-light.svg` and `-dark.svg` pairs into `docs/images/schematics/`.
 """
 
 from __future__ import annotations
@@ -16,7 +17,7 @@ import math
 import sys
 import xml.etree.ElementTree as ET
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
@@ -47,7 +48,9 @@ class ThemePalette:
     court_line_bg: str
     glass_fill: str
     glass_stroke: str
+    fence_fill: str
     fence_stroke: str
+    pillar_stroke: str
     text_primary: str
     text_muted: str
     badge_bg: str
@@ -63,12 +66,14 @@ LIGHT_PALETTE = ThemePalette(
     bg_panel="#ffffff",
     border="#cbd5e1",
     grid_line="#e2e8f0",
-    court_floor="#f1f5f9",
+    court_floor="#e2e8f0",
     court_line_fg="#0f172a",
-    court_line_bg="#94a3b8",
-    glass_fill="#e0f2fe",
+    court_line_bg="#64748b",
+    glass_fill="#bae6fd",
     glass_stroke="#0284c7",
+    fence_fill="#f1f5f9",
     fence_stroke="#64748b",
+    pillar_stroke="#334155",
     text_primary="#09090b",
     text_muted="#475569",
     badge_bg="#ffffff",
@@ -86,10 +91,12 @@ DARK_PALETTE = ThemePalette(
     grid_line="#1e293b",
     court_floor="#111c2d",
     court_line_fg="#f8fafc",
-    court_line_bg="#475569",
-    glass_fill="#0c4a6e",
+    court_line_bg="#64748b",
+    glass_fill="#0ea5e9",
     glass_stroke="#38bdf8",
-    fence_stroke="#64748b",
+    fence_fill="#1e293b",
+    fence_stroke="#94a3b8",
+    pillar_stroke="#cbd5e1",
     text_primary="#f4f4f5",
     text_muted="#94a3b8",
     badge_bg="#090d16",
@@ -104,13 +111,15 @@ FONT_MONO = "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
 
 
 def _fmt(val: float) -> str:
-    """Format a float to 2 decimal places while rejecting NaN or infinite values."""
+    """Format a float to 1 decimal place while rejecting NaN or infinite values."""
     fval = float(val)
     if not math.isfinite(fval):
         raise ValueError(f"Non-finite coordinate in SVG schematic: {val}")
     if abs(fval) < 1e-4:
         fval = 0.0
-    return f"{fval:.2f}"
+    if abs(fval - round(fval)) < 1e-3:
+        return f"{int(round(fval))}"
+    return f"{fval:.1f}"
 
 
 class SvgCanvas:
@@ -142,6 +151,7 @@ class SvgCanvas:
         desc_el = ET.SubElement(self.root, "desc")
         desc_el.text = desc
         self.defs = ET.SubElement(self.root, "defs")
+        self._target: ET.Element = self.root
         self._register_markers()
         self.rect(
             0,
@@ -172,8 +182,8 @@ class SvgCanvas:
                     "viewBox": "0 0 10 10",
                     "refX": "8",
                     "refY": "5",
-                    "markerWidth": "6",
-                    "markerHeight": "6",
+                    "markerWidth": "5.5",
+                    "markerHeight": "5.5",
                     "orient": "auto-start-reverse",
                 },
             )
@@ -182,6 +192,27 @@ class SvgCanvas:
                 "path",
                 {"d": "M 0 1.5 L 9 5 L 0 8.5 z", "fill": color},
             )
+
+    def clip_group(
+        self,
+        clip_id: str,
+        x: float,
+        y: float,
+        w: float,
+        h: float,
+        rx: float = 0.0,
+    ) -> ET.Element:
+        """Create a `<clipPath>` in `<defs>` and return a `<g clip-path="url(#...)">`."""
+        cp = ET.SubElement(self.defs, "clipPath", {"id": clip_id})
+        attrs = {"x": _fmt(x), "y": _fmt(y), "width": _fmt(w), "height": _fmt(h)}
+        if rx > 0:
+            attrs["rx"] = _fmt(rx)
+        ET.SubElement(cp, "rect", attrs)
+        return ET.SubElement(self.root, "g", {"clip-path": f"url(#{clip_id})"})
+
+    def set_target(self, target: ET.Element | None = None) -> None:
+        """Set the active parent XML element (`None` resets to root `<svg>`)."""
+        self._target = target if target is not None else self.root
 
     def rect(
         self,
@@ -212,7 +243,7 @@ class SvgCanvas:
             attrs["opacity"] = _fmt(opacity)
         if dash:
             attrs["stroke-dasharray"] = dash
-        return ET.SubElement(self.root, "rect", attrs)
+        return ET.SubElement(self._target, "rect", attrs)
 
     def line(
         self,
@@ -245,7 +276,7 @@ class SvgCanvas:
             attrs["marker-start"] = f"url(#{marker_start})"
         if marker_end:
             attrs["marker-end"] = f"url(#{marker_end})"
-        return ET.SubElement(self.root, "line", attrs)
+        return ET.SubElement(self._target, "line", attrs)
 
     def polyline(
         self,
@@ -273,7 +304,7 @@ class SvgCanvas:
             attrs["opacity"] = _fmt(opacity)
         if marker_end:
             attrs["marker-end"] = f"url(#{marker_end})"
-        return ET.SubElement(self.root, "polyline", attrs)
+        return ET.SubElement(self._target, "polyline", attrs)
 
     def polygon(
         self,
@@ -300,7 +331,7 @@ class SvgCanvas:
             attrs["stroke-opacity"] = _fmt(stroke_opacity)
         if dash:
             attrs["stroke-dasharray"] = dash
-        return ET.SubElement(self.root, "polygon", attrs)
+        return ET.SubElement(self._target, "polygon", attrs)
 
     def circle(
         self,
@@ -323,7 +354,7 @@ class SvgCanvas:
         }
         if opacity < 1.0:
             attrs["opacity"] = _fmt(opacity)
-        return ET.SubElement(self.root, "circle", attrs)
+        return ET.SubElement(self._target, "circle", attrs)
 
     def path(
         self,
@@ -350,7 +381,7 @@ class SvgCanvas:
             attrs["opacity"] = _fmt(opacity)
         if marker_end:
             attrs["marker-end"] = f"url(#{marker_end})"
-        return ET.SubElement(self.root, "path", attrs)
+        return ET.SubElement(self._target, "path", attrs)
 
     def text(
         self,
@@ -375,14 +406,14 @@ class SvgCanvas:
             "text-anchor": anchor,
             "dominant-baseline": baseline,
         }
-        el = ET.SubElement(self.root, "text", attrs)
+        el = ET.SubElement(self._target, "text", attrs)
         el.text = content
         return el
 
     def header(self, title: str, subtitle: str) -> None:
         self.text(
             28,
-            28,
+            27,
             title,
             fill=self.palette.text_primary,
             size=15,
@@ -391,10 +422,10 @@ class SvgCanvas:
         )
         self.text(
             28,
-            48,
+            47,
             subtitle,
             fill=self.palette.text_muted,
-            size=11.5,
+            size=11.0,
             weight="400",
             mono=True,
             anchor="start",
@@ -410,7 +441,7 @@ class SvgCanvas:
         *,
         marker_key: str = "tertiary",
         color: str | None = None,
-        label_offset: tuple[float, float] = (0.0, -10.0),
+        label_offset: tuple[float, float] = (0.0, 0.0),
         bidirectional: bool = True,
     ) -> None:
         stroke_color = color or self.palette.accent_tertiary
@@ -426,7 +457,7 @@ class SvgCanvas:
         )
         mx = 0.5 * (x1 + x2) + label_offset[0]
         my = 0.5 * (y1 + y2) + label_offset[1]
-        tw = max(len(label) * 6.8 + 10.0, 34.0)
+        tw = max(len(label) * 6.5 + 10.0, 32.0)
         self.rect(
             mx - tw / 2,
             my - 9,
@@ -442,7 +473,7 @@ class SvgCanvas:
             my + 0.5,
             label,
             fill=stroke_color,
-            size=10.5,
+            size=10.0,
             weight="700",
             mono=True,
         )
@@ -471,23 +502,23 @@ class SvgCanvas:
                 opacity=0.85,
             )
             self.circle(x, y, 3.2, fill=color, stroke=self.palette.bg_panel)
-        bw = max(len(badge_text) * 6.6 + 10.0, 20.0)
+        bw = max(len(badge_text) * 6.4 + 10.0, 19.0)
         self.rect(
             bx - bw / 2,
-            by - 9.5,
+            by - 9.0,
             bw,
-            19.0,
+            18.0,
             fill=self.palette.badge_bg,
             stroke=color,
-            stroke_width=1.5,
-            rx=9.5,
+            stroke_width=1.4,
+            rx=9.0,
         )
         self.text(
             bx,
             by + 0.5,
             badge_text,
             fill=color,
-            size=10.0,
+            size=9.8,
             weight="700",
             mono=True,
         )
@@ -499,7 +530,7 @@ class SvgCanvas:
                 by + 0.5,
                 label,
                 fill=self.palette.text_primary,
-                size=10.0,
+                size=9.8,
                 weight="600",
                 mono=True,
                 anchor=anchor,
@@ -512,7 +543,428 @@ class SvgCanvas:
 
 
 # --------------------------------------------------------------------------- #
-# 3D-to-2D Projection & Polyline Simplification Utilities
+# True 3D CAD Scene-Graph & Depth-Sorted Optical Renderer
+# --------------------------------------------------------------------------- #
+
+
+@dataclass(frozen=True)
+class Face3D:
+    """3D planar polygon with material styling for depth-sorted Painter's rendering."""
+
+    vertices: np.ndarray  # (N, 3)
+    fill: str
+    fill_opacity: float = 0.20
+    stroke: str = "none"
+    stroke_width: float = 1.0
+    stroke_opacity: float = 1.0
+    dash: str | None = None
+    layer_bias: float = 0.0  # Positive bias pushes further back in Painter's sort
+
+
+@dataclass(frozen=True)
+class Segment3D:
+    """3D line/polyline segment with material styling and depth-sort support."""
+
+    points: np.ndarray  # (N, 3)
+    stroke: str
+    stroke_width: float = 1.4
+    opacity: float = 1.0
+    dash: str | None = None
+    subdivide: int = 1
+    layer_bias: float = 0.0
+
+
+@dataclass
+class Scene3D:
+    """3D CAD scene graph holding faces and line segments for projective rendering."""
+
+    faces: list[Face3D] = field(default_factory=list)
+    segments: list[Segment3D] = field(default_factory=list)
+
+    def add_face(
+        self,
+        vertices: Sequence[Sequence[float]] | np.ndarray,
+        *,
+        fill: str,
+        fill_opacity: float = 0.20,
+        stroke: str = "none",
+        stroke_width: float = 1.0,
+        stroke_opacity: float = 1.0,
+        dash: str | None = None,
+        layer_bias: float = 0.0,
+    ) -> None:
+        self.faces.append(
+            Face3D(
+                vertices=np.asarray(vertices, dtype=np.float64),
+                fill=fill,
+                fill_opacity=fill_opacity,
+                stroke=stroke,
+                stroke_width=stroke_width,
+                stroke_opacity=stroke_opacity,
+                dash=dash,
+                layer_bias=layer_bias,
+            )
+        )
+
+    def add_segment(
+        self,
+        p1: Sequence[float],
+        p2: Sequence[float],
+        *,
+        stroke: str,
+        stroke_width: float = 1.4,
+        opacity: float = 1.0,
+        dash: str | None = None,
+        subdivide: int = 1,
+        layer_bias: float = 0.0,
+    ) -> None:
+        self.segments.append(
+            Segment3D(
+                points=np.asarray([p1, p2], dtype=np.float64),
+                stroke=stroke,
+                stroke_width=stroke_width,
+                opacity=opacity,
+                dash=dash,
+                subdivide=subdivide,
+                layer_bias=layer_bias,
+            )
+        )
+
+    def all_vertices(self) -> np.ndarray:
+        """Return all 3D vertices across faces and segments for auto-fitting."""
+        chunks: list[np.ndarray] = [f.vertices for f in self.faces]
+        chunks.extend(s.points for s in self.segments)
+        return np.vstack(chunks) if chunks else np.zeros((0, 3), dtype=np.float64)
+
+
+class ViewportProjector3D:
+    """Projects 3D world coordinates through `padelkit.camera.Camera` and auto-fits to a 2D SVG rectangle."""
+
+    def __init__(
+        self,
+        camera: Camera,
+        fit_points_3d: np.ndarray,
+        rect_x: float,
+        rect_y: float,
+        rect_w: float,
+        rect_h: float,
+        padding_px: float = 36.0,
+        shift_uv: tuple[float, float] = (0.0, 0.0),
+    ) -> None:
+        self.camera = camera
+        uv, _ = camera.project_points(np.asarray(fit_points_3d, dtype=np.float64))
+        u_min, v_min = float(np.min(uv[:, 0])), float(np.min(uv[:, 1]))
+        u_max, v_max = float(np.max(uv[:, 0])), float(np.max(uv[:, 1]))
+        span_u = max(u_max - u_min, 1e-6)
+        span_v = max(v_max - v_min, 1e-6)
+
+        avail_w = max(rect_w - 2.0 * padding_px, 10.0)
+        avail_h = max(rect_h - 2.0 * padding_px, 10.0)
+        self.scale = min(avail_w / span_u, avail_h / span_v)
+        self.u_center = 0.5 * (u_min + u_max)
+        self.v_center = 0.5 * (v_min + v_max)
+        self.cx = rect_x + 0.5 * rect_w + shift_uv[0]
+        self.cy = rect_y + 0.5 * rect_h + shift_uv[1]
+
+    def project_point(self, xyz: Sequence[float] | np.ndarray) -> tuple[float, float]:
+        uv, _ = self.camera.project_points(np.asarray([xyz], dtype=np.float64))
+        u = self.cx + (float(uv[0, 0]) - self.u_center) * self.scale
+        v = self.cy + (float(uv[0, 1]) - self.v_center) * self.scale
+        return u, v
+
+    def project_points(self, pts_3d: np.ndarray) -> np.ndarray:
+        uv, _ = self.camera.project_points(np.asarray(pts_3d, dtype=np.float64))
+        out = np.empty_like(uv)
+        out[:, 0] = self.cx + (uv[:, 0] - self.u_center) * self.scale
+        out[:, 1] = self.cy + (uv[:, 1] - self.v_center) * self.scale
+        return out
+
+    def camera_depth(self, pts_3d: np.ndarray) -> float:
+        """Compute mean Z_cam depth in OpenCV camera coordinates for Painter's sorting."""
+        r_mat = self.camera.extrinsics.R
+        t_vec = self.camera.extrinsics.t
+        pts_cam = (r_mat @ pts_3d.T).T + t_vec
+        return float(np.mean(pts_cam[:, 2]))
+
+    def render_scene(self, svg: SvgCanvas, scene: Scene3D) -> None:
+        """Render all 3D faces and segments sorted back-to-front by camera depth."""
+        draw_ables: list[tuple[float, Literal["face", "seg"], Face3D | Segment3D]] = []
+        for f in scene.faces:
+            z_depth = self.camera_depth(f.vertices) + f.layer_bias
+            draw_ables.append((z_depth, "face", f))
+        for s in scene.segments:
+            z_depth = self.camera_depth(s.points) + s.layer_bias
+            draw_ables.append((z_depth, "seg", s))
+
+        # Painter's algorithm: largest Z_cam (furthest from camera) drawn first
+        draw_ables.sort(key=lambda item: item[0], reverse=True)
+
+        for _, kind, obj in draw_ables:
+            if kind == "face":
+                assert isinstance(obj, Face3D)
+                uv = self.project_points(obj.vertices)
+                svg.polygon(
+                    uv,
+                    fill=obj.fill,
+                    fill_opacity=obj.fill_opacity,
+                    stroke=obj.stroke,
+                    stroke_width=obj.stroke_width,
+                    stroke_opacity=obj.stroke_opacity,
+                    dash=obj.dash,
+                )
+            else:
+                assert isinstance(obj, Segment3D)
+                if obj.subdivide <= 1 and obj.points.shape[0] == 2:
+                    u1, v1 = self.project_point(obj.points[0])
+                    u2, v2 = self.project_point(obj.points[1])
+                    svg.line(
+                        u1,
+                        v1,
+                        u2,
+                        v2,
+                        stroke=obj.stroke,
+                        stroke_width=obj.stroke_width,
+                        opacity=obj.opacity,
+                        dash=obj.dash,
+                    )
+                else:
+                    uv = self.project_points(obj.points)
+                    svg.polyline(
+                        uv,
+                        stroke=obj.stroke,
+                        stroke_width=obj.stroke_width,
+                        opacity=obj.opacity,
+                        dash=obj.dash,
+                    )
+
+
+def build_fip_court_3d_scene(
+    palette: ThemePalette,
+    *,
+    include_walls: bool = True,
+    include_panel_divisions: bool = True,
+) -> Scene3D:
+    """Build the authentic 3D FIP court CAD model matching `src/padelkit/viz/template.py`.
+
+    Includes:
+    - Floor surface (`20m x 10m`), baselines, sidelines, service lines (`Y = ±7m`), and center service line.
+    - Back walls (`Y = ±10m`): 5 modules of `2m` width (`X = -5, -3, -1, 1, 3, 5`), tempered glass (`Z = 0..3m`) + metallic mesh (`Z = 3..4m`).
+    - Side walls (`X = ±5m`): stepped corner module (`|Y| in [8, 10]`, `3m` glass + `1m` mesh = `4m`), second module (`|Y| in [6, 8]`, `2m` glass + `1m` mesh = `3m`), metallic mesh panels (`|Y| in [1, 6]`, `Z = 0..3m`), and central `2m` doorway opening (`Y in [-1, 1]`).
+    - 3D Net (`Y = 0`): net posts (`Z = 0..0.92m`), catenary top tape (`0.92m` at posts sagging to `0.88m` at center), center vertical strap, and vertical net mesh lines.
+    """
+    scene = Scene3D()
+
+    # 1. Court floor base (bias +20 so floor always renders underneath court lines and walls)
+    scene.add_face(
+        [(-5.0, -10.0, 0.0), (5.0, -10.0, 0.0), (5.0, 10.0, 0.0), (-5.0, 10.0, 0.0)],
+        fill=palette.court_floor,
+        fill_opacity=1.0,
+        stroke=palette.court_line_fg,
+        stroke_width=1.8,
+        layer_bias=20.0,
+    )
+
+    # Floor court markings (service lines & center service line)
+    for p1, p2 in [
+        ((-5.0, -7.0, 0.0), (5.0, -7.0, 0.0)),
+        ((-5.0, 7.0, 0.0), (5.0, 7.0, 0.0)),
+        ((0.0, -7.0, 0.0), (0.0, 7.0, 0.0)),
+        ((-5.0, 0.0, 0.0), (5.0, 0.0, 0.0)),
+    ]:
+        scene.add_segment(
+            p1,
+            p2,
+            stroke=palette.court_line_fg,
+            stroke_width=1.4,
+            opacity=0.90,
+            layer_bias=18.0,
+        )
+
+    # 2. 3D Net at Y = 0 (posts 0.92m, center 0.88m catenary)
+    xs_net = np.linspace(-5.0, 5.0, 11)
+    top_net = [(float(x), 0.0, 0.88 + 0.04 * ((float(x) / 5.0) ** 2)) for x in xs_net]
+    net_poly = [(-5.0, 0.0, 0.0), (5.0, 0.0, 0.0), *reversed(top_net)]
+    scene.add_face(
+        net_poly,
+        fill=palette.accent_secondary,
+        fill_opacity=0.16,
+        stroke=palette.accent_secondary,
+        stroke_width=1.5,
+    )
+    # Net top white tape and center strap
+    scene.segments.append(
+        Segment3D(
+            points=np.asarray(top_net, dtype=np.float64),
+            stroke=palette.court_line_fg,
+            stroke_width=2.0,
+        )
+    )
+    scene.add_segment(
+        (0.0, 0.0, 0.0),
+        (0.0, 0.0, 0.88),
+        stroke=palette.court_line_fg,
+        stroke_width=1.6,
+    )
+    for x_post in (-5.0, 5.0):
+        scene.add_segment(
+            (x_post, 0.0, 0.0),
+            (x_post, 0.0, 0.92),
+            stroke=palette.pillar_stroke,
+            stroke_width=2.2,
+        )
+    if include_panel_divisions:
+        for x_m in (-4.0, -3.0, -2.0, -1.0, 1.0, 2.0, 3.0, 4.0):
+            z_top = 0.88 + 0.04 * ((x_m / 5.0) ** 2)
+            scene.add_segment(
+                (x_m, 0.0, 0.0),
+                (x_m, 0.0, z_top),
+                stroke=palette.accent_secondary,
+                stroke_width=0.7,
+                opacity=0.45,
+            )
+
+    if not include_walls:
+        return scene
+
+    # 3. Back Walls at Y = -10.0m and Y = +10.0m (5 panels of 2.0m width: 3.0m glass + 1.0m metallic mesh)
+    for y_back in (-10.0, 10.0):
+        # Tempered Glass Band (Z = 0..3m)
+        scene.add_face(
+            [
+                (-5.0, y_back, 0.0),
+                (5.0, y_back, 0.0),
+                (5.0, y_back, 3.0),
+                (-5.0, y_back, 3.0),
+            ],
+            fill=palette.glass_fill,
+            fill_opacity=0.14,
+            stroke=palette.glass_stroke,
+            stroke_width=1.4,
+        )
+        # Upper Metallic Mesh Band (Z = 3..4m)
+        scene.add_face(
+            [
+                (-5.0, y_back, 3.0),
+                (5.0, y_back, 3.0),
+                (5.0, y_back, 4.0),
+                (-5.0, y_back, 4.0),
+            ],
+            fill=palette.fence_fill,
+            fill_opacity=0.12,
+            stroke=palette.fence_stroke,
+            stroke_width=1.2,
+            dash="4 3",
+        )
+        if include_panel_divisions:
+            for x_div in (-3.0, -1.0, 1.0, 3.0):
+                scene.add_segment(
+                    (x_div, y_back, 0.0),
+                    (x_div, y_back, 3.0),
+                    stroke=palette.glass_stroke,
+                    stroke_width=0.9,
+                    opacity=0.65,
+                )
+                scene.add_segment(
+                    (x_div, y_back, 3.0),
+                    (x_div, y_back, 4.0),
+                    stroke=palette.fence_stroke,
+                    stroke_width=0.9,
+                    opacity=0.65,
+                    dash="3 3",
+                )
+
+    # 4. Stepped Side Walls at X = -5.0m and X = +5.0m (matching `template.py` sideSegments)
+    for x_side in (-5.0, 5.0):
+        for y_sign in (-1.0, 1.0):
+            y10 = 10.0 * y_sign
+            y8 = 8.0 * y_sign
+            y6 = 6.0 * y_sign
+            y1 = 1.0 * y_sign  # Doorway opening in [-1.0, +1.0]
+
+            # Corner 2m segment (|Y| in [8, 10]): 3m glass + 1m mesh (total 4m)
+            scene.add_face(
+                [
+                    (x_side, y10, 0.0),
+                    (x_side, y8, 0.0),
+                    (x_side, y8, 3.0),
+                    (x_side, y10, 3.0),
+                ],
+                fill=palette.glass_fill,
+                fill_opacity=0.13,
+                stroke=palette.glass_stroke,
+                stroke_width=1.3,
+            )
+            scene.add_face(
+                [
+                    (x_side, y10, 3.0),
+                    (x_side, y8, 3.0),
+                    (x_side, y8, 4.0),
+                    (x_side, y10, 4.0),
+                ],
+                fill=palette.fence_fill,
+                fill_opacity=0.10,
+                stroke=palette.fence_stroke,
+                stroke_width=1.1,
+                dash="4 3",
+            )
+
+            # Second 2m segment (|Y| in [6, 8]): 2m glass + 1m mesh (total 3m)
+            scene.add_face(
+                [
+                    (x_side, y8, 0.0),
+                    (x_side, y6, 0.0),
+                    (x_side, y6, 2.0),
+                    (x_side, y8, 2.0),
+                ],
+                fill=palette.glass_fill,
+                fill_opacity=0.13,
+                stroke=palette.glass_stroke,
+                stroke_width=1.3,
+            )
+            scene.add_face(
+                [
+                    (x_side, y8, 2.0),
+                    (x_side, y6, 2.0),
+                    (x_side, y6, 3.0),
+                    (x_side, y8, 3.0),
+                ],
+                fill=palette.fence_fill,
+                fill_opacity=0.10,
+                stroke=palette.fence_stroke,
+                stroke_width=1.1,
+                dash="4 3",
+            )
+
+            # Metallic fence section (|Y| in [1, 6], Z = 0..3m, doorway at [-1, 1])
+            scene.add_face(
+                [
+                    (x_side, y6, 0.0),
+                    (x_side, y1, 0.0),
+                    (x_side, y1, 3.0),
+                    (x_side, y6, 3.0),
+                ],
+                fill=palette.fence_fill,
+                fill_opacity=0.08,
+                stroke=palette.fence_stroke,
+                stroke_width=1.1,
+                dash="4 3",
+            )
+            if include_panel_divisions:
+                for y_div in (4.0 * y_sign, 2.0 * y_sign):
+                    scene.add_segment(
+                        (x_side, y_div, 0.0),
+                        (x_side, y_div, 3.0),
+                        stroke=palette.fence_stroke,
+                        stroke_width=0.85,
+                        opacity=0.55,
+                        dash="3 3",
+                    )
+
+    return scene
+
+
+# --------------------------------------------------------------------------- #
+# 3D-to-2D Clipping & Polyline Simplification Utilities
 # --------------------------------------------------------------------------- #
 
 
@@ -607,9 +1059,9 @@ def rdp_simplify_2d(points_2d: np.ndarray, epsilon: float = 0.50) -> np.ndarray:
 def simplify_trajectory_preserve_cusps(
     positions_2d: np.ndarray,
     bounce_indices: Sequence[int],
-    epsilon: float = 0.50,
+    epsilon: float = 0.35,
 ) -> np.ndarray:
-    """Simplify a 2D trajectory while preserving exact sharp vertices at bounces."""
+    """Simplify a 2D trajectory while preserving exact sharp vertices at bounces and apexes."""
     pts = np.asarray(positions_2d, dtype=np.float64)
     n_pts = pts.shape[0]
     if n_pts <= 2:
@@ -632,12 +1084,12 @@ def simplify_trajectory_preserve_cusps(
 
 
 def render_court_landmarks_3d(palette: ThemePalette) -> str:
-    """1. 3D perspective wireframe of all 17 standardized FIP court landmarks."""
+    """1. Full 3D CAD court schematic with all 17 standardized FIP CourtLandmarks."""
     svg = SvgCanvas(
         960,
         540,
         "PadelKit 17 Standardized 3D Court Landmarks",
-        "Axonometric 3D view of the 17 CourtLandmark positions: 1-13 on floor (Z=0m) and 14-17 on back walls (Z=4.0m).",
+        "3D CAD view of the 17 CourtLandmark positions: 1-13 on floor (Z=0m) and 14-17 on back walls (Z=4.0m).",
         palette,
     )
     svg.header(
@@ -666,148 +1118,149 @@ def render_court_landmarks_3d(palette: ThemePalette) -> str:
     court = Court.fip_standard()
     pts_3d = court.landmarks_3d(CoordinateSystem.CENTERED)
 
+    # Use a low-distortion telephoto axonometric camera (FOV = 18 deg at 54m)
     cam = Camera(
         intrinsics=CameraIntrinsics.from_fov(
-            width_px=615, height_px=452, horizontal_fov_deg=44.0
+            width_px=1200, height_px=900, horizontal_fov_deg=18.0
         ),
         extrinsics=CameraExtrinsics.from_look_at(
-            position=(-13.5, -18.8, 11.2),
-            target=(0.2, 0.2, 1.0),
+            position=(-34.0, -34.0, 24.0),
+            target=(0.0, 0.0, 1.4),
         ),
     )
 
-    def proj(xyz: Sequence[float]) -> tuple[float, float]:
-        uv, _ = cam.project_points(np.asarray([xyz], dtype=np.float64))
-        return float(uv[0, 0]) + 24.0, float(uv[0, 1]) + 64.0
-
-    # Court floor polygon
-    fl_poly = [
-        proj((-5.0, -10.0, 0.0)),
-        proj((5.0, -10.0, 0.0)),
-        proj((5.0, 10.0, 0.0)),
-        proj((-5.0, 10.0, 0.0)),
-    ]
-    svg.polygon(
-        fl_poly,
-        fill=palette.court_floor,
-        stroke=palette.court_line_fg,
-        stroke_width=1.8,
+    scene = build_fip_court_3d_scene(
+        palette, include_walls=True, include_panel_divisions=True
+    )
+    projector = ViewportProjector3D(
+        cam,
+        scene.all_vertices(),
+        rect_x=24.0,
+        rect_y=64.0,
+        rect_w=615.0,
+        rect_h=430.0,
+        padding_px=42.0,
+        shift_uv=(0.0, -8.0),
     )
 
-    # Back-to-front enclosure wireframe (far walls dashed/muted, near walls crisp)
-    far_back_wall = [
-        proj((-5.0, 10.0, 0.0)),
-        proj((5.0, 10.0, 0.0)),
-        proj((5.0, 10.0, 4.0)),
-        proj((-5.0, 10.0, 4.0)),
-    ]
-    svg.polygon(
-        far_back_wall,
-        fill=palette.glass_fill,
-        fill_opacity=0.20,
-        stroke=palette.glass_stroke,
-        stroke_width=1.3,
-        dash="5 4",
-    )
-
-    # Side walls (4m corner steps + 3m center enclosure profile)
-    for x_side, is_bg in [(5.0, True), (-5.0, False)]:
-        profile_3d = [
-            (x_side, -10.0, 0.0),
-            (x_side, -10.0, 4.0),
-            (x_side, -8.0, 4.0),
-            (x_side, -8.0, 3.0),
-            (x_side, 8.0, 3.0),
-            (x_side, 8.0, 4.0),
-            (x_side, 10.0, 4.0),
-            (x_side, 10.0, 0.0),
-        ]
-        svg.polygon(
-            [proj(p) for p in profile_3d],
-            fill=palette.glass_fill,
-            fill_opacity=0.10 if is_bg else 0.16,
-            stroke=palette.court_line_bg if is_bg else palette.glass_stroke,
-            stroke_width=1.1 if is_bg else 1.5,
-            dash="4 4" if is_bg else None,
-        )
-
-    # Floor service lines and center line
-    for p1, p2 in [
-        ((-5.0, -7.0, 0.0), (5.0, -7.0, 0.0)),
-        ((-5.0, 7.0, 0.0), (5.0, 7.0, 0.0)),
-        ((0.0, -7.0, 0.0), (0.0, 7.0, 0.0)),
-    ]:
-        u1, v1 = proj(p1)
-        u2, v2 = proj(p2)
-        svg.line(u1, v1, u2, v2, stroke=palette.court_line_fg, stroke_width=1.4)
-
-    # Net plane at Y = 0
-    net_poly = [
-        proj((-5.0, 0.0, 0.0)),
-        proj((5.0, 0.0, 0.0)),
-        proj((5.0, 0.0, 0.92)),
-        proj((0.0, 0.0, 0.88)),
-        proj((-5.0, 0.0, 0.92)),
-    ]
-    svg.polygon(
-        net_poly,
-        fill=palette.accent_secondary,
-        fill_opacity=0.18,
-        stroke=palette.accent_secondary,
-        stroke_width=1.8,
-    )
-
-    # Near back wall (Z = 4.0m)
-    near_back_wall = [
-        proj((-5.0, -10.0, 0.0)),
-        proj((5.0, -10.0, 0.0)),
-        proj((5.0, -10.0, 4.0)),
-        proj((-5.0, -10.0, 4.0)),
-    ]
-    svg.polygon(
-        near_back_wall,
-        fill=palette.glass_fill,
-        fill_opacity=0.22,
-        stroke=palette.glass_stroke,
-        stroke_width=1.8,
-    )
+    clip_g = svg.clip_group("clip-court-3d", 24, 64, 615, 452, rx=10)
+    svg.set_target(clip_g)
+    projector.render_scene(svg, scene)
 
     # Vertical dashed elevation guides for the 4 wall-top landmarks (14-17)
     for corner_xy in [(-5.0, -10.0), (5.0, -10.0), (-5.0, 10.0), (5.0, 10.0)]:
-        u_lo, v_lo = proj((corner_xy[0], corner_xy[1], 0.0))
-        u_hi, v_hi = proj((corner_xy[0], corner_xy[1], 4.0))
+        u_lo, v_lo = projector.project_point((corner_xy[0], corner_xy[1], 0.0))
+        u_hi, v_hi = projector.project_point((corner_xy[0], corner_xy[1], 4.0))
         svg.line(
             u_lo,
             v_lo,
             u_hi,
             v_hi,
             stroke=palette.accent_secondary,
-            stroke_width=1.4,
+            stroke_width=1.6,
             dash="3 3",
         )
 
+    # World origin triad at net center (0, 0, 0)
+    o_u, o_v = projector.project_point((0.0, 0.0, 0.0))
+    x_u, x_v = projector.project_point((1.8, 0.0, 0.0))
+    y_u, y_v = projector.project_point((0.0, 2.2, 0.0))
+    z_u, z_v = projector.project_point((0.0, 0.0, 1.8))
+    svg.line(
+        o_u,
+        o_v,
+        x_u,
+        x_v,
+        stroke=palette.accent_danger,
+        stroke_width=2.0,
+        marker_end="arrow-danger",
+    )
+    svg.line(
+        o_u,
+        o_v,
+        y_u,
+        y_v,
+        stroke=palette.accent_primary,
+        stroke_width=2.0,
+        marker_end="arrow-primary",
+    )
+    svg.line(
+        o_u,
+        o_v,
+        z_u,
+        z_v,
+        stroke=palette.accent_tertiary,
+        stroke_width=2.0,
+        marker_end="arrow-tertiary",
+    )
+
     # Draw numbered badges 1..17 with clean non-overlapping offsets
     offsets: dict[int, tuple[float, float]] = {
-        1: (-18, 14),
-        2: (16, 14),
-        3: (-20, 8),
-        4: (0, 16),
-        5: (20, 8),
-        6: (-22, 4),
-        7: (0, 16),
-        8: (22, 4),
-        9: (-20, -6),
-        10: (0, -15),
-        11: (20, -6),
-        12: (-18, -14),
-        13: (18, -14),
-        14: (-20, -14),
-        15: (20, -14),
-        16: (-20, -14),
-        17: (20, -14),
+        1: (22, 14),
+        2: (22, 8),
+        3: (-24, 10),
+        4: (18, 12),
+        5: (24, 6),
+        6: (-24, 4),
+        7: (22, 10),
+        8: (24, 2),
+        9: (-24, -4),
+        10: (18, -10),
+        11: (24, -4),
+        12: (-24, -6),
+        13: (22, 10),
+        14: (-24, -12),
+        15: (22, -14),
+        16: (-22, -14),
+        17: (22, -14),
     }
 
     members = list(CourtLandmark)
+    for idx, landmark in enumerate(members, start=1):
+        xyz = pts_3d[landmark.value]
+        u, v = projector.project_point(xyz)
+        is_wall = idx >= 14
+        color = palette.accent_secondary if is_wall else palette.accent_primary
+        dx, dy = offsets[idx]
+        svg.callout_badge(u, v, str(idx), color=color, offset=(dx, dy))
+
+    # Material legend pill at bottom-left of 3D panel
+    svg.rect(38, 476, 360, 28, fill=palette.bg_canvas, stroke=palette.border, rx=6)
+    svg.rect(
+        48, 485, 10, 10, fill=palette.glass_fill, stroke=palette.glass_stroke, rx=2
+    )
+    svg.text(
+        64,
+        490,
+        "Tempered Glass (3m / 2m)",
+        fill=palette.text_muted,
+        size=9.5,
+        mono=True,
+        anchor="start",
+    )
+    svg.rect(
+        218,
+        485,
+        10,
+        10,
+        fill=palette.fence_fill,
+        stroke=palette.fence_stroke,
+        dash="2 2",
+        rx=2,
+    )
+    svg.text(
+        234,
+        490,
+        "Metallic Mesh (4m / 3m)",
+        fill=palette.text_muted,
+        size=9.5,
+        mono=True,
+        anchor="start",
+    )
+
+    svg.set_target(None)
+
+    # Right panel table of 17 landmarks
     svg.text(
         668,
         88,
@@ -818,16 +1271,10 @@ def render_court_landmarks_3d(palette: ThemePalette) -> str:
         mono=True,
         anchor="start",
     )
-
     for idx, landmark in enumerate(members, start=1):
         xyz = pts_3d[landmark.value]
-        u, v = proj(xyz)
         is_wall = idx >= 14
         color = palette.accent_secondary if is_wall else palette.accent_primary
-        dx, dy = offsets[idx]
-        svg.callout_badge(u, v, str(idx), color=color, offset=(dx, dy))
-
-        # Legend row on right panel
         row_y = 96 + idx * 23.8
         svg.callout_badge(678, row_y, str(idx), color=color)
         svg.text(
@@ -855,12 +1302,12 @@ def render_court_landmarks_3d(palette: ThemePalette) -> str:
 
 
 def render_court_dimensions(palette: ThemePalette) -> str:
-    """2. 2D FIP plan blueprint + 3D side-wall V1/V2 and net height elevation."""
+    """2. 2D FIP plan blueprint + Side-wall glass/mesh elevation + Net catenary profile."""
     svg = SvgCanvas(
         960,
         520,
         "PadelKit Official FIP CourtDimensions Blueprint",
-        "2D top-down dimension schematic and side/net elevation profile for CourtDimensions.",
+        "2D top-down dimension schematic, side/back wall glass-and-mesh elevation, and net profile for CourtDimensions.",
         palette,
     )
     svg.header(
@@ -892,8 +1339,8 @@ def render_court_dimensions(palette: ThemePalette) -> str:
         anchor="start",
     )
 
-    cx0, cy0 = 76.0, 145.0
-    scale = 21.0  # 20m -> 420px, 10m -> 210px
+    cx0, cy0 = 68.0, 146.0
+    scale = 20.5  # 20m -> 410px, 10m -> 205px
     cw = dims.length * scale
     ch = dims.width * scale
     svc_px = dims.service_line_distance_from_back * scale
@@ -907,6 +1354,19 @@ def render_court_dimensions(palette: ThemePalette) -> str:
         stroke=palette.court_line_fg,
         stroke_width=2.2,
     )
+    # 2m panel tick marks along perimeter
+    for m_step in range(2, 20, 2):
+        tx = cx0 + m_step * scale
+        svg.line(tx, cy0 - 4, tx, cy0 + 4, stroke=palette.text_muted, stroke_width=1.0)
+        svg.line(
+            tx,
+            cy0 + ch - 4,
+            tx,
+            cy0 + ch + 4,
+            stroke=palette.text_muted,
+            stroke_width=1.0,
+        )
+
     # Service lines & center service line
     svg.line(
         cx0 + svc_px,
@@ -943,17 +1403,19 @@ def render_court_dimensions(palette: ThemePalette) -> str:
         dash="5 3",
     )
 
-    # Dimension arrows
+    # Extension guides and clean non-overlapping dimension arrows
+    svg.line(cx0, cy0, cx0, cy0 - 34, stroke=palette.border, dash="2 2")
+    svg.line(cx0 + cw, cy0, cx0 + cw, cy0 - 34, stroke=palette.border, dash="2 2")
     svg.dimension_arrow(
         cx0,
-        cy0 - 26,
+        cy0 - 24,
         cx0 + cw,
-        cy0 - 26,
+        cy0 - 24,
         f"length = {dims.length:.1f} m",
         marker_key="primary",
         color=palette.accent_primary,
-        label_offset=(0, 0),
     )
+
     svg.dimension_arrow(
         cx0 + cw + 34,
         cy0,
@@ -962,35 +1424,66 @@ def render_court_dimensions(palette: ThemePalette) -> str:
         f"width = {dims.width:.1f} m",
         marker_key="secondary",
         color=palette.accent_secondary,
-        label_offset=(0, 0),
     )
+
+    # Bottom sub-dimensions with extension lines so arrows are clearly visible
+    y_dim1 = cy0 + ch + 30
+    y_dim2 = cy0 + ch + 72
+    svg.line(cx0, cy0 + ch, cx0, y_dim1 + 8, stroke=palette.border, dash="2 2")
+    svg.line(
+        cx0 + svc_px,
+        cy0 + ch,
+        cx0 + svc_px,
+        y_dim2 + 8,
+        stroke=palette.border,
+        dash="2 2",
+    )
+    svg.line(
+        cx0 + cw / 2,
+        cy0 + ch,
+        cx0 + cw / 2,
+        y_dim2 + 8,
+        stroke=palette.border,
+        dash="2 2",
+    )
+
     svg.dimension_arrow(
         cx0,
-        cy0 + ch + 30,
+        y_dim1,
         cx0 + svc_px,
-        cy0 + ch + 30,
-        f"service_line = {dims.service_line_distance_from_back:.1f} m",
+        y_dim1,
+        "3.0 m",
         marker_key="tertiary",
         color=palette.accent_tertiary,
-        label_offset=(36, 0),
+        label_offset=(0, -18),
     )
+    svg.text(
+        cx0 + svc_px + 8,
+        y_dim1,
+        "service_line_distance_from_back = 3.0 m",
+        fill=palette.accent_tertiary,
+        size=10.0,
+        weight="600",
+        mono=True,
+        anchor="start",
+    )
+
     svg.dimension_arrow(
         cx0 + svc_px,
-        cy0 + ch + 62,
+        y_dim2,
         cx0 + cw / 2,
-        cy0 + ch + 62,
+        y_dim2,
         "service box = 7.0 m",
         marker_key="muted",
         color=palette.text_muted,
-        label_offset=(0, 0),
     )
 
-    # Right panel top: Side Wall Profile (V1 3.0m vs V2 4.0m)
+    # Right panel top: Side Wall Profile (V1 3.0m vs V2 4.0m with Glass vs Mesh modules)
     svg.rect(
         590,
         64,
         346,
-        210,
+        214,
         fill=palette.bg_panel,
         stroke=palette.border,
         rx=10,
@@ -998,35 +1491,24 @@ def render_court_dimensions(palette: ThemePalette) -> str:
     svg.text(
         608,
         88,
-        "B. WALL ELEVATION (V1 vs V2)",
+        "B. SIDE WALL ELEVATION (GLASS vs MESH)",
         fill=palette.text_primary,
-        size=11.5,
+        size=11.2,
         weight="700",
         mono=True,
         anchor="start",
     )
 
-    ex0, ey_floor = 626.0, 234.0
-    escale_x = 12.5  # 20m -> 250px
+    ex0, ey_floor = 616.0, 234.0
+    escale_x = 13.0  # 20m -> 260px
     escale_z = 26.0  # 4m -> 104px
     w_len = 20.0 * escale_x
     h_4m = dims.back_wall_height * escale_z
     h_3m = dims.side_wall_height * escale_z
+    h_2m = 2.0 * escale_z
     step_2m = 2.0 * escale_x
 
-    # V2 full 4.0m dashed upper envelope
-    svg.rect(
-        ex0,
-        ey_floor - h_4m,
-        w_len,
-        h_4m,
-        fill=palette.glass_fill,
-        stroke=palette.accent_secondary,
-        stroke_width=1.3,
-        opacity=0.25,
-        dash="4 3",
-    )
-    # V1 stepped profile (4m corners, 3m central side wall)
+    # Full 3m / 4m metallic mesh background envelope
     v1_poly = [
         (ex0, ey_floor),
         (ex0, ey_floor - h_4m),
@@ -1039,25 +1521,66 @@ def render_court_dimensions(palette: ThemePalette) -> str:
     ]
     svg.polygon(
         v1_poly,
-        fill=palette.glass_fill,
-        fill_opacity=0.35,
-        stroke=palette.accent_primary,
+        fill=palette.fence_fill,
+        fill_opacity=0.65,
+        stroke=palette.fence_stroke,
+        stroke_width=1.5,
+        dash="4 3",
+    )
+
+    # Stepped Tempered Glass panels at both ends (3m glass in 0..2m, 2m glass in 2..4m)
+    for x_start, x_dir in [(ex0, 1.0), (ex0 + w_len, -1.0)]:
+        glass_poly = [
+            (x_start, ey_floor),
+            (x_start, ey_floor - h_3m),
+            (x_start + x_dir * step_2m, ey_floor - h_3m),
+            (x_start + x_dir * step_2m, ey_floor - h_2m),
+            (x_start + x_dir * 2.0 * step_2m, ey_floor - h_2m),
+            (x_start + x_dir * 2.0 * step_2m, ey_floor),
+        ]
+        svg.polygon(
+            glass_poly,
+            fill=palette.glass_fill,
+            fill_opacity=0.45,
+            stroke=palette.glass_stroke,
+            stroke_width=1.8,
+        )
+
+    # 2m vertical panel division lines
+    for m_i in range(1, 10):
+        px_div = ex0 + m_i * step_2m
+        top_h = h_4m if m_i in (1, 9) else h_3m
+        svg.line(
+            px_div,
+            ey_floor,
+            px_div,
+            ey_floor - top_h,
+            stroke=palette.border,
+            stroke_width=0.9,
+        )
+
+    svg.line(
+        ex0 - 6,
+        ey_floor,
+        ex0 + w_len + 6,
+        ey_floor,
+        stroke=palette.court_line_fg,
         stroke_width=2.0,
     )
+
     svg.dimension_arrow(
-        ex0 + w_len + 24,
+        ex0 + w_len + 26,
         ey_floor - h_4m,
-        ex0 + w_len + 24,
+        ex0 + w_len + 26,
         ey_floor,
         "4.0m",
         marker_key="primary",
         color=palette.accent_primary,
-        label_offset=(0, 0),
     )
     svg.text(
         ex0 + w_len / 2,
-        ey_floor - h_3m - 10,
-        "side_wall_height: 3.0m (V1) / 4.0m (V2)",
+        ey_floor - h_3m - 12,
+        "side_wall_height = 3.0m (Step = 4.0m)",
         fill=palette.text_primary,
         size=9.5,
         weight="600",
@@ -1065,38 +1588,38 @@ def render_court_dimensions(palette: ThemePalette) -> str:
     )
     svg.text(
         ex0 + w_len / 2,
-        ey_floor + 16,
-        "back_wall_height = 4.0m (Both V1 & V2)",
+        ey_floor + 18,
+        "Blue: Tempered Glass (3m/2m) | Dashed: Metallic Mesh",
         fill=palette.text_muted,
-        size=9.5,
+        size=9.0,
         mono=True,
     )
 
     # Right panel bottom: Net Height Profile (0.92m posts vs 0.88m center sag)
     svg.rect(
         590,
-        286,
+        290,
         346,
-        210,
+        206,
         fill=palette.bg_panel,
         stroke=palette.border,
         rx=10,
     )
     svg.text(
         608,
-        310,
+        314,
         "C. NET CATENARY PROFILE (WIDTH = 10.0m)",
         fill=palette.text_primary,
-        size=11.5,
+        size=11.2,
         weight="700",
         mono=True,
         anchor="start",
     )
 
-    nx0, ny_floor = 636.0, 456.0
+    nx0, ny_floor = 636.0, 462.0
     nw = 250.0
-    post_h = 92.0
-    center_h = 74.0  # Exaggerated sag for visual clarity of 0.88m vs 0.92m
+    post_h = 88.0
+    center_h = 70.0  # Exaggerated sag for visual clarity of 0.88m vs 0.92m
 
     net_d = (
         f"M {_fmt(nx0)} {_fmt(ny_floor - post_h)} "
@@ -1110,7 +1633,32 @@ def render_court_dimensions(palette: ThemePalette) -> str:
         stroke=palette.accent_secondary,
         stroke_width=2.0,
         fill=palette.glass_fill,
-        opacity=0.45,
+        opacity=0.35,
+    )
+    # Center strap & posts
+    svg.line(
+        nx0 + nw / 2,
+        ny_floor,
+        nx0 + nw / 2,
+        ny_floor - center_h + 7,
+        stroke=palette.court_line_fg,
+        stroke_width=2.0,
+    )
+    svg.line(
+        nx0,
+        ny_floor,
+        nx0,
+        ny_floor - post_h,
+        stroke=palette.pillar_stroke,
+        stroke_width=3.0,
+    )
+    svg.line(
+        nx0 + nw,
+        ny_floor,
+        nx0 + nw,
+        ny_floor - post_h,
+        stroke=palette.pillar_stroke,
+        stroke_width=3.0,
     )
     svg.line(
         nx0 - 12,
@@ -1125,14 +1673,14 @@ def render_court_dimensions(palette: ThemePalette) -> str:
         ny_floor - post_h,
         f"posts: {dims.net_height_posts:.2f}m",
         color=palette.accent_secondary,
-        offset=(18, -18),
+        offset=(36, -18),
     )
     svg.callout_badge(
         nx0 + nw / 2,
         ny_floor - center_h + 7,
         f"center: {dims.net_height_center:.2f}m",
         color=palette.accent_tertiary,
-        offset=(0, -22),
+        offset=(0, -24),
     )
 
     return svg.to_xml_string()
@@ -1199,7 +1747,6 @@ def render_court_coordinate_systems(palette: ThemePalette) -> str:
         )
 
         pts = court.landmarks_2d(coordinate_system=sys_enum)
-        # Render court vertically (Width X horizontal, Length Y vertical upwards)
         cx_mid = px + 222.0
         cy_mid = 256.0
         sx, sy = 15.0, 11.2  # 10m -> 150px, 20m -> 224px
@@ -1228,7 +1775,6 @@ def render_court_coordinate_systems(palette: ThemePalette) -> str:
             stroke_width=2.0,
         )
 
-        # Service lines and net
         for k_a, k_b, col, dash in [
             ("service_near_left", "service_near_right", palette.court_line_fg, None),
             ("service_far_left", "service_far_right", palette.court_line_fg, None),
@@ -1239,7 +1785,6 @@ def render_court_coordinate_systems(palette: ThemePalette) -> str:
             u2, v2 = to_uv(pts[k_b])
             svg.line(u1, v1, u2, v2, stroke=col, stroke_width=1.6, dash=dash)
 
-        # Origin (0, 0) & +X / +Y coordinate axes
         origin_key = (
             "center" if sys_enum is CoordinateSystem.CENTERED else "floor_near_left"
         )
@@ -1282,7 +1827,6 @@ def render_court_coordinate_systems(palette: ThemePalette) -> str:
         )
         svg.circle(ox, oy, 5.0, fill=palette.accent_danger, stroke=palette.bg_panel)
 
-        # Key landmark coordinate badges
         for key, off in [
             ("floor_near_left", (-62, 16)),
             ("floor_near_right", (62, 16)),
@@ -1308,12 +1852,12 @@ def render_court_coordinate_systems(palette: ThemePalette) -> str:
 
 
 def render_camera_frustum_3d(palette: ThemePalette) -> str:
-    """4. 3D court with camera presets, viewing frustum pyramid, and coordinate frames."""
+    """4. Full 3D court with camera presets, viewing frustum pyramid, and coordinate frames."""
     svg = SvgCanvas(
         960,
         500,
         "PadelKit 3D Camera Frustum & Coordinate Frames",
-        "3D perspective schematic of Camera.broadcast_near() frustum pyramid and World/Camera/Sensor coordinate frames.",
+        "3D CAD schematic of Camera.broadcast_near() frustum pyramid and World/Camera/Sensor coordinate frames.",
         palette,
     )
     svg.header(
@@ -1341,48 +1885,54 @@ def render_camera_frustum_3d(palette: ThemePalette) -> str:
 
     court = Court.fip_standard()
     bcast_cam = Camera.broadcast_near(court=court)
+    frustum = bcast_cam.frustum_corners_world(near_m=2.4, far_m=15.0)
+    cam_pos = bcast_cam.extrinsics.position
 
     observer = Camera(
         intrinsics=CameraIntrinsics.from_fov(
-            width_px=580, height_px=412, horizontal_fov_deg=48.0
+            width_px=1200, height_px=850, horizontal_fov_deg=20.0
         ),
         extrinsics=CameraExtrinsics.from_look_at(
-            position=(-16.5, -18.5, 11.5),
-            target=(0.0, -2.0, 1.5),
+            position=(-34.0, -34.0, 26.0),
+            target=(0.0, -1.5, 2.0),
         ),
     )
 
-    def proj(xyz: Sequence[float]) -> tuple[float, float]:
-        uv, _ = observer.project_points(np.asarray([xyz], dtype=np.float64))
-        return float(uv[0, 0]) + 24.0, float(uv[0, 1]) + 64.0
-
-    # Court floor
-    floor_corners = [
-        proj((-5.0, -10.0, 0.0)),
-        proj((5.0, -10.0, 0.0)),
-        proj((5.0, 10.0, 0.0)),
-        proj((-5.0, 10.0, 0.0)),
-    ]
-    svg.polygon(
-        floor_corners,
-        fill=palette.court_floor,
-        stroke=palette.court_line_fg,
-        stroke_width=1.8,
+    scene = build_fip_court_3d_scene(
+        palette, include_walls=True, include_panel_divisions=False
     )
-    for p1, p2, col in [
-        ((-5.0, -7.0, 0.0), (5.0, -7.0, 0.0), palette.court_line_fg),
-        ((-5.0, 7.0, 0.0), (5.0, 7.0, 0.0), palette.court_line_fg),
-        ((0.0, -7.0, 0.0), (0.0, 7.0, 0.0), palette.court_line_fg),
-        ((-5.0, 0.0, 0.0), (5.0, 0.0, 0.0), palette.accent_primary),
-    ]:
-        svg.line(*proj(p1), *proj(p2), stroke=col, stroke_width=1.4)
+    preset_pts = np.asarray(
+        [
+            cam_pos,
+            (0.0, 0.0, 10.5),
+            (-4.8, -9.8, 3.6),
+            (5.8, 0.0, 2.4),
+        ],
+        dtype=np.float64,
+    )
+    fit_pts = np.vstack(
+        [scene.all_vertices(), frustum["near"], frustum["far"], preset_pts]
+    )
 
-    # Frustum geometry from Camera.frustum_corners_world()
-    frustum = bcast_cam.frustum_corners_world(near_m=2.2, far_m=15.5)
-    cam_pos = bcast_cam.extrinsics.position
-    c_uv = proj(cam_pos)
-    near_uvs = [proj(p) for p in frustum["near"]]
-    far_uvs = [proj(p) for p in frustum["far"]]
+    projector = ViewportProjector3D(
+        observer,
+        fit_pts,
+        rect_x=24.0,
+        rect_y=64.0,
+        rect_w=580.0,
+        rect_h=412.0,
+        padding_px=42.0,
+    )
+
+    clip_g = svg.clip_group("clip-frustum-3d", 24, 64, 580, 412, rx=10)
+    svg.set_target(clip_g)
+
+    projector.render_scene(svg, scene)
+
+    # Frustum pyramid from Camera.frustum_corners_world()
+    c_uv = projector.project_point(cam_pos)
+    near_uvs = [projector.project_point(p) for p in frustum["near"]]
+    far_uvs = [projector.project_point(p) for p in frustum["far"]]
 
     for f_uv in far_uvs:
         svg.line(
@@ -1393,12 +1943,12 @@ def render_camera_frustum_3d(palette: ThemePalette) -> str:
             stroke=palette.accent_secondary,
             stroke_width=1.2,
             dash="4 3",
-            opacity=0.75,
+            opacity=0.80,
         )
     svg.polygon(
         far_uvs,
         fill=palette.accent_secondary,
-        fill_opacity=0.08,
+        fill_opacity=0.09,
         stroke=palette.accent_secondary,
         stroke_width=1.4,
         dash="5 3",
@@ -1406,54 +1956,50 @@ def render_camera_frustum_3d(palette: ThemePalette) -> str:
     svg.polygon(
         near_uvs,
         fill=palette.accent_secondary,
-        fill_opacity=0.24,
+        fill_opacity=0.28,
         stroke=palette.accent_secondary,
         stroke_width=2.0,
     )
 
     # Optical axis ray from broadcast_near camera to court center
-    center_uv = proj((0.0, 0.0, 0.0))
+    center_uv = projector.project_point((0.0, 0.0, 0.0))
     svg.line(
         c_uv[0],
         c_uv[1],
         center_uv[0],
         center_uv[1],
         stroke=palette.accent_tertiary,
-        stroke_width=2.0,
+        stroke_width=2.2,
         marker_end="arrow-tertiary",
+    )
+    svg.circle(
+        c_uv[0], c_uv[1], 5.5, fill=palette.accent_secondary, stroke=palette.bg_panel
     )
     svg.callout_badge(
         c_uv[0],
         c_uv[1],
         "broadcast_near",
         color=palette.accent_secondary,
-        offset=(0, -22),
+        offset=(18, 22),
     )
     svg.callout_badge(
         center_uv[0],
         center_uv[1],
         "World (0,0,0)",
         color=palette.accent_primary,
-        offset=(52, 16),
+        offset=(46, -24),
     )
 
     # Other camera presets markers
-    for label, pos_xyz in [
-        ("overhead_zenith", (0.0, 0.0, 12.0)),
-        ("corner_near_left", (-4.8, -9.8, 3.6)),
-        ("side_net_right", (5.8, 0.0, 2.4)),
+    for label, pos_xyz, off in [
+        ("overhead_zenith", (0.0, 0.0, 10.5), (0, -18)),
+        ("corner_near_left", (-4.8, -9.8, 3.6), (-64, 24)),
+        ("side_net_right", (5.8, 0.0, 2.4), (56, -12)),
     ]:
-        pu, pv = proj(pos_xyz)
-        svg.circle(pu, pv, 4.5, fill=palette.accent_tertiary, stroke=palette.bg_panel)
-        svg.text(
-            pu + 8,
-            pv - 6,
-            label,
-            fill=palette.text_muted,
-            size=9.5,
-            mono=True,
-            anchor="start",
-        )
+        pu, pv = projector.project_point(pos_xyz)
+        svg.callout_badge(pu, pv, label, color=palette.accent_tertiary, offset=off)
+
+    svg.set_target(None)
 
     # Right panel: Coordinate frame transformation summary
     frames = [
@@ -1522,17 +2068,17 @@ def render_camera_frustum_3d(palette: ThemePalette) -> str:
 
 
 def render_camera_sensor_projection(palette: ThemePalette) -> str:
-    """5. 1920x1080 sensor view showing all 17 projected landmarks and principal point."""
+    """5. 1920x1080 sensor view showing full 3D court projection and all 17 landmarks."""
     svg = SvgCanvas(
         900,
         500,
         "PadelKit 1080p Sensor Landmark Projection & Intrinsics",
-        "2D sensor projection of the 17 CourtLandmark points using Camera.broadcast_near().project_court_landmarks().",
+        "2D sensor projection of the 3D FIP court and 17 CourtLandmark points onto a 1920x1080 sensor frame.",
         palette,
     )
     svg.header(
         "Sensor Plane Projection & CameraIntrinsics (1920 × 1080 px)",
-        "cam = Camera.broadcast_near()  |  landmarks_px = cam.project_court_landmarks()  |  Principal Point (cx=960, cy=540)",
+        "landmarks_px = cam.project_court_landmarks()  |  Resolution = 1920×1080  |  Principal Point (cx=960, cy=540)",
     )
 
     sx0, sy0 = 48.0, 82.0
@@ -1550,7 +2096,7 @@ def render_camera_sensor_projection(palette: ThemePalette) -> str:
         rx=6,
     )
 
-    # Sensor pixel grid & principal point crosshair (cx, cy)
+    # Sensor pixel grid
     for gx in range(1, 6):
         x_line = sx0 + gx * (sw / 6)
         svg.line(
@@ -1562,82 +2108,125 @@ def render_camera_sensor_projection(palette: ThemePalette) -> str:
             sx0, y_line, sx0 + sw, y_line, stroke=palette.grid_line, stroke_width=1.0
         )
 
+    court = Court.fip_standard()
+    # Elevated wide broadcast camera so all 17 landmarks (including near baseline & 4m walls) fall cleanly inside the 1920x1080 sensor!
+    cam = Camera(
+        intrinsics=CameraIntrinsics.from_fov(
+            width_px=1920, height_px=1080, horizontal_fov_deg=60.0
+        ),
+        extrinsics=CameraExtrinsics.from_look_at(
+            position=(0.0, -23.0, 10.5),
+            target=(0.0, -1.0, 1.0),
+        ),
+    )
+    proj_pts = cam.project_court_landmarks(court=court)
+
+    def world_to_svg(pts_3d: np.ndarray) -> np.ndarray:
+        uv, _ = cam.project_points(np.asarray(pts_3d, dtype=np.float64))
+        out = np.empty_like(uv)
+        out[:, 0] = sx0 + uv[:, 0] * scale
+        out[:, 1] = sy0 + uv[:, 1] * scale
+        return out
+
+    # Clip all rendered 3D court geometry strictly inside the 1920x1080 sensor frame
+    sensor_clip = svg.clip_group("clip-sensor-1080p", sx0, sy0, sw, sh, rx=6)
+    svg.set_target(sensor_clip)
+
+    scene = build_fip_court_3d_scene(
+        palette, include_walls=True, include_panel_divisions=True
+    )
+    # Render 3D scene sorted by camera depth directly into sensor pixel space
+    r_mat = cam.extrinsics.R
+    t_vec = cam.extrinsics.t
+    draw_ables: list[tuple[float, Literal["face", "seg"], Face3D | Segment3D]] = []
+    for f in scene.faces:
+        z_d = float(np.mean(((r_mat @ f.vertices.T).T + t_vec)[:, 2])) + f.layer_bias
+        draw_ables.append((z_d, "face", f))
+    for s in scene.segments:
+        z_d = float(np.mean(((r_mat @ s.points.T).T + t_vec)[:, 2])) + s.layer_bias
+        draw_ables.append((z_d, "seg", s))
+    draw_ables.sort(key=lambda item: item[0], reverse=True)
+
+    for _, kind, obj in draw_ables:
+        if kind == "face":
+            assert isinstance(obj, Face3D)
+            svg.polygon(
+                world_to_svg(obj.vertices),
+                fill=obj.fill,
+                fill_opacity=obj.fill_opacity,
+                stroke=obj.stroke,
+                stroke_width=obj.stroke_width,
+                stroke_opacity=obj.stroke_opacity,
+                dash=obj.dash,
+            )
+        else:
+            assert isinstance(obj, Segment3D)
+            uv_s = world_to_svg(obj.points)
+            svg.polyline(
+                uv_s,
+                stroke=obj.stroke,
+                stroke_width=obj.stroke_width,
+                opacity=obj.opacity,
+                dash=obj.dash,
+            )
+
+    # Principal point crosshair (cx, cy)
     cx_px = sx0 + 960.0 * scale
     cy_px = sy0 + 540.0 * scale
     svg.line(
-        cx_px - 14,
+        cx_px - 12,
         cy_px,
-        cx_px + 14,
+        cx_px + 12,
         cy_px,
         stroke=palette.accent_danger,
-        stroke_width=1.5,
+        stroke_width=1.6,
     )
     svg.line(
         cx_px,
-        cy_px - 14,
+        cy_px - 12,
         cx_px,
-        cy_px + 14,
+        cy_px + 12,
         stroke=palette.accent_danger,
-        stroke_width=1.5,
+        stroke_width=1.6,
     )
     svg.callout_badge(
         cx_px,
         cy_px,
         "(cx, cy)",
         color=palette.accent_danger,
-        offset=(-52, -18),
+        offset=(56, -12),
     )
 
-    court = Court.fip_standard()
-    cam = Camera.broadcast_near(court=court)
-    proj_pts = cam.project_court_landmarks(court=court)
-
-    def to_sensor(name: str) -> tuple[float, float]:
-        u, v = proj_pts[name]
-        return sx0 + u * scale, sy0 + v * scale
-
-    # Projected court floor & service lines on sensor
-    floor_poly = [
-        to_sensor("floor_near_left"),
-        to_sensor("floor_near_right"),
-        to_sensor("floor_far_right"),
-        to_sensor("floor_far_left"),
-    ]
-    svg.polygon(
-        floor_poly,
-        fill=palette.court_floor,
-        stroke=palette.court_line_fg,
-        stroke_width=1.8,
-    )
-    for a, b, col in [
-        ("service_near_left", "service_near_right", palette.court_line_fg),
-        ("service_far_left", "service_far_right", palette.court_line_fg),
-        ("service_near_center", "service_far_center", palette.court_line_fg),
-        ("net_left", "net_right", palette.accent_secondary),
-        ("floor_near_left", "wall_top_near_left", palette.accent_secondary),
-        ("floor_near_right", "wall_top_near_right", palette.accent_secondary),
-        ("floor_far_left", "wall_top_far_left", palette.accent_secondary),
-        ("floor_far_right", "wall_top_far_right", palette.accent_secondary),
-        ("wall_top_near_left", "wall_top_near_right", palette.accent_secondary),
-        ("wall_top_far_left", "wall_top_far_right", palette.accent_secondary),
-    ]:
-        svg.line(*to_sensor(a), *to_sensor(b), stroke=col, stroke_width=1.4)
-
+    # Draw all 17 projected landmarks inside the sensor
+    badge_offsets: dict[int, tuple[float, float]] = {
+        1: (-24, -12),
+        2: (24, -12),
+        3: (-24, 4),
+        4: (0, 15),
+        5: (24, 4),
+        6: (-24, 0),
+        7: (-22, 12),
+        8: (24, 0),
+        9: (-28, 8),
+        10: (0, -16),
+        11: (28, 8),
+        12: (-28, -12),
+        13: (28, -12),
+        14: (-22, -12),
+        15: (22, -12),
+        16: (-20, -12),
+        17: (20, -12),
+    }
     for idx, lm in enumerate(CourtLandmark, start=1):
-        u_s, v_s = to_sensor(lm.value)
+        u_px, v_px = proj_pts[lm.value]
+        u_s = sx0 + u_px * scale
+        v_s = sy0 + v_px * scale
         col = palette.accent_secondary if idx >= 14 else palette.accent_primary
-        svg.circle(u_s, v_s, 4.5, fill=col, stroke=palette.bg_panel)
-        svg.text(
-            u_s,
-            v_s - 9,
-            str(idx),
-            fill=col,
-            size=9.5,
-            weight="700",
-            mono=True,
-        )
+        svg.callout_badge(u_s, v_s, str(idx), color=col, offset=badge_offsets[idx])
 
-    # Pixel axes (0,0) top-left
+    svg.set_target(None)
+
+    # Pixel axes (0,0) top-left outside clip group
     svg.line(
         sx0,
         sy0,
@@ -1649,7 +2238,7 @@ def render_camera_sensor_projection(palette: ThemePalette) -> str:
     )
     svg.text(
         sx0 + 82,
-        sy0 - 8,
+        sy0 - 9,
         "+u (width_px = 1920)",
         fill=palette.accent_tertiary,
         size=10.0,
@@ -1666,7 +2255,7 @@ def render_camera_sensor_projection(palette: ThemePalette) -> str:
         marker_end="arrow-tertiary",
     )
     svg.text(
-        sx0 - 10,
+        sx0 - 12,
         sy0 + 74,
         "+v",
         fill=palette.accent_tertiary,
@@ -1732,7 +2321,7 @@ def render_camera_distortion_grid(palette: ThemePalette) -> str:
     )
     svg.header(
         "Optical Lens Distortion Models (CameraDistortion)",
-        "Subdivided 3D court & grid lines (N = 48 samples/segment) projected via Camera.project_points()",
+        "Full 3D court enclosure & grid lines (N = 48 samples/segment) warped via Camera.project_points()",
     )
 
     models = [
@@ -1745,43 +2334,67 @@ def render_camera_distortion_grid(palette: ThemePalette) -> str:
         ),
         (
             "2. BROWN_CONRADY",
-            "k1=-0.22, k2=0.05 (Barrel)",
-            CameraDistortion.brown_conrady(k1=-0.22, k2=0.05, p1=0.001, p2=-0.001),
+            "k1=-0.24, k2=0.06 (Barrel)",
+            CameraDistortion.brown_conrady(k1=-0.24, k2=0.06, p1=0.001, p2=-0.001),
             palette.accent_secondary,
             336.0,
         ),
         (
             "3. FISHEYE (Kannala-Brandt)",
             "Equidistant Wide Action Lens",
-            CameraDistortion.fisheye(k1=-0.08, k2=0.02, k3=-0.003, k4=0.0005),
+            CameraDistortion.fisheye(k1=-0.10, k2=0.02, k3=-0.003, k4=0.0005),
             palette.accent_tertiary,
             648.0,
         ),
     ]
 
     intr = CameraIntrinsics.from_fov(
-        width_px=260, height_px=190, horizontal_fov_deg=92.0
+        width_px=260, height_px=190, horizontal_fov_deg=86.0
     )
     extr = CameraExtrinsics.from_look_at(
-        position=(0.0, -12.2, 5.2),
-        target=(0.0, 0.0, 0.2),
+        position=(0.0, -14.2, 6.4),
+        target=(0.0, -0.5, 0.8),
     )
 
-    # 3D court segments to project with 48-point subdivision
-    court_segments = [
-        ((-5.0, -10.0, 0.0), (5.0, -10.0, 0.0)),
-        ((5.0, -10.0, 0.0), (5.0, 10.0, 0.0)),
-        ((5.0, 10.0, 0.0), (-5.0, 10.0, 0.0)),
-        ((-5.0, 10.0, 0.0), (-5.0, -10.0, 0.0)),
-        ((-5.0, -7.0, 0.0), (5.0, -7.0, 0.0)),
-        ((-5.0, 7.0, 0.0), (5.0, 7.0, 0.0)),
-        ((0.0, -7.0, 0.0), (0.0, 7.0, 0.0)),
-        ((-5.0, 0.0, 0.0), (5.0, 0.0, 0.0)),
-        ((-5.0, -10.0, 4.0), (5.0, -10.0, 4.0)),
-        ((-5.0, 10.0, 4.0), (5.0, 10.0, 4.0)),
+    # Complete connected 3D court wireframe (floor, service lines, net, and full 3D walls with vertical posts)
+    court_segments: list[
+        tuple[tuple[float, float, float], tuple[float, float, float], bool]
+    ] = [
+        # Floor & service lines (is_wall=False)
+        ((-5.0, -10.0, 0.0), (5.0, -10.0, 0.0), False),
+        ((5.0, -10.0, 0.0), (5.0, 10.0, 0.0), False),
+        ((5.0, 10.0, 0.0), (-5.0, 10.0, 0.0), False),
+        ((-5.0, 10.0, 0.0), (-5.0, -10.0, 0.0), False),
+        ((-5.0, -7.0, 0.0), (5.0, -7.0, 0.0), False),
+        ((-5.0, 7.0, 0.0), (5.0, 7.0, 0.0), False),
+        ((0.0, -7.0, 0.0), (0.0, 7.0, 0.0), False),
+        # Net at Y = 0
+        ((-5.0, 0.0, 0.0), (5.0, 0.0, 0.0), False),
+        ((-5.0, 0.0, 0.92), (5.0, 0.0, 0.92), True),
+        ((-5.0, 0.0, 0.0), (-5.0, 0.0, 0.92), True),
+        ((5.0, 0.0, 0.0), (5.0, 0.0, 0.92), True),
+        # Back & Side 3D Walls (connected vertical posts + horizontal glass/mesh beams)
+        ((-5.0, -10.0, 0.0), (-5.0, -10.0, 4.0), True),
+        ((5.0, -10.0, 0.0), (5.0, -10.0, 4.0), True),
+        ((-5.0, 10.0, 0.0), (-5.0, 10.0, 4.0), True),
+        ((5.0, 10.0, 0.0), (5.0, 10.0, 4.0), True),
+        ((-5.0, -10.0, 4.0), (5.0, -10.0, 4.0), True),
+        ((-5.0, 10.0, 4.0), (5.0, 10.0, 4.0), True),
+        ((-5.0, 10.0, 3.0), (5.0, 10.0, 3.0), True),
+        # Stepped side walls (left X=-5 and right X=+5)
+        ((-5.0, -10.0, 3.0), (-5.0, 10.0, 3.0), True),
+        ((5.0, -10.0, 3.0), (5.0, 10.0, 3.0), True),
+        ((-5.0, -10.0, 4.0), (-5.0, -8.0, 4.0), True),
+        ((-5.0, -8.0, 4.0), (-5.0, -8.0, 0.0), True),
+        ((5.0, -10.0, 4.0), (5.0, -8.0, 4.0), True),
+        ((5.0, -8.0, 4.0), (5.0, -8.0, 0.0), True),
+        ((-5.0, 10.0, 4.0), (-5.0, 8.0, 4.0), True),
+        ((-5.0, 8.0, 4.0), (-5.0, 8.0, 0.0), True),
+        ((5.0, 10.0, 4.0), (5.0, 8.0, 4.0), True),
+        ((5.0, 8.0, 4.0), (5.0, 8.0, 0.0), True),
     ]
 
-    for title, subtitle, dist_model, accent, px in models:
+    for idx_m, (title, subtitle, dist_model, accent, px) in enumerate(models):
         svg.rect(
             px,
             64,
@@ -1823,10 +2436,13 @@ def render_camera_distortion_grid(palette: ThemePalette) -> str:
             rx=6,
         )
 
-        # Background sensor distortion grid via CameraDistortion.distort()
+        clip_vp = svg.clip_group(f"clip-dist-{idx_m}", vp_x, vp_y, 260, 190, rx=6)
+        svg.set_target(clip_vp)
+
+        # Background sensor distortion grid via CameraDistortion.distort_normalized()
         for norm_c in np.linspace(-0.75, 0.75, 7):
-            h_pts = np.column_stack([np.linspace(-1.05, 1.05, 48), np.full(48, norm_c)])
-            v_pts = np.column_stack([np.full(48, norm_c), np.linspace(-0.75, 0.75, 48)])
+            h_pts = np.column_stack([np.linspace(-1.05, 1.05, 40), np.full(40, norm_c)])
+            v_pts = np.column_stack([np.full(40, norm_c), np.linspace(-0.75, 0.75, 40)])
             for grid_pts in (h_pts, v_pts):
                 warped = dist_model.distort_normalized(grid_pts)
                 uv = np.column_stack(
@@ -1835,36 +2451,26 @@ def render_camera_distortion_grid(palette: ThemePalette) -> str:
                         vp_y + 95.0 + warped[:, 1] * 105.0,
                     ]
                 )
-                in_bounds = (
-                    (uv[:, 0] >= vp_x + 2)
-                    & (uv[:, 0] <= vp_x + 258)
-                    & (uv[:, 1] >= vp_y + 2)
-                    & (uv[:, 1] <= vp_y + 188)
+                svg.polyline(
+                    rdp_simplify_2d(uv, epsilon=0.45),
+                    stroke=palette.grid_line,
+                    stroke_width=1.0,
                 )
-                if np.count_nonzero(in_bounds) >= 2:
-                    svg.polyline(
-                        rdp_simplify_2d(uv[in_bounds], epsilon=0.35),
-                        stroke=palette.grid_line,
-                        stroke_width=1.0,
-                    )
 
         cam = Camera(intrinsics=intr, extrinsics=extr, distortion=dist_model)
-        for seg_a, seg_b in court_segments:
-            uv = project_polyline_3d(cam, [seg_a, seg_b], subdivide=48)
-            uv[:, 0] += vp_x
-            uv[:, 1] += vp_y
-            in_vp = (
-                (uv[:, 0] >= vp_x + 2)
-                & (uv[:, 0] <= vp_x + 258)
-                & (uv[:, 1] >= vp_y + 2)
-                & (uv[:, 1] <= vp_y + 188)
-            )
-            if np.count_nonzero(in_vp) >= 2:
+        for seg_a, seg_b, is_wall in court_segments:
+            uv = project_polyline_3d(cam, [seg_a, seg_b], subdivide=36)
+            if uv.shape[0] >= 2:
+                uv[:, 0] += vp_x
+                uv[:, 1] += vp_y
                 svg.polyline(
-                    rdp_simplify_2d(uv[in_vp], epsilon=0.30),
-                    stroke=accent,
-                    stroke_width=1.8,
+                    rdp_simplify_2d(uv, epsilon=0.40),
+                    stroke=accent if not is_wall else palette.glass_stroke,
+                    stroke_width=1.7 if not is_wall else 1.15,
+                    opacity=1.0 if not is_wall else 0.75,
                 )
+
+        svg.set_target(None)
 
     return svg.to_xml_string()
 
@@ -1950,7 +2556,6 @@ def render_physics_forces_9d(palette: ThemePalette) -> str:
     )
 
     # Force & Velocity vectors from ball center
-    # 1. Velocity v (forward-upward)
     svg.line(
         bx,
         by,
@@ -1968,7 +2573,6 @@ def render_physics_forces_9d(palette: ThemePalette) -> str:
         offset=(10, -18),
     )
 
-    # 2. Aerodynamic Drag F_drag (opposes v)
     svg.line(
         bx,
         by,
@@ -1986,7 +2590,6 @@ def render_physics_forces_9d(palette: ThemePalette) -> str:
         offset=(-10, 22),
     )
 
-    # 3. Gravity F_g (downward -Z)
     svg.line(
         bx,
         by,
@@ -2004,7 +2607,6 @@ def render_physics_forces_9d(palette: ThemePalette) -> str:
         offset=(64, 0),
     )
 
-    # 4. Spindt Magnus Lift F_magnus (perpendicular: w x v)
     svg.line(
         bx,
         by,
@@ -2022,7 +2624,6 @@ def render_physics_forces_9d(palette: ThemePalette) -> str:
         offset=(56, -8),
     )
 
-    # Right panel: Equations & 9D state summary using BallState.from_shot()
     sample = BallState.from_shot(
         position=(0.0, -6.0, 1.2),
         velocity=(0.0, 22.0, 3.5),
@@ -2064,7 +2665,7 @@ def render_physics_forces_9d(palette: ThemePalette) -> str:
 
 
 def render_physics_trajectories(palette: ThemePalette) -> str:
-    """8. RK4-simulated side-view trajectory comparison with sharp bounce cusps."""
+    """8. RK4-simulated side-view trajectory comparison with floor & back-glass rebounds."""
     svg = SvgCanvas(
         960,
         440,
@@ -2074,7 +2675,7 @@ def render_physics_trajectories(palette: ThemePalette) -> str:
     )
     svg.header(
         "RK4 Spin Trajectory Comparison (BallPhysicsEngine.simulate)",
-        "Side Elevation (Y ∈ [-10m, +10m], Z ∈ [0m, 4.5m])  |  dt = 0.002s  |  Sharp bounce cusps preserved",
+        "Side Elevation (Y ∈ [-10m, +10m], Z ∈ [0m, 4.0m])  |  dt = 0.002s  |  Floor & Back-Glass Rebounds",
     )
     svg.rect(
         24,
@@ -2092,33 +2693,35 @@ def render_physics_trajectories(palette: ThemePalette) -> str:
         (
             "Topspin Smash (+2400 RPM)",
             BallState.from_shot(
-                position=(0.0, -4.5, 2.55),
-                velocity=(0.0, 21.5, -1.6),
+                position=(0.0, -2.5, 2.65),
+                velocity=(0.0, 23.0, -3.2),
                 topspin_rpm=2400.0,
             ),
+            1.28,
             palette.accent_danger,
         ),
         (
             "Flat Drive (0 RPM)",
             BallState.from_shot(
-                position=(0.0, -8.2, 1.15),
-                velocity=(0.0, 21.0, 2.7),
+                position=(0.0, -8.2, 1.10),
+                velocity=(0.0, 19.8, 3.0),
                 topspin_rpm=0.0,
             ),
+            1.45,
             palette.accent_secondary,
         ),
         (
             "Backspin Bandeja (-1800 RPM)",
             BallState.from_shot(
-                position=(0.0, -3.5, 2.20),
-                velocity=(0.0, 14.8, -0.6),
+                position=(0.0, -4.0, 2.15),
+                velocity=(0.0, 14.5, -0.4),
                 topspin_rpm=-1800.0,
             ),
+            1.55,
             palette.accent_primary,
         ),
     ]
 
-    # Map Y in [-10, 10] -> X in [80, 880] (40 px/m), Z in [0, 4.5] -> Y in [366, 114] (56 px/m)
     x0, y_floor = 480.0, 366.0
     sx, sz = 40.0, 56.0
 
@@ -2141,46 +2744,47 @@ def render_physics_trajectories(palette: ThemePalette) -> str:
             anchor="end",
         )
 
-    # Court floor, service lines, net, and 4m back glass walls
+    # Court floor, service lines, net, and 3m glass + 1m mesh back walls
     svg.line(80, y_floor, 880, y_floor, stroke=palette.court_line_fg, stroke_width=2.4)
-    svg.line(
-        80,
-        y_floor,
-        80,
-        y_floor - 4.0 * sz,
-        stroke=palette.glass_stroke,
-        stroke_width=3.0,
-    )
-    svg.line(
-        880,
-        y_floor,
-        880,
-        y_floor - 4.0 * sz,
-        stroke=palette.glass_stroke,
-        stroke_width=3.0,
-    )
+    for x_wall in (80.0, 880.0):
+        svg.line(
+            x_wall,
+            y_floor,
+            x_wall,
+            y_floor - 3.0 * sz,
+            stroke=palette.glass_stroke,
+            stroke_width=3.5,
+        )
+        svg.line(
+            x_wall,
+            y_floor - 3.0 * sz,
+            x_wall,
+            y_floor - 4.0 * sz,
+            stroke=palette.fence_stroke,
+            stroke_width=2.5,
+            dash="4 3",
+        )
     svg.line(
         x0,
         y_floor,
         x0,
         y_floor - 0.88 * sz,
         stroke=palette.accent_tertiary,
-        stroke_width=3.0,
+        stroke_width=3.2,
     )
 
     for y_tick, lbl in [
-        (-10.0, "Y = -10m (Near Glass)"),
+        (-10.0, "Y = -10m (Near Wall)"),
         (-7.0, "-7m"),
         (0.0, "Y = 0m (Net 0.88m)"),
         (7.0, "+7m"),
-        (10.0, "Y = +10m (Far Glass)"),
+        (10.0, "Y = +10m (Far Wall)"),
     ]:
         tu, _ = yz_to_uv(y_tick, 0.0)
         svg.text(tu, y_floor + 20, lbl, fill=palette.text_muted, size=9.5, mono=True)
 
-    # Simulate and draw each trajectory with cusp-preserving RDP simplification
-    for idx, (label, init_state, color) in enumerate(shots):
-        traj = engine.simulate(init_state, duration=1.65, dt=0.002)
+    for idx, (label, init_state, dur, color) in enumerate(shots):
+        traj = engine.simulate(init_state, duration=dur, dt=0.002)
         pos = traj.positions
         uv_raw = np.column_stack([x0 + pos[:, 1] * sx, y_floor - pos[:, 2] * sz])
 
@@ -2189,10 +2793,22 @@ def render_physics_trajectories(palette: ThemePalette) -> str:
             b_idx = int(np.argmin(np.abs(traj.timestamps - b.timestamp)))
             bounce_idxs.append(b_idx)
 
-        uv_clean = simplify_trajectory_preserve_cusps(uv_raw, bounce_idxs, epsilon=0.45)
-        svg.polyline(uv_clean, stroke=color, stroke_width=2.4)
+        uv_clean = simplify_trajectory_preserve_cusps(uv_raw, bounce_idxs, epsilon=0.35)
+        svg.polyline(
+            uv_clean,
+            stroke=color,
+            stroke_width=2.4,
+            marker_end=(
+                "arrow-danger"
+                if color == palette.accent_danger
+                else (
+                    "arrow-secondary"
+                    if color == palette.accent_secondary
+                    else "arrow-primary"
+                )
+            ),
+        )
 
-        # Mark initial shot origin and bounce events
         svg.circle(uv_raw[0, 0], uv_raw[0, 1], 4.5, fill=color, stroke=palette.bg_panel)
         for b in traj.bounces:
             bu, bv = yz_to_uv(b.position[1], b.position[2])
@@ -2200,8 +2816,7 @@ def render_physics_trajectories(palette: ThemePalette) -> str:
                 bu, bv, 5.0, fill=palette.bg_panel, stroke=color, stroke_width=2.2
             )
 
-        # Legend entry at top of viewport
-        lx = 110.0 + idx * 270.0
+        lx = 104.0 + idx * 276.0
         svg.line(lx, 92, lx + 28, 92, stroke=color, stroke_width=2.8)
         svg.text(
             lx + 36,
@@ -2306,7 +2921,6 @@ def render_physics_rebound_regimes(palette: ThemePalette) -> str:
             anchor="start",
         )
 
-        # Impact surface horizontal bar at y = 255
         surf_y = 255.0
         svg.rect(
             px + 20,
@@ -2318,7 +2932,6 @@ def render_physics_rebound_regimes(palette: ThemePalette) -> str:
             stroke_width=1.6,
             rx=3,
         )
-        # Surface normal n
         hx = px + 144.0
         svg.line(
             hx,
@@ -2334,7 +2947,6 @@ def render_physics_rebound_regimes(palette: ThemePalette) -> str:
             hx + 12, surf_y - 72, "n̂", fill=palette.text_muted, size=10.0, mono=True
         )
 
-        # Incident velocity v_in and rebound velocity v_out
         in_x = hx - (p_hit[0] - p_in[0])
         out_x = hx + (p_out[0] - p_hit[0])
         svg.line(
@@ -2382,7 +2994,6 @@ def render_physics_rebound_regimes(palette: ThemePalette) -> str:
             hx, surf_y - 12, 11.0, fill=palette.bg_canvas, stroke=col, stroke_width=2.2
         )
 
-        # Formula box at bottom
         svg.rect(
             px + 16,
             296,
@@ -2438,7 +3049,6 @@ def render_serving_rotations(palette: ThemePalette) -> str:
         rx=10,
     )
 
-    # Horizontal court in left panel
     cx0, cy0 = 64.0, 124.0
     scale = 22.0  # 20m -> 440px, 10m -> 220px
     cw, ch = 20.0 * scale, 10.0 * scale
@@ -2453,7 +3063,6 @@ def render_serving_rotations(palette: ThemePalette) -> str:
         stroke=palette.court_line_fg,
         stroke_width=2.0,
     )
-    # Highlight target diagonal service boxes
     svg.rect(
         cx0 + cw / 2,
         cy0,
@@ -2505,7 +3114,6 @@ def render_serving_rotations(palette: ThemePalette) -> str:
         dash="4 3",
     )
 
-    # Diagonal serve trajectories (Right/Deuce bottom-left -> top-right; Left/Ad top-left -> bottom-right)
     svg.line(
         cx0 + 42,
         cy0 + ch * 0.78,
@@ -2551,7 +3159,6 @@ def render_serving_rotations(palette: ThemePalette) -> str:
         color=palette.accent_secondary,
     )
 
-    # Right panel: Compute actual 4-game rotation states via ServingEngine
     team_a = Team(
         id=TeamId.A,
         name="Team A",
@@ -2651,7 +3258,7 @@ SCHEMATIC_GENERATORS: dict[str, Callable[[ThemePalette], str]] = {
     "serving-rotations": render_serving_rotations,
 }
 
-MAX_SVG_BYTES = 30_720
+MAX_SVG_BYTES = 45_000
 
 
 def build_all_schematics_in_memory() -> dict[str, str]:
@@ -2661,7 +3268,6 @@ def build_all_schematics_in_memory() -> dict[str, str]:
         for palette in (LIGHT_PALETTE, DARK_PALETTE):
             filename = f"{name}-{palette.mode}.svg"
             xml_str = fn(palette)
-            # Validate XML well-formedness & size invariants
             ET.fromstring(xml_str)
             encoded = xml_str.encode("utf-8")
             if len(encoded) > MAX_SVG_BYTES:
@@ -2720,7 +3326,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     for filename, xml_str in generated.items():
         (out_dir / filename).write_text(xml_str, encoding="utf-8")
 
-    # Also write fallback docs/images/court-landmarks-3d.svg
     fallback_path = out_dir.parent / "court-landmarks-3d.svg"
     fallback_path.write_text(generated["court-landmarks-3d-dark.svg"], encoding="utf-8")
     print(f"Generated {len(generated)} SVG schematics in {out_dir}.")
