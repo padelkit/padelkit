@@ -1,0 +1,33 @@
+# Automatic Release Notes configuration for GitHub Releases
+# Used when clicking "Generate release notes" in GitHub Releases UI
+
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+      - duplicate
+      - invalid
+      - wontfix
+  categories:
+    - title: 🚀 Features & Enhancements
+      labels:
+        - enhancement
+        - feat
+        - feature
+    - title: 🐛 Bug Fixes
+      labels:
+        - bug
+        - fix
+    - title: 📚 Documentation & Schematics
+      labels:
+        - documentation
+        - docs
+    - title: 🧪 Tests, CI & Maintenance
+      labels:
+        - test
+        - ci
+        - chore
+        - refactor
+    - title: 🧩 Other Changes
+      labels:
+        - "*"

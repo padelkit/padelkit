@@ -18,7 +18,7 @@ Please make sure your Pull Request targets the **`develop`** branch (unless it i
 - [ ] My branch is up to date with `develop` and targets `develop`.
 - [ ] I have added or updated unit tests in `tests/` and `.venv/bin/pytest` passes locally.
 - [ ] Code linting (`.venv/bin/ruff check .`) and formatting (`.venv/bin/ruff format --check .`) pass without errors.
-- [ ] I have added an entry under `## [X.Y.Z] - Unreleased` in `CHANGELOG.md`.
+- [ ] I have added an entry under `## [X.Y.Z] - Unreleased` in `CHANGELOG.md` (feel free to credit yourself: `(#PR by @your-username)`).
 - [ ] **Documentation (`docs/`):**
   - [ ] If I added/modified public classes or methods, I updated the corresponding `.mdx` files in `docs/` and registered any new routes in `docs/docs.config.json`.
   - [ ] I did **not** include manual `export const metadata = ...` blocks in `.mdx` files.

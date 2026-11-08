@@ -24,7 +24,7 @@ PadelKit uses a two-branch integration model (`develop` and `main`) connected to
    ```
 3. **Make your changes** (code, unit tests, and documentation if applicable).
 4. **Run the quality checks locally** (see [Local Development Setup](#-local-development-setup) below).
-5. **Update `CHANGELOG.md`** under the `## [X.Y.Z] - Unreleased` section.
+5. **Update `CHANGELOG.md`** under the `## [X.Y.Z] - Unreleased` section and credit yourself at the end of the line (e.g., `- Add altitude air density helper (#12 by @your-github-username).`).
 6. **Open a Pull Request targeting the `develop` branch** of `padelkit/padelkit`.
 
 ---
@@ -109,7 +109,7 @@ PadelKit follows [Semantic Versioning (`SemVer`)](https://semver.org/):
 - **Release checklist for maintainers:**
   1. Ensure `pyproject.toml` has the target version (e.g. `version = "0.1.0"`), `docs/docs.config.json` lists `"0.1.0"` in `"versions"`, and `CHANGELOG.md` replaces `## [0.1.0] - Unreleased` with `## [0.1.0] - YYYY-MM-DD`.
   2. Merge `develop` into `main` via Pull Request (this deploys production docs to `padelkit.dev`).
-  3. Create a GitHub Release with tag `v0.1.0` targeting `main` — the [`.github/workflows/release.yml`](./.github/workflows/release.yml) workflow will automatically verify the tag matches `pyproject.toml`, run tests, build the wheel/sdist, and publish to PyPI.
+  3. Create a GitHub Release with tag `v0.1.0` targeting `main` and click **"Generate release notes"** (configured via [`.github/release.yml`](./.github/release.yml) to automatically group PRs by category and credit every contributor with `@username` and "New Contributors" callouts) — the [`.github/workflows/release.yml`](./.github/workflows/release.yml) workflow will automatically verify the tag matches `pyproject.toml`, run tests, build the wheel/sdist, and publish to PyPI.
 
 ---
 

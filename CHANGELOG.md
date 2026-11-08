@@ -20,3 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project initialization with `pyproject.toml` and CI via GitHub Actions.
 - `padelkit.court` module with `Court`, `CourtDimensions`, `CourtLocation`, 17-point 2D/3D `CourtLandmark` model, and `CENTERED` / `CORNER_BASED` coordinate systems.
 - `padelkit.scoring` module with `Match`, `MatchConfiguration`, `MatchScore`, `MatchScoreHistory`, `Team`, `Player`, `ServingState`, and `ServingEngine`.
+
+[0.1.0]: https://github.com/padelkit/padelkit/compare/v0.0.1...HEAD
+[0.0.1]: https://github.com/padelkit/padelkit/releases/tag/v0.0.1
