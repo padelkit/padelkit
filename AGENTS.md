@@ -19,11 +19,16 @@ This document serves as the single source of truth regarding the architecture, d
 
 ## Versioning & Documentation (`docs/`)
 - **Current Version:** `0.1.0` (unreleased; `0.0.1` is the initial published version on PyPI). While `0.1.0` remains unreleased, accumulate all changes under `## [0.1.0] - Unreleased` in `CHANGELOG.md`.
+- **Single Source of Truth for Version:** `pyproject.toml` defines `version = "X.Y.Z"`. `src/padelkit/__init__.py` reads it dynamically via `importlib.metadata.version("padelkit")`, and `tests/test_version_and_docs.py` verifies consistency across `pyproject.toml`, `padelkit.__version__`, `CHANGELOG.md`, and `docs/docs.config.json`.
+- **Branching & CI/CD Workflow:**
+  - `develop` is the integration branch for all contributor Pull Requests (`CONTRIBUTING.md`). Pushing to `docs/**` on `develop` triggers the Vercel Preview Deploy Hook (`VERCEL_PREVIEW_DEPLOY_HOOK_URL`).
+  - `main` is the production branch. Merging `develop` into `main` triggers the Vercel Production Deploy Hook (`VERCEL_DEPLOY_HOOK_URL`) for `https://padelkit.dev`.
+  - Publishing a GitHub Release (`vX.Y.Z`) on `main` triggers `.github/workflows/release.yml` to verify tag/version parity, run tests, and publish to PyPI via Trusted Publishing.
 - **Decoupled Docs Architecture:**
   - `docs/` in this repository contains the `.mdx` content pages, custom SVG icons (`docs/icons/`), and `docs/docs.config.json`.
   - A separate private Next.js repository (`padelkit-docs`) syncs `docs/` during build and deploys to `https://padelkit.dev` via Vercel.
-  - **MDX Rules:**
-    1. Do **not** include `export const metadata = { ... }` at the top of new `.mdx` files (`padelkit-docs/scripts/sync-docs.mjs` injects it automatically from `docs/docs.config.json`).
+  - **MDX Rules (enforced by `tests/test_version_and_docs.py`):**
+    1. Do **not** include `export const metadata = { ... }` at the top of `.mdx` files (`padelkit-docs/scripts/sync-docs.mjs` injects it automatically from `docs/docs.config.json`).
     2. Register every new page in `docs/docs.config.json` under `"pages"` (with `"min": "0.1.0"` for `0.1.0` features), `"navigation"`, and optionally `"intro_cards"`.
     3. Follow the modular 2-column layout (`<Row>`, `<Col>`, `<Col sticky>`, `<Properties>`, `<Property>`, `<CodeGroup>`, `<Schematic>`).
     4. Static light/dark vector schematics in `docs/images/schematics/` are generated deterministically via `.venv/bin/python scripts/generate_schematics.py` (and verified via `--check` in `tests/test_docs_schematics.py`).

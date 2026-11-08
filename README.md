@@ -69,11 +69,19 @@ print(match.history.get_current_score())
 - **3D Visualizer & Replay Studio (`padelkit.viz`):** Interactive Three.js 3D court studio supporting CSV match replay, real-time live streaming (`serve()` + `push_frame()`), standalone HTML/Jupyter export, and CV render passes (`RGB`, `Semantic Segmentation`, `Depth`, and `17 Landmarks`).
 - **Scoring System (`padelkit.scoring`):** Full event-sourced match, set, game, tie-break, and serving rotation engine.
 
+## Contributing
+
+We welcome contributions to both the Python library and the official documentation website!
+
+- **Code & Features:** Target your Pull Requests to the **`develop`** branch. Read our [**Contributing Guide (`CONTRIBUTING.md`)**](./CONTRIBUTING.md) for local setup with `uv`, testing (`pytest`), linting (`ruff`), and versioning rules.
+- **Website Documentation (`padelkit.dev`):** All documentation pages (`.mdx`), navigation menus (`docs.config.json`), custom icons, and SVG schematics live directly inside [`docs/`](./docs/). Merging changes into `develop` automatically deploys the preview documentation site, and merging into `main` updates [https://padelkit.dev](https://padelkit.dev). See [`docs/README.md`](./docs/README.md) for details.
+
 ## License
 
 Apache 2.0 License.
 
 ## Links
 
-- **Documentation:** [https://padelkit.dev](https://padelkit.dev) (See [Docs Guide](./docs/README.md) for contribution instructions)
+- **Documentation:** [https://padelkit.dev](https://padelkit.dev) (See [Docs Guide](./docs/README.md) for authoring instructions)
+- **Contributing Guide:** [CONTRIBUTING.md](./CONTRIBUTING.md)
 - **Source Code:** [GitHub](https://github.com/padelkit/padelkit)

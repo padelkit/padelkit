@@ -1,0 +1,72 @@
+name: Release to PyPI
+
+on:
+  release:
+    types: [ published ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Verify Version, Test & Build Distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Verify release tag matches pyproject.toml
+        if: github.event_name == 'release'
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION=$(python -c "import padelkit; print(padelkit.__version__)")
+          echo "Release tag version: $TAG_VERSION"
+          echo "Package version:     $PKG_VERSION"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "Error: Git tag ($GITHUB_REF_NAME) does not match pyproject.toml version ($PKG_VERSION)!"
+            exit 1
+          fi
+
+      - name: Run linter, formatter, and test suite
+        run: |
+          ruff check .
+          ruff format --check .
+          pytest
+
+      - name: Build sdist and wheel
+        run: |
+          python -m build
+          twine check dist/*
+
+      - name: Upload distribution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: build
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/padelkit
+    permissions:
+      id-token: write  # Required for PyPI Trusted Publishing (OIDC)
+    steps:
+      - name: Download distribution artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

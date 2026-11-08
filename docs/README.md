@@ -124,7 +124,9 @@ Icons are defined directly within PadelKit in [docs/icons/](file:///home/fidelec
     
     Once the file is saved, reference it in `docs.config.json` as `"icon": "NewFeatureIcon"`. During the next automated sync, the build process will automatically copy, register, and render your custom icon.
 
-## 🚀 Deployment
+## 🚀 Deployment (Preview & Production)
 
-You do not need to do anything to deploy the documentation. 
-Whenever changes to this folder are merged into the `main` branch, a Vercel webhook will automatically trigger the private frontend repository to fetch your changes, inject the necessary metadata, build the site, and deploy the updates.
+You do not need to do anything manual to deploy the documentation:
+- **Preview / Staging (`develop` branch):** Open your Pull Request targeting the **`develop`** branch. Whenever changes to `docs/` are merged into `develop`, a GitHub Action automatically triggers the Vercel Preview Deploy Hook so the team can verify the rendered changes on the staging environment.
+- **Production (`main` branch):** Whenever `develop` is merged into `main`, the Vercel Production Deploy Hook automatically fetches the `main` branch, injects metadata from `docs.config.json`, builds the Next.js site, and deploys updates live to **[https://padelkit.dev](https://padelkit.dev)**.
+- **CI Validation:** Running `.venv/bin/pytest` locally (and automatically on every PR) validates that `docs/docs.config.json`, all `.mdx` routes, custom icons, and `<Schematic />` SVG pairs are 100% consistent before deployment.

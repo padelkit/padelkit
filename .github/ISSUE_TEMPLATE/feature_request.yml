@@ -1,0 +1,35 @@
+name: 🚀 Feature or Documentation Request
+description: Suggest a new feature, physics/vision model, or documentation improvement for PadelKit.
+title: "[Feat]: "
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: module
+    attributes:
+      label: Target Module
+      options:
+        - "padelkit.court (Court Geometry & Landmarks)"
+        - "padelkit.camera (Calibration, Distortion & Projection)"
+        - "padelkit.physics (9D Aerodynamics & Rebound Physics)"
+        - "padelkit.viz (3D Studio, Replay & Animations)"
+        - "padelkit.scoring (Match Rules & Event Sourcing)"
+        - "docs/ (Website Documentation & Schematics)"
+        - "Other / New Module"
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Feature Description & Motivation
+      description: Describe the feature you would like to see and the problem or use case it solves.
+    validations:
+      required: true
+
+  - type: textarea
+    id: api_design
+    attributes:
+      label: Proposed API / Usage Example (Optional)
+      description: How would you ideally call or configure this in Python?
+      placeholder: |
+        from padelkit import ...
