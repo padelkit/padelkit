@@ -1,0 +1,233 @@
+# MatchTimeline
+
+`MatchTimeline` is the central time-indexed container for 60 FPS match dynamics, coupling frame-by-frame [`FrameState`](/frame-state) snapshots with static domain metadata ([`Court`](/court), [`EnvironmentConditions`](/physics-parameters), [`BallProperties`](/physics-parameters), [`SurfaceMaterials`](/physics-parameters), and [`Match`](/match)) for lossless serialization to [Apache Parquet (`.parquet`)](/match-format), CSV, and Pandas DataFrames. {{ className: 'lead' }}
+
+## Properties
+
+<Properties>
+  <Property name="frames" type="list[FrameState]" optional default="[]">
+    Chronological sequence of [`FrameState`](/frame-state) snapshots.
+  </Property>
+  <Property name="fps" type="float" optional default="60.0">
+    Nominal sampling frequency in frames per second.
+  </Property>
+  <Property name="court" type="Court | None" optional default="None">
+    Court geometry, enclosure, turf color, and [`CourtLocation`](/court-location) metadata associated with the recording.
+  </Property>
+  <Property name="environment" type="EnvironmentConditions | None" optional default="None">
+    Atmospheric and environmental parameters (`temperature_c`, `relative_humidity`, `altitude_m`, `wind_velocity`, `air_density`, `gravity`).
+  </Property>
+  <Property name="ball_properties" type="BallProperties | None" optional default="None">
+    Physical ball properties (`mass`, `radius`, `cor_normal`, `fuzz_factor`, `spin_decay_tau`).
+  </Property>
+  <Property name="surface_materials" type="SurfaceMaterials | None" optional default="None">
+    Friction and restitution parameters for the court floor, glass walls, fence, and net.
+  </Property>
+  <Property name="match" type="Match | None" optional default="None">
+    Associated [`Match`](/match) domain entity (teams, players, [`MatchConfiguration`](/match-configuration), and `score_history`).
+  </Property>
+  <Property name="metadata" type="dict[str, Any]" optional default="{}">
+    Arbitrary user-defined JSON-serializable key-value metadata preserved in `.parquet` headers.
+  </Property>
+  <Property name="duration" type="float">
+    Total elapsed duration in seconds (`frames[-1].timestamp - frames[0].timestamp`).
+  </Property>
+  <Property name="has_skeletal_poses" type="bool">
+    Returns `True` if any player in any frame contains 17-joint 3D skeletal keypoints (`keypoints_3d`).
+  </Property>
+</Properties>
+
+---
+
+## Export to Universal Parquet {{ tag: 'method', label: 'timeline.to_parquet()' }}
+
+<Row>
+  <Col>
+
+    Writes the timeline to a single self-contained `.parquet` file. Static domain entities (`court`, `environment`, `ball_properties`, `surface_materials`, `match`, `metadata`) are serialized as JSON inside the Parquet schema header under `b"padelkit_metadata"`, while frame dynamics are stored as columnar `float32` / `int16` / `string` arrays.
+
+    ### Arguments
+
+    <Properties>
+      <Property name="path" type="str | Path">
+        Destination `.parquet` file path.
+      </Property>
+      <Property name="compression" type="str" optional default='"zstd"'>
+        Parquet compression codec (`"zstd"`, `"snappy"`, `"gzip"`, or `"none"`).
+      </Property>
+      <Property name="bake_skeleton" type="bool" optional default="False">
+        If `True` and `not timeline.has_skeletal_poses`, automatically calls [`bake_skeletal_poses()`](#bake-3d-skeletal-poses) before writing so all `204` 3D joint columns (`p1_j0_x..p4_j16_z`) are included.
+      </Property>
+      <Property name="animation_library_dir" type="str | Path | None" optional default="None">
+        Optional path to a `padelkit-animator` library folder used when `bake_skeleton=True`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Save to Parquet" tag="method" label="to_parquet">
+
+    ```python
+    from padelkit import Court, EnvironmentConditions, MatchTimeline
+
+    timeline = MatchTimeline.demo_rally(
+        court=Court.fip_standard(),
+        environment=EnvironmentConditions.from_atmosphere(
+            temperature_c=22.0,
+            altitude_m=650.0,
+            relative_humidity=0.45,
+        ),
+    )
+
+    path = timeline.to_parquet(
+        "rally_recording.parquet",
+        compression="zstd",
+        bake_skeleton=True,
+    )
+    print(f"Saved {len(timeline.frames)} frames to {path}")
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Load from Universal Parquet {{ tag: 'classmethod', label: 'MatchTimeline.from_parquet()' }}
+
+<Row>
+  <Col>
+
+    Reads a `.parquet` file written by [`to_parquet()`](#export-to-universal-parquet), reconstructs all attached domain objects (`court`, `environment`, `ball_properties`, `surface_materials`, `match`) from the `padelkit_metadata` schema header, and restores all [`FrameState`](/frame-state) objects (including 17-joint `keypoints_3d` when present).
+
+    ### Arguments
+
+    <Properties>
+      <Property name="path" type="str | Path">
+        Source `.parquet` file path.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Load from Parquet" tag="classmethod" label="from_parquet">
+
+    ```python
+    from padelkit import MatchTimeline
+
+    timeline = MatchTimeline.from_parquet("rally_recording.parquet")
+
+    print("Frames:", len(timeline.frames), "@", timeline.fps, "FPS")
+    print("Has 3D skeletons:", timeline.has_skeletal_poses)
+    print("Court turf:", timeline.court.turf_color)
+    print("Air density:", timeline.environment.air_density)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Bake 3D Skeletal Poses {{ tag: 'method', label: 'timeline.bake_skeletal_poses()' }}
+
+<Row>
+  <Col>
+
+    Populates `PlayerPose.keypoints_3d` (`shape (17, 3)` in the `H36M_17` convention) for every player in every frame of the timeline.
+
+    If `animation_library_dir` is provided and contains `.npz` or `.glb` clips matching `PlayerPose.animation`, their motion-captured 3D joint trajectories are phase-aligned via `contact_swing_phase` and rotated by `PlayerPose.yaw_deg`. Otherwise, PadelKit synthesizes an anatomically accurate 17-joint athletic padel rig driven by the player's locomotion cycle and stroke `swing_phase`.
+
+    ### Arguments
+
+    <Properties>
+      <Property name="animation_library_dir" type="str | Path | None" optional default="None">
+        Optional directory containing `manifest.json` and 3D clips from `padelkit-animator`.
+      </Property>
+      <Property name="overwrite" type="bool" optional default="False">
+        When `False`, preserves existing `PlayerPose.keypoints_3d` arrays (e.g., from camera pose estimation) and only bakes missing players/frames.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Bake 17-Joint Skeletons" tag="method" label="bake_skeletal_poses">
+
+    ```python
+    from padelkit import MatchTimeline
+
+    timeline = MatchTimeline.demo_rally(fps=60.0)
+    assert not timeline.has_skeletal_poses
+
+    timeline.bake_skeletal_poses(
+        animation_library_dir="../padelkit-animator/data/animations"
+    )
+    assert timeline.has_skeletal_poses
+
+    p1_pose = timeline.frames[30].players["P1"]
+    print("Root-relative (17 joints):", len(p1_pose.keypoints_3d))
+    print("World Pelvis (X, Y, Z):", p1_pose.world_keypoints_3d[0])
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## DataFrame & CSV Conversion {{ tag: 'methods', label: 'to_dataframe / from_dataframe / to_csv / from_csv' }}
+
+<Row>
+  <Col>
+
+    Converts between `MatchTimeline` and tabular Pandas `DataFrame` or `.csv` files. All structured score columns, 9D ball state columns, and optional `204` skeletal columns (`p1_j0_x..p4_j16_z`) are supported in both DataFrames and CSV files.
+
+    ### Methods
+
+    <Properties>
+      <Property name="to_dataframe(include_skeleton=None)" type="pd.DataFrame">
+        Converts all frames into a flat Pandas DataFrame. By default (`include_skeleton=None`), includes the `204` skeletal columns automatically if `has_skeletal_poses` is `True`.
+      </Property>
+      <Property name="from_dataframe(df, fps=60.0, ...)" type="MatchTimeline">
+        Classmethod that reconstructs a `MatchTimeline` from a Pandas DataFrame, automatically detecting `p{1..4}_j{0..16}_{x,y,z}` columns when present.
+      </Property>
+      <Property name="to_csv(path, include_skeleton=False)" type="Path">
+        Writes the timeline to a `.csv` file (defaults to compact root-pose columns unless `include_skeleton=True`).
+      </Property>
+      <Property name="from_csv(path, fps=60.0)" type="MatchTimeline">
+        Classmethod that loads a `MatchTimeline` from a `.csv` file.
+      </Property>
+      <Property name="build_metadata_envelope()" type="dict[str, Any]">
+        Returns the serializable metadata dictionary stored in the `padelkit_metadata` Parquet header.
+      </Property>
+      <Property name="demo_rally(court=None, fps=60.0, ..., bake_skeleton=False)" type="MatchTimeline">
+        Classmethod that generates a physics-driven 6-shot padel rally (Serve, Return, Volley,Chiquita, Lob, Bandeja) with 9D ball aerodynamics and 4 players.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="DataFrame Roundtrip" tag="method" label="to_dataframe">
+
+    ```python
+    from padelkit import MatchTimeline
+
+    timeline = MatchTimeline.demo_rally(bake_skeleton=True)
+    df = timeline.to_dataframe()
+
+    print("Rows:", len(df), "| Columns:", len(df.columns))
+    restored = MatchTimeline.from_dataframe(df, fps=timeline.fps)
+    assert restored.has_skeletal_poses
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

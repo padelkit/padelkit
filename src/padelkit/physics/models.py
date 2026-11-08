@@ -83,6 +83,20 @@ class BallProperties:
             "drag_coefficient": round(self.drag_coefficient, 4),
         }
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "BallProperties":
+        """Reconstructs a :class:`BallProperties` instance from a dictionary."""
+        std = cls.fip_standard()
+        return cls(
+            mass=float(data.get("mass", std.mass)),
+            radius=float(data.get("radius", std.radius)),
+            moment_of_inertia=float(
+                data.get("moment_of_inertia", std.moment_of_inertia)
+            ),
+            fuzz_factor=float(data.get("fuzz_factor", std.fuzz_factor)),
+            pressure_psi=float(data.get("pressure_psi", std.pressure_psi)),
+        )
+
 
 @dataclass(frozen=True)
 class EnvironmentConditions:
@@ -94,12 +108,18 @@ class EnvironmentConditions:
         wind_velocity: 3D wind velocity vector ``(wx, wy, wz)`` in ``m/s``.
         spin_decay_rate: Exponential angular velocity decay rate ``k_spin``
             in ``1/s`` during free flight (negligible by default: ``0.001``).
+        temperature_c: Optional ambient temperature in degrees Celsius.
+        relative_humidity: Optional relative humidity in ``[0.0, 1.0]``.
+        altitude_m: Optional venue elevation above sea level in meters.
     """
 
     gravity: float = 9.81
     air_density: float = 1.18
     wind_velocity: tuple[float, float, float] = (0.0, 0.0, 0.0)
     spin_decay_rate: float = 0.001
+    temperature_c: float | None = None
+    relative_humidity: float | None = None
+    altitude_m: float | None = None
 
     def __post_init__(self) -> None:
         if self.gravity < 0.0 or self.air_density < 0.0:
@@ -146,6 +166,9 @@ class EnvironmentConditions:
             gravity=9.81,
             air_density=round(rho, 5),
             wind_velocity=wind_velocity,
+            temperature_c=float(temperature_c),
+            relative_humidity=float(relative_humidity),
+            altitude_m=float(altitude_m),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -155,7 +178,37 @@ class EnvironmentConditions:
             "air_density": self.air_density,
             "wind_velocity": list(self.wind_velocity),
             "spin_decay_rate": self.spin_decay_rate,
+            "temperature_c": self.temperature_c,
+            "relative_humidity": self.relative_humidity,
+            "altitude_m": self.altitude_m,
         }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "EnvironmentConditions":
+        """Reconstructs an :class:`EnvironmentConditions` instance from a dictionary."""
+        std = cls.standard()
+        wv = data.get("wind_velocity", std.wind_velocity)
+        return cls(
+            gravity=float(data.get("gravity", std.gravity)),
+            air_density=float(data.get("air_density", std.air_density)),
+            wind_velocity=(float(wv[0]), float(wv[1]), float(wv[2])),
+            spin_decay_rate=float(data.get("spin_decay_rate", std.spin_decay_rate)),
+            temperature_c=(
+                float(data["temperature_c"])
+                if data.get("temperature_c") is not None
+                else None
+            ),
+            relative_humidity=(
+                float(data["relative_humidity"])
+                if data.get("relative_humidity") is not None
+                else None
+            ),
+            altitude_m=(
+                float(data["altitude_m"])
+                if data.get("altitude_m") is not None
+                else None
+            ),
+        )
 
 
 @dataclass(frozen=True)
@@ -218,6 +271,23 @@ class SurfaceMaterials:
             "fence_randomness": self.fence_randomness,
             "net_damping": self.net_damping,
         }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "SurfaceMaterials":
+        """Reconstructs a :class:`SurfaceMaterials` instance from a dictionary."""
+        std = cls.fip_standard()
+        return cls(
+            glass_cor=float(data.get("glass_cor", std.glass_cor)),
+            glass_friction=float(data.get("glass_friction", std.glass_friction)),
+            wall_cor=float(data.get("wall_cor", std.wall_cor)),
+            wall_friction=float(data.get("wall_friction", std.wall_friction)),
+            floor_cor=float(data.get("floor_cor", std.floor_cor)),
+            floor_friction=float(data.get("floor_friction", std.floor_friction)),
+            fence_cor=float(data.get("fence_cor", std.fence_cor)),
+            fence_friction=float(data.get("fence_friction", std.fence_friction)),
+            fence_randomness=float(data.get("fence_randomness", std.fence_randomness)),
+            net_damping=float(data.get("net_damping", std.net_damping)),
+        )
 
 
 @dataclass(frozen=True)

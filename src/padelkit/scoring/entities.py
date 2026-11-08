@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Literal
+from typing import Any, Literal
 
 
 class TeamId(str, Enum):
@@ -15,6 +15,23 @@ class Player:
     name: str
     side: Literal["left", "right"] | None = None
     nationality: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serializes the player to a dictionary."""
+        return {
+            "name": self.name,
+            "side": self.side,
+            "nationality": self.nationality,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Player":
+        """Reconstructs a :class:`Player` instance from a dictionary."""
+        return cls(
+            name=str(data["name"]),
+            side=data.get("side"),
+            nationality=data.get("nationality"),
+        )
 
 
 @dataclass
@@ -39,6 +56,27 @@ class Team:
             return self.name
         return f"{self.player1.name} / {self.player2.name}"
 
+    def to_dict(self) -> dict[str, Any]:
+        """Serializes the team to a dictionary."""
+        return {
+            "id": self.id.value,
+            "player1": self.player1.to_dict(),
+            "player2": self.player2.to_dict(),
+            "serve_formation": self.serve_formation,
+            "name": self.name,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Team":
+        """Reconstructs a :class:`Team` instance from a dictionary."""
+        return cls(
+            id=TeamId(data["id"]),
+            player1=Player.from_dict(data["player1"]),
+            player2=Player.from_dict(data["player2"]),
+            serve_formation=data.get("serve_formation", "standard"),
+            name=data.get("name"),
+        )
+
 
 @dataclass(frozen=True)
 class ServingState:
@@ -49,6 +87,27 @@ class ServingState:
     player: Player | None = None
     receiver: Player | None = None
     court_side: Literal["left", "right"] | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serializes the serving state to a dictionary."""
+        return {
+            "team": self.team.value,
+            "player": self.player.to_dict() if self.player else None,
+            "receiver": self.receiver.to_dict() if self.receiver else None,
+            "court_side": self.court_side,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "ServingState":
+        """Reconstructs a :class:`ServingState` instance from a dictionary."""
+        return cls(
+            team=TeamId(data["team"]),
+            player=Player.from_dict(data["player"]) if data.get("player") else None,
+            receiver=(
+                Player.from_dict(data["receiver"]) if data.get("receiver") else None
+            ),
+            court_side=data.get("court_side"),
+        )
 
 
 @dataclass
@@ -114,3 +173,38 @@ class MatchConfiguration:
             and hasattr(self, "set_starting_servers")
         ):
             self.validate()
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serializes the match configuration to a dictionary."""
+        return {
+            "best_of_sets": self.best_of_sets,
+            "advantage_method": self.advantage_method,
+            "set_format": self.set_format,
+            "deciding_set_format": self.deciding_set_format,
+            "starting_server_team": self.starting_server_team.value,
+            "set_starting_servers": {
+                str(set_idx): {
+                    tid.value: p.to_dict() for tid, p in team_servers.items()
+                }
+                for set_idx, team_servers in self.set_starting_servers.items()
+            },
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "MatchConfiguration":
+        """Reconstructs a :class:`MatchConfiguration` instance from a dictionary."""
+        raw_servers = data.get("set_starting_servers") or {}
+        parsed_servers: dict[int, dict[TeamId, Player]] = {}
+        for k, team_map in raw_servers.items():
+            parsed_servers[int(k)] = {
+                TeamId(tid): Player.from_dict(p_data)
+                for tid, p_data in team_map.items()
+            }
+        return cls(
+            best_of_sets=int(data.get("best_of_sets", 3)),
+            advantage_method=data.get("advantage_method", "advantage"),
+            set_format=data.get("set_format", "standard"),
+            deciding_set_format=data.get("deciding_set_format", "regular"),
+            starting_server_team=TeamId(data.get("starting_server_team", "A")),
+            set_starting_servers=parsed_servers,
+        )

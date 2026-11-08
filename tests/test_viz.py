@@ -114,3 +114,212 @@ def test_padel_visualizer_with_animation_library(tmp_path: Path):
         server_cfg["animation_library"]["glb_sources"]["forehand_drive"]
         == "/animations/forehand_drive.glb"
     )
+
+
+def test_domain_entities_to_dict_and_from_dict_roundtrip():
+    from datetime import datetime
+
+    from padelkit import (
+        BallProperties,
+        CourtDimensions,
+        CourtLocation,
+        CourtOrientation,
+        CourtSetting,
+        DoorState,
+        EnclosureType,
+        EnclosureVariant,
+        EnvironmentConditions,
+        Match,
+        MatchConfiguration,
+        Player,
+        ServingState,
+        SurfaceMaterials,
+        Team,
+        TeamId,
+    )
+
+    court = Court(
+        dimensions=CourtDimensions.fip_standard(),
+        enclosure_type=EnclosureType.GLASS,
+        enclosure_variant=EnclosureVariant.V2,
+        orientation=CourtOrientation.NORTH_SOUTH,
+        turf_color="blue",
+        setting=CourtSetting.OUTDOOR,
+        door_left=DoorState.OPEN,
+        door_right=DoorState.CLOSED,
+        location=CourtLocation(
+            club="Wizink Padel",
+            city="Madrid",
+            address="Av. Felipe II",
+            country="Spain",
+            latitude=40.4239,
+            longitude=-3.6718,
+        ),
+    )
+    assert Court.from_dict(court.to_dict()) == court
+
+    env = EnvironmentConditions.from_atmosphere(
+        temperature_c=26.5,
+        altitude_m=655.0,
+        relative_humidity=0.38,
+        wind_velocity=(1.2, -0.5, 0.0),
+    )
+    restored_env = EnvironmentConditions.from_dict(env.to_dict())
+    assert restored_env == env
+    assert restored_env.temperature_c == 26.5
+    assert restored_env.altitude_m == 655.0
+    assert restored_env.relative_humidity == 0.38
+
+    ball = BallProperties.worn()
+    assert BallProperties.from_dict(ball.to_dict()) == ball
+
+    surf = SurfaceMaterials.fast_indoor()
+    assert SurfaceMaterials.from_dict(surf.to_dict()) == surf
+
+    p1 = Player(name="Coello", side="right", nationality="ESP")
+    p2 = Player(name="Tapia", side="left", nationality="ARG")
+    p3 = Player(name="Galan", side="left", nationality="ESP")
+    p4 = Player(name="Chingotto", side="right", nationality="ARG")
+
+    assert Player.from_dict(p1.to_dict()) == p1
+
+    team_a = Team(
+        id=TeamId.A,
+        player1=p1,
+        player2=p2,
+        serve_formation="australian",
+        name="Golden Boys",
+    )
+    team_b = Team(id=TeamId.B, player1=p3, player2=p4, name="Chingalan")
+    assert Team.from_dict(team_a.to_dict()) == team_a
+
+    srv_state = ServingState(team=TeamId.A, player=p1, receiver=p3, court_side="right")
+    assert ServingState.from_dict(srv_state.to_dict()) == srv_state
+
+    cfg = MatchConfiguration(
+        best_of_sets=3,
+        advantage_method="gold_point",
+        set_format="standard",
+        deciding_set_format="super_tiebreak",
+        starting_server_team=TeamId.A,
+        set_starting_servers={1: {TeamId.A: p1, TeamId.B: p3}},
+    )
+    assert MatchConfiguration.from_dict(cfg.to_dict()) == cfg
+
+    match = Match(
+        teams={TeamId.A: team_a, TeamId.B: team_b},
+        config=cfg,
+        court=court,
+        date=datetime(2026, 5, 10, 18, 30),
+        duration_minutes=94,
+    )
+    match.history.add_point(TeamId.A)
+    match.history.add_point(TeamId.B)
+    match.history.add_point(TeamId.A)
+
+    restored_match = Match.from_dict(match.to_dict())
+    assert restored_match.teams == match.teams
+    assert restored_match.config == match.config
+    assert restored_match.court == match.court
+    assert restored_match.duration_minutes == 94
+    assert (
+        restored_match.history.get_current_score() == match.history.get_current_score()
+    )
+
+
+def test_parquet_universal_match_format_and_skeletal_baking(tmp_path: Path):
+    import numpy as np
+
+    from padelkit import (
+        H36M_JOINT_NAMES,
+        BallProperties,
+        CourtLocation,
+        CourtSetting,
+        EnvironmentConditions,
+        Match,
+        SurfaceMaterials,
+        TeamId,
+    )
+
+    assert len(H36M_JOINT_NAMES) == 17
+
+    # Test PlayerPose.from_world_keypoints_3d
+    world_j3d = np.zeros((17, 3), dtype=np.float32)
+    world_j3d[:, 0] = 2.0
+    world_j3d[:, 1] = -6.5
+    world_j3d[0, 2] = 0.88  # Pelvis
+    world_j3d[3, 2] = 0.08  # RightAnkle
+    world_j3d[6, 2] = 0.08  # LeftAnkle
+    world_j3d[10, 2] = 1.66  # Head
+    pose = PlayerPose.from_world_keypoints_3d(
+        "P1", world_j3d, yaw_deg=15.0, animation="forehand_drive", swing_phase=0.5
+    )
+    assert pose.x == 2.0
+    assert pose.y == -6.5
+    assert np.allclose(pose.world_keypoints_3d, world_j3d, atol=1e-3)
+
+    court = Court(
+        turf_color="blue",
+        setting=CourtSetting.INDOOR,
+        location=CourtLocation(club="Premier Club", city="Madrid", country="Spain"),
+    )
+    env = EnvironmentConditions.from_atmosphere(
+        temperature_c=23.0, altitude_m=650.0, relative_humidity=0.45
+    )
+    ball = BallProperties.fip_standard()
+    surf = SurfaceMaterials.fip_standard()
+    match = Match(advantage_method="gold_point", court=court)
+    match.history.add_point(TeamId.A)
+
+    timeline = MatchTimeline.demo_rally(
+        court=court,
+        fps=30.0,
+        environment=env,
+        ball_properties=ball,
+        surface_materials=surf,
+        match=match,
+        bake_skeleton=True,
+    )
+    assert timeline.has_skeletal_poses
+
+    # Stamp structured match score onto frame 0
+    timeline.frames[0] = timeline.frames[0].with_match_score(
+        match.history.get_current_score(),
+        point_index=1,
+        server_team="A",
+        server_player="P1",
+        golden_point_enabled=True,
+    )
+    assert timeline.frames[0].points_a == "15"
+    assert timeline.frames[0].points_b == "0"
+
+    parquet_path = tmp_path / "match_recording.parquet"
+    timeline.to_parquet(parquet_path, compression="zstd")
+    assert parquet_path.exists()
+
+    loaded = MatchTimeline.from_parquet(parquet_path)
+    assert len(loaded) == len(timeline)
+    assert loaded.fps == 30.0
+    assert loaded.has_skeletal_poses
+    assert loaded.court == court
+    assert loaded.environment == env
+    assert loaded.ball_properties == ball
+    assert loaded.surface_materials == surf
+    assert loaded.match is not None
+    assert loaded.match.history.get_current_score() == match.history.get_current_score()
+    assert loaded.frames[0].points_a == "15"
+    assert loaded.frames[0].point_index == 1
+
+    p1_loaded = loaded.frames[10].players["P1"]
+    p1_orig = timeline.frames[10].players["P1"]
+    assert p1_loaded.keypoints_3d is not None
+    assert len(p1_loaded.keypoints_3d) == 17
+    assert np.asarray(p1_loaded.keypoints_3d).shape == (17, 3)
+    assert np.allclose(p1_loaded.keypoints_3d, p1_orig.keypoints_3d, atol=1e-4)
+
+    # Verify PadelVisualizer.from_parquet renders kp3dGroup in HTML
+    viz = PadelVisualizer.from_parquet(parquet_path)
+    assert viz.court == court
+    html_str = viz.to_html()
+    assert "kp3dGroup" in html_str
+    assert '"kp3d"' in html_str

@@ -1108,9 +1108,63 @@ THREEJS_VIEWER_HTML_TEMPLATE = """<!DOCTYPE html>
       rightElbow.add(racket);
       upperBody.add(rightShoulder);
 
+      // 17-Joint H36M 3D Skeletal Rig (for baked Parquet / MotionBERT keypoints_3d)
+      const kp3dGroup = new THREE.Group();
+      kp3dGroup.visible = false;
+      root.add(kp3dGroup);
+
+      const kpJoints = [];
+      for (let j = 0; j < 17; j++) {
+        const isHead = j === 10;
+        const jRadius = isHead ? 0.11 : j === 0 || j === 7 || j === 8 ? 0.065 : 0.046;
+        const jMat = isHead ? skinMat : j === 7 || j === 8 ? jerseyMat : j <= 6 ? shortsMat : skinMat;
+        const jm = registerMesh(
+          new THREE.Mesh(new THREE.SphereGeometry(jRadius, 12, 12), jMat),
+          segKey
+        );
+        jm.castShadow = true;
+        kp3dGroup.add(jm);
+        kpJoints.push(jm);
+      }
+
+      const kpBonePairs = [
+        [0, 1, shortsMat, 0.055],
+        [1, 2, shortsMat, 0.062],
+        [2, 3, skinMat, 0.048],
+        [0, 4, shortsMat, 0.055],
+        [4, 5, shortsMat, 0.062],
+        [5, 6, skinMat, 0.048],
+        [0, 7, jerseyMat, 0.125],
+        [7, 8, jerseyMat, 0.135],
+        [8, 9, skinMat, 0.052],
+        [9, 10, skinMat, 0.050],
+        [8, 11, jerseyMat, 0.055],
+        [11, 12, skinMat, 0.046],
+        [12, 13, skinMat, 0.040],
+        [8, 14, jerseyMat, 0.055],
+        [14, 15, skinMat, 0.046],
+        [15, 16, skinMat, 0.040],
+      ];
+      const kpLimbs = kpBonePairs.map(([a, b, mat, rad]) => {
+        const mesh = registerMesh(
+          new THREE.Mesh(new THREE.CylinderGeometry(rad, rad * 0.9, 1.0, 12), mat),
+          segKey
+        );
+        mesh.castShadow = true;
+        kp3dGroup.add(mesh);
+        return { a, b, mesh };
+      });
+
+      const kpRacket = createPadelRacketMesh(team);
+      kp3dGroup.add(kpRacket);
+
       root.userData = {
         proceduralGroup,
         glbGroup,
+        kp3dGroup,
+        kpJoints,
+        kpLimbs,
+        kpRacket,
         glbMixer: null,
         glbActions: {},
         activeGlbKey: null,
@@ -1406,11 +1460,49 @@ THREEJS_VIEWER_HTML_TEMPLATE = """<!DOCTYPE html>
         }
       }
 
+      const upAxisY = new THREE.Vector3(0, 1, 0);
+      const upAxisZ = new THREE.Vector3(0, 0, 1);
+
       Object.entries(frame.players || {}).forEach(([pid, p]) => {
         const mesh = playerMeshes[pid];
         if (!mesh) return;
         mesh.position.set(p.x, p.y, p.z || 0);
         mesh.rotation.z = -THREE.MathUtils.degToRad(p.yaw_deg || 0);
+
+        if (Array.isArray(p.kp3d) && p.kp3d.length === 17) {
+          mesh.userData.kp3dGroup.visible = true;
+          mesh.userData.glbGroup.visible = false;
+          mesh.userData.proceduralGroup.visible = false;
+
+          const joints = mesh.userData.kpJoints;
+          for (let j = 0; j < 17; j++) {
+            const pt = p.kp3d[j];
+            joints[j].position.set(pt[0], pt[1], pt[2]);
+          }
+          mesh.userData.kpLimbs.forEach(({ a, b, mesh: limbMesh }) => {
+            const va = joints[a].position;
+            const vb = joints[b].position;
+            const diff = new THREE.Vector3().subVectors(vb, va);
+            const len = Math.max(diff.length(), 1e-4);
+            limbMesh.position.copy(va).addScaledVector(diff, 0.5);
+            limbMesh.scale.set(1, len, 1);
+            limbMesh.quaternion.setFromUnitVectors(upAxisY, diff.clone().divideScalar(len));
+          });
+
+          const elbowPos = joints[15].position;
+          const wristPos = joints[16].position;
+          const forearmDir = new THREE.Vector3().subVectors(wristPos, elbowPos);
+          if (forearmDir.lengthSq() > 1e-6) {
+            forearmDir.normalize();
+          } else {
+            forearmDir.set(0, 0, 1);
+          }
+          mesh.userData.kpRacket.position.copy(wristPos);
+          mesh.userData.kpRacket.quaternion.setFromUnitVectors(upAxisZ, forearmDir);
+          return;
+        }
+
+        mesh.userData.kp3dGroup.visible = false;
 
         const isRunning = p.animation === "run";
         const phase = frame.t * 15.0;

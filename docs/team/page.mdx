@@ -84,3 +84,36 @@ The `Team` dataclass groups two players together and specifies team-level attrib
   </Col>
 </Row>
 
+---
+
+## Dictionary Serialization {{ tag: 'methods', label: 'to_dict / from_dict' }}
+
+<Row>
+  <Col>
+
+    <Properties>
+      <Property name="team.to_dict()" type="dict[str, Any]">
+        Serializes the team (`id`, `player1`, `player2`, `serve_formation`, `name`) into a JSON-compatible dictionary.
+      </Property>
+      <Property name="Team.from_dict(data)" type="Team">
+        Classmethod that reconstructs a `Team` instance from a dictionary.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Serialize Team" tag="method" label="to_dict / from_dict">
+
+    ```python
+    from padelkit import Player, Team, TeamId
+
+    team = Team(id=TeamId.A, player1=Player("Coello"), player2=Player("Tapia"))
+    assert Team.from_dict(team.to_dict()) == team
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+

@@ -165,3 +165,44 @@ Defines the normal Coefficient of Restitution (`cor_*`) and tangential Coulomb f
 
   </Col>
 </Row>
+
+---
+
+## Dictionary Serialization {{ tag: 'methods', label: 'to_dict / from_dict' }}
+
+<Row>
+  <Col>
+
+    All three parameter dataclasses (`BallProperties`, `EnvironmentConditions`, and `SurfaceMaterials`) implement `.to_dict()` and `.from_dict(data)` for lossless storage inside the [Universal Match Format (`.parquet`)](/match-format) metadata header.
+
+    <Properties>
+      <Property name="to_dict()" type="dict[str, Any]">
+        Serializes the physical configuration dataclass to a JSON-compatible dictionary.
+      </Property>
+      <Property name="from_dict(data)" type="BallProperties | EnvironmentConditions | SurfaceMaterials">
+        Classmethod that reconstructs the dataclass from a dictionary.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Serialize Physics Parameters" tag="method" label="to_dict / from_dict">
+
+    ```python
+    from padelkit import BallProperties, EnvironmentConditions, SurfaceMaterials
+
+    env = EnvironmentConditions.from_atmosphere(
+        temperature_c=26.0,
+        altitude_m=650.0,
+        relative_humidity=0.40,
+    )
+    assert EnvironmentConditions.from_dict(env.to_dict()) == env
+    assert BallProperties.from_dict(BallProperties.fip_standard().to_dict()) == BallProperties.fip_standard()
+    assert SurfaceMaterials.from_dict(SurfaceMaterials.fip_standard().to_dict()) == SurfaceMaterials.fip_standard()
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Any
 
 from .dimensions import CourtDimensions
 from .enums import (
@@ -27,7 +28,7 @@ class Court:
     compatible with the padelamix camera-calibration pipeline.
     """
 
-    dimensions: CourtDimensions
+    dimensions: CourtDimensions = field(default_factory=CourtDimensions.fip_standard)
 
     # Physical characteristics
     enclosure_type: EnclosureType | None = None
@@ -210,3 +211,74 @@ class Court:
                 f"Unknown landmark: '{name}'. Available: {sorted(landmarks.keys())}"
             )
         return landmarks[name]
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serializes the court geometry and metadata to a dictionary."""
+        return {
+            "dimensions": self.dimensions.to_dict(),
+            "enclosure_type": (
+                self.enclosure_type.value if self.enclosure_type is not None else None
+            ),
+            "enclosure_variant": (
+                self.enclosure_variant.value
+                if self.enclosure_variant is not None
+                else None
+            ),
+            "orientation": (
+                self.orientation.value if self.orientation is not None else None
+            ),
+            "turf_color": self.turf_color,
+            "setting": self.setting.value if self.setting is not None else None,
+            "door_left": self.door_left.value if self.door_left is not None else None,
+            "door_right": (
+                self.door_right.value if self.door_right is not None else None
+            ),
+            "location": self.location.to_dict() if self.location is not None else None,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Court":
+        """Reconstructs a :class:`Court` instance from a dictionary."""
+        dims_data = data.get("dimensions")
+        dims = (
+            CourtDimensions.from_dict(dims_data)
+            if isinstance(dims_data, dict)
+            else CourtDimensions.fip_standard()
+        )
+        loc_data = data.get("location")
+        loc = CourtLocation.from_dict(loc_data) if isinstance(loc_data, dict) else None
+        return cls(
+            dimensions=dims,
+            enclosure_type=(
+                EnclosureType(data["enclosure_type"])
+                if data.get("enclosure_type") is not None
+                else None
+            ),
+            enclosure_variant=(
+                EnclosureVariant(int(data["enclosure_variant"]))
+                if data.get("enclosure_variant") is not None
+                else None
+            ),
+            orientation=(
+                CourtOrientation(data["orientation"])
+                if data.get("orientation") is not None
+                else None
+            ),
+            turf_color=data.get("turf_color"),
+            setting=(
+                CourtSetting(data["setting"])
+                if data.get("setting") is not None
+                else None
+            ),
+            door_left=(
+                DoorState(data["door_left"])
+                if data.get("door_left") is not None
+                else None
+            ),
+            door_right=(
+                DoorState(data["door_right"])
+                if data.get("door_right") is not None
+                else None
+            ),
+            location=loc,
+        )

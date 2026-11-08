@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from ..court.court import Court
 from .entities import MatchConfiguration, Player, Team, TeamId
@@ -129,3 +130,49 @@ class Match:
     def is_completed(self) -> bool:
         """Returns True if the match has been won by a team."""
         return self.winner is not None
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serializes the match configuration, teams, court, and point history."""
+        return {
+            "teams": (
+                {tid.value: team.to_dict() for tid, team in self.teams.items()}
+                if self.teams
+                else None
+            ),
+            "config": self.config.to_dict(),
+            "points_history": [tid.value for tid in self.history._points_history],
+            "duration_minutes": self.duration_minutes,
+            "date": self.date.isoformat() if self.date else None,
+            "court": self.court.to_dict() if self.court else None,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Match":
+        """Reconstructs a :class:`Match` instance from a dictionary."""
+        raw_teams = data.get("teams")
+        teams = (
+            {TeamId(tid): Team.from_dict(t_data) for tid, t_data in raw_teams.items()}
+            if isinstance(raw_teams, dict)
+            else None
+        )
+        cfg_data = data.get("config")
+        config = (
+            MatchConfiguration.from_dict(cfg_data)
+            if isinstance(cfg_data, dict)
+            else None
+        )
+        court_data = data.get("court")
+        court = Court.from_dict(court_data) if isinstance(court_data, dict) else None
+        date_str = data.get("date")
+        date_val = datetime.fromisoformat(date_str) if date_str else None
+
+        match = cls(
+            teams=teams,
+            config=config,
+            duration_minutes=data.get("duration_minutes"),
+            date=date_val,
+            court=court,
+        )
+        for pt_team in data.get("points_history", []):
+            match.history.add_point(TeamId(pt_team))
+        return match

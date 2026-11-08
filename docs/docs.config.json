@@ -37,6 +37,30 @@
       "icon": "BoltIcon",
       "min": "0.1.0"
     },
+    "/match-format": {
+      "title": "Universal Match Format (.parquet)",
+      "description": "Single-file Apache Parquet specification combining static court/environment/match metadata with 60 FPS 9D ball and 17-joint 3D skeletal dynamics.",
+      "icon": "ShapesIcon",
+      "min": "0.1.0"
+    },
+    "/match-timeline": {
+      "title": "MatchTimeline",
+      "description": "API reference for MatchTimeline, 3D skeletal pose baking, and Parquet/CSV/DataFrame serialization.",
+      "icon": "ShapesIcon",
+      "min": "0.1.0"
+    },
+    "/frame-state": {
+      "title": "FrameState & PlayerPose",
+      "description": "API reference for FrameState, PlayerPose, and the 17-joint H36M 3D skeletal pose convention.",
+      "icon": "UserIcon",
+      "min": "0.1.0"
+    },
+    "/padel-visualizer": {
+      "title": "PadelVisualizer",
+      "description": "API reference for the interactive Three.js 3D court studio, Parquet/CSV loader, and real-time SSE streamer.",
+      "icon": "ViewfinderCircleIcon",
+      "min": "0.1.0"
+    },
     "/ball-physics": {
       "title": "Ball Aerodynamics & Contact Physics",
       "description": "Learn how the 9D aerodynamic model (Drag, Spindt Magnus lift) and Coulomb Sliding/Rolling rebound physics work.",
@@ -150,7 +174,16 @@
         "/camera-system",
         "/ball-physics",
         "/visualization-3d",
-        "/stroke-library"
+        "/stroke-library",
+        "/match-format"
+      ]
+    },
+    {
+      "title": "Timeline & Visualization",
+      "links": [
+        "/match-timeline",
+        "/frame-state",
+        "/padel-visualizer"
       ]
     },
     {
@@ -205,9 +238,13 @@
       "/camera-system",
       "/ball-physics",
       "/visualization-3d",
-      "/stroke-library"
+      "/stroke-library",
+      "/match-format"
     ],
     "resources": [
+      "/match-timeline",
+      "/frame-state",
+      "/padel-visualizer",
       "/court-landmark",
       "/camera",
       "/ball-physics-engine",

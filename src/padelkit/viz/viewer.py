@@ -36,7 +36,12 @@ class PadelVisualizer:
         timeline: MatchTimeline | None = None,
         animation_library_dir: str | Path | None = None,
     ) -> None:
-        self.court: Court = court or Court.fip_standard()
+        self.timeline: MatchTimeline = (
+            timeline
+            if timeline is not None
+            else MatchTimeline.demo_rally(court=court or Court.fip_standard())
+        )
+        self.court: Court = court or self.timeline.court
         if cameras is not None:
             self.cameras: list[Camera] = list(cameras)
         else:
@@ -47,11 +52,6 @@ class PadelVisualizer:
                 Camera.from_preset(CameraPreset.CORNER_NEAR_LEFT, court=self.court),
                 Camera.from_preset(CameraPreset.SIDE_NET_RIGHT, court=self.court),
             ]
-        self.timeline: MatchTimeline = (
-            timeline
-            if timeline is not None
-            else MatchTimeline.demo_rally(court=self.court)
-        )
         self.animation_library_dir: Path | None = (
             Path(animation_library_dir) if animation_library_dir is not None else None
         )
@@ -80,6 +80,23 @@ class PadelVisualizer:
             animation_library_dir=animation_library_dir,
         )
 
+    @classmethod
+    def from_parquet(
+        cls,
+        parquet_path: str | Path,
+        court: Court | None = None,
+        cameras: list[Camera] | None = None,
+        animation_library_dir: str | Path | None = None,
+    ) -> "PadelVisualizer":
+        """Creates a :class:`PadelVisualizer` pre-loaded with a Parquet match file."""
+        timeline = MatchTimeline.from_parquet(parquet_path, court=court)
+        return cls(
+            court=timeline.court,
+            cameras=cameras,
+            timeline=timeline,
+            animation_library_dir=animation_library_dir,
+        )
+
     def add_camera(self, camera: Camera) -> "PadelVisualizer":
         """Registers an additional :class:`Camera` viewpoint in the 3D scene."""
         self.cameras.append(camera)
@@ -88,6 +105,12 @@ class PadelVisualizer:
     def load_csv(self, csv_path: str | Path) -> "PadelVisualizer":
         """Replaces the active timeline with data loaded from ``csv_path``."""
         self.timeline = MatchTimeline.from_csv(csv_path, court=self.court)
+        return self
+
+    def load_parquet(self, parquet_path: str | Path) -> "PadelVisualizer":
+        """Replaces the active timeline and court metadata from ``parquet_path``."""
+        self.timeline = MatchTimeline.from_parquet(parquet_path)
+        self.court = self.timeline.court
         return self
 
     def load_animation_library(

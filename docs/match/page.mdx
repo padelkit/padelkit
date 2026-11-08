@@ -206,4 +206,44 @@ The following properties are convenience proxies for the properties encapsulated
   </Col>
 </Row>
 
+---
+
+## Dictionary Serialization {{ tag: 'methods', label: 'to_dict / from_dict' }}
+
+<Row>
+  <Col>
+
+    Serializes and reconstructs a complete `Match` (including both [`Team`](/team) instances, [`MatchConfiguration`](/match-configuration), [`Court`](/court), `date`, `duration_minutes`, and the full event-sourced `points_history` in [`MatchScoreHistory`](/match-score-history)).
+
+    <Properties>
+      <Property name="match.to_dict()" type="dict[str, Any]">
+        Serializes the match and its point-by-point progression into a JSON-compatible dictionary.
+      </Property>
+      <Property name="Match.from_dict(data)" type="Match">
+        Classmethod that reconstructs the `Match` and replays all recorded points into `match.history`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Serialize Match" tag="method" label="to_dict / from_dict">
+
+    ```python
+    from padelkit import Match, TeamId
+
+    match = Match(advantage_method="gold_point")
+    match.history.add_point(TeamId.A)
+    match.history.add_point(TeamId.B)
+
+    restored = Match.from_dict(match.to_dict())
+    assert restored.history.get_current_score() == match.history.get_current_score()
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+
 

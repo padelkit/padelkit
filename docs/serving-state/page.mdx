@@ -80,3 +80,36 @@ The `ServingState` dataclass encapsulates the serving team, player, receiver, an
 
   </Col>
 </Row>
+
+---
+
+## Dictionary Serialization {{ tag: 'methods', label: 'to_dict / from_dict' }}
+
+<Row>
+  <Col>
+
+    <Properties>
+      <Property name="serving_state.to_dict()" type="dict[str, Any]">
+        Serializes the serving state (`team`, `player`, `receiver`, `court_side`) into a JSON-compatible dictionary.
+      </Property>
+      <Property name="ServingState.from_dict(data)" type="ServingState">
+        Classmethod that reconstructs a `ServingState` instance from a dictionary.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Serialize ServingState" tag="method" label="to_dict / from_dict">
+
+    ```python
+    from padelkit import Player, ServingState, TeamId
+
+    state = ServingState(team=TeamId.A, player=Player("Galán"), court_side="right")
+    assert ServingState.from_dict(state.to_dict()) == state
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

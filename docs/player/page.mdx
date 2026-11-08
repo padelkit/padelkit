@@ -67,3 +67,36 @@ The `Player` dataclass holds individual player metadata. {{ className: 'lead' }}
   </Col>
 </Row>
 
+---
+
+## Dictionary Serialization {{ tag: 'methods', label: 'to_dict / from_dict' }}
+
+<Row>
+  <Col>
+
+    <Properties>
+      <Property name="player.to_dict()" type="dict[str, Any]">
+        Serializes the player (`name`, `side`, `nationality`) into a JSON-compatible dictionary.
+      </Property>
+      <Property name="Player.from_dict(data)" type="Player">
+        Classmethod that reconstructs a `Player` instance from a dictionary.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Serialize Player" tag="method" label="to_dict / from_dict">
+
+    ```python
+    from padelkit import Player
+
+    p = Player(name="Alejandro Galán", side="left", nationality="ESP")
+    assert Player.from_dict(p.to_dict()) == p
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+

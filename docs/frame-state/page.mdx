@@ -1,0 +1,203 @@
+# FrameState & PlayerPose
+
+`FrameState`, `PlayerPose`, and `H36M_JOINT_NAMES` define the instantaneous per-frame kinematic and scoreboard contract used across [`MatchTimeline`](/match-timeline), [`PadelVisualizer`](/padel-visualizer), and the [Universal Match Format (`.parquet`)](/match-format). {{ className: 'lead' }}
+
+## FrameState
+
+Represents the complete state of the court, 9D ball, 4 players, and match scoreboard at a single timestamp `timestamp`.
+
+<Properties>
+  <Property name="timestamp" type="float">
+    Elapsed time in seconds.
+  </Property>
+  <Property name="ball_position" type="tuple[float, float, float]" optional default="(0.0, 0.0, 0.0)">
+    3D ball coordinates `(x, y, z)` in meters (`CENTERED` court frame).
+  </Property>
+  <Property name="ball_velocity" type="tuple[float, float, float]" optional default="(0.0, 0.0, 0.0)">
+    3D linear ball velocity `(vx, vy, vz)` in `m/s`.
+  </Property>
+  <Property name="ball_spin" type="tuple[float, float, float]" optional default="(0.0, 0.0, 0.0)">
+    3D angular ball velocity `(wx, wy, wz)` in `rad/s`.
+  </Property>
+  <Property name="ball_speed_mps / ball_speed_kmh" type="float">
+    Computed scalar linear ball speed in `m/s` and `km/h`.
+  </Property>
+  <Property name="ball_spin_rpm" type="float">
+    Computed total ball spin rate in revolutions per minute (`RPM`).
+  </Property>
+  <Property name="players" type="dict[str, PlayerPose]" optional default="{}">
+    Mapping of player IDs (`"P1"`..`"P4"`) to their [`PlayerPose`](#playerpose) instances.
+  </Property>
+  <Property name="score" type="str" optional default='"0-0 (0-0)"'>
+    Formatted scoreboard string displayed on the 3D HUD.
+  </Property>
+  <Property name="sets_a / sets_b" type="int" optional default="0">
+    Completed sets won by Team A and Team B at this frame.
+  </Property>
+  <Property name="games_a / games_b" type="int" optional default="0">
+    Games won in the active set by Team A and Team B.
+  </Property>
+  <Property name="points_a / points_b" type="str" optional default='"0"'>
+    Point call in the active game (`"0"`, `"15"`, `"30"`, `"40"`, `"Ad"`, or tiebreak integer string).
+  </Property>
+  <Property name="server_team" type="str" optional default='"A"'>
+    Serving team identifier (`"A"` or `"B"`).
+  </Property>
+  <Property name="server_player" type="str" optional default='"P1"'>
+    Serving player identifier (`"P1"`..`"P4"` or player name).
+  </Property>
+  <Property name="point_index" type="int" optional default="0">
+    0-based rally/point index in the match progression.
+  </Property>
+  <Property name="in_tiebreak" type="bool" optional default="False">
+    `True` when the active game is a tiebreak or super-tiebreak.
+  </Property>
+  <Property name="is_gold_point" type="bool" optional default="False">
+    `True` on a deciding deuce point (`40-40` with golden point enabled).
+  </Property>
+  <Property name="event" type="str | None" optional default="None">
+    Optional discrete event label at this frame (`"serve"`, `"bounce_floor_sliding"`, `"shot_smash"`, etc.).
+  </Property>
+</Properties>
+
+---
+
+## Stamp Score from MatchScore {{ tag: 'method', label: 'frame.with_match_score()' }}
+
+<Row>
+  <Col>
+
+    Returns a copy of the `FrameState` with all structured score fields (`score`, `sets_a`, `sets_b`, `games_a`, `games_b`, `points_a`, `points_b`, `in_tiebreak`, `is_gold_point`, `point_index`, `server_team`, `server_player`) populated directly from a [`MatchScore`](/match-score) snapshot.
+
+    ### Arguments
+
+    <Properties>
+      <Property name="match_score" type="MatchScore">
+        Immutable [`MatchScore`](/match-score) snapshot (e.g. `match.current_score`).
+      </Property>
+      <Property name="point_index" type="int" optional default="0">
+        0-based rally index.
+      </Property>
+      <Property name="server_team" type="str" optional default='"A"'>
+        Serving team label (`"A"` or `"B"`).
+      </Property>
+      <Property name="server_player" type="str" optional default='"P1"'>
+        Serving player label.
+      </Property>
+      <Property name="golden_point_enabled" type="bool" optional default="False">
+        If `True`, sets `is_gold_point=True` when `points_a == "40"` and `points_b == "40"`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Stamp MatchScore" tag="method" label="with_match_score">
+
+    ```python
+    from padelkit import FrameState, Match, TeamId
+
+    match = Match(advantage_method="gold_point")
+    match.history.add_point(TeamId.A)
+
+    frame = FrameState(
+        timestamp=0.5,
+        ball_position=(0.0, 2.0, 1.4),
+    ).with_match_score(
+        match.history.get_current_score(),
+        point_index=1,
+        server_team="A",
+        server_player="P1",
+    )
+
+    print(frame.score, "| points:", frame.points_a, "-", frame.points_b)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## PlayerPose
+
+Represents the 3D position, heading, stroke animation state, and optional **17-joint H36M 3D skeletal pose** of a single player at a single timestamp.
+
+<Row>
+  <Col>
+
+    <Properties>
+      <Property name="player_id" type="str">
+        Player slot identifier (`"P1"`, `"P2"`, `"P3"`, or `"P4"`).
+      </Property>
+      <Property name="x / y / z" type="float" optional default="0.0">
+        Root position `(x, y, z)` in court meters (`CENTERED` coordinate system).
+      </Property>
+      <Property name="yaw_deg" type="float" optional default="0.0">
+        Facing heading in degrees (`0.0` = facing `+Y`, `180.0` = facing `-Y`).
+      </Property>
+      <Property name="animation" type="str" optional default='"idle"'>
+        Active locomotion or stroke clip ID (`"idle"`, `"run"`, `"forehand_drive"`, `"forehand_serve"`, etc.).
+      </Property>
+      <Property name="team" type="str" optional default='"A"'>
+        Team identifier (`"A"` for `P1`/`P2`, `"B"` for `P3`/`P4`).
+      </Property>
+      <Property name="swing_phase" type="float" optional default="0.0">
+        Normalized stroke progress in `[0.0, 1.0]`.
+      </Property>
+      <Property name="keypoints_3d" type="tuple[tuple[float, float, float], ...] | None" optional default="None">
+        Optional 17-tuple of `(jx, jy, jz)` coordinates in the player's local frame (`Pelvis` XY at `(0, 0)`, `Z` height above floor `0.0`, facing `+Y`) following `H36M_JOINT_NAMES`.
+      </Property>
+      <Property name="world_keypoints_3d" type="tuple[tuple[float, float, float], ...] | None">
+        Computed 17-tuple of `(X, Y, Z)` joints transformed into absolute 3D court coordinates, or `None` if `keypoints_3d` is not set.
+      </Property>
+    </Properties>
+
+    ### Classmethods & Methods
+
+    <Properties>
+      <Property name="from_world_keypoints_3d(player_id, world_keypoints_3d, ...)" type="PlayerPose">
+        Constructs a `PlayerPose` directly from a `(17, 3)` array or sequence of absolute 3D world joints (e.g. from multi-camera triangulation or `MotionBERT`), automatically anchoring `(x, y)` at `Pelvis (joint 0)`, `z` at the lowest ankle, and computing local `keypoints_3d`.
+      </Property>
+      <Property name="to_dict()" type="dict[str, Any]">
+        Serializes the pose for the Three.js visualizer (including `kp3d` when `keypoints_3d` is populated).
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Construct from World 3D Joints" tag="classmethod" label="from_world_keypoints_3d">
+
+    ```python
+    import numpy as np
+    from padelkit import H36M_JOINT_NAMES, PlayerPose
+
+    print("17 H36M joints:", H36M_JOINT_NAMES)
+
+    # Example (17, 3) absolute world coordinates in court meters
+    world_j3d = np.zeros((17, 3), dtype=np.float32)
+    world_j3d[:, 0] = 1.85   # X = +1.85m
+    world_j3d[:, 1] = -7.20  # Y = -7.20m
+    world_j3d[0, 2] = 0.88   # Pelvis Z = 0.88m
+    world_j3d[10, 2] = 1.66  # Head Z = 1.66m
+
+    pose = PlayerPose.from_world_keypoints_3d(
+        player_id="P1",
+        world_keypoints_3d=world_j3d,
+        yaw_deg=10.0,
+        animation="forehand_drive",
+        team="A",
+        swing_phase=0.5,
+    )
+
+    print("Root (x, y, z):", (pose.x, pose.y, pose.z))
+    print("Pelvis offset:", pose.keypoints_3d[0])
+    print("World Head Z:", pose.world_keypoints_3d[10][2])
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

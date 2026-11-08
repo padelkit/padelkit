@@ -142,3 +142,37 @@ The `CourtDimensions` dataclass holds the official physical measurements of a pa
 
   </Col>
 </Row>
+
+---
+
+## Dictionary Serialization {{ tag: 'methods', label: 'to_dict / from_dict' }}
+
+<Row>
+  <Col>
+
+    <Properties>
+      <Property name="dims.to_dict()" type="dict[str, float]">
+        Serializes all 7 court measurements into a dictionary of floats.
+      </Property>
+      <Property name="CourtDimensions.from_dict(data)" type="CourtDimensions">
+        Classmethod that reconstructs a `CourtDimensions` instance from a dictionary (defaulting any omitted keys to FIP standard values).
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Serialize Dimensions" tag="method" label="to_dict / from_dict">
+
+    ```python
+    from padelkit import CourtDimensions
+
+    dims = CourtDimensions.fip_standard()
+    restored = CourtDimensions.from_dict(dims.to_dict())
+    assert restored == dims
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

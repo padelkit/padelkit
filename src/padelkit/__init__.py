@@ -49,6 +49,7 @@ from padelkit.scoring import (
     TeamId,
 )
 from padelkit.viz import (
+    H36M_JOINT_NAMES,
     FrameState,
     MatchTimeline,
     PadelVisualizer,
@@ -89,6 +90,7 @@ __all__ = [
     "MatchTimeline",
     "FrameState",
     "PlayerPose",
+    "H36M_JOINT_NAMES",
     # Scoring
     "MatchScore",
     "MatchScoreHistory",

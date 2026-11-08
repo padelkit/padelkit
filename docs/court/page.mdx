@@ -391,4 +391,42 @@
   </Col>
 </Row>
 
+---
+
+## Dictionary Serialization {{ tag: 'methods', label: 'to_dict / from_dict' }}
+
+<Row>
+  <Col>
+
+    Serializes and reconstructs a `Court` instance (including nested [`CourtDimensions`](/court-dimensions), enum values, and [`CourtLocation`](/court-location)) to and from a JSON-compatible dictionary. Used automatically by [`MatchTimeline.to_parquet()`](/match-timeline#export-to-universal-parquet) and [`MatchTimeline.from_parquet()`](/match-timeline#load-from-universal-parquet).
+
+    <Properties>
+      <Property name="court.to_dict()" type="dict[str, Any]">
+        Returns a JSON-serializable dictionary of all court dimensions and metadata.
+      </Property>
+      <Property name="Court.from_dict(data)" type="Court">
+        Classmethod that reconstructs a `Court` instance from a dictionary produced by `to_dict()`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Serialize Court" tag="method" label="to_dict / from_dict">
+
+    ```python
+    from padelkit import Court
+
+    court = Court.fip_standard()
+    payload = court.to_dict()
+    restored = Court.from_dict(payload)
+    assert restored == court
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+
 

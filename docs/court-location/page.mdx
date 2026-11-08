@@ -64,3 +64,37 @@ The `CourtLocation` dataclass stores structured geographic information about a c
 
   </Col>
 </Row>
+
+---
+
+## Dictionary Serialization {{ tag: 'methods', label: 'to_dict / from_dict' }}
+
+<Row>
+  <Col>
+
+    <Properties>
+      <Property name="location.to_dict()" type="dict[str, Any]">
+        Serializes the geographic location fields (`club`, `city`, `address`, `country`, `latitude`, `longitude`) into a JSON-compatible dictionary.
+      </Property>
+      <Property name="CourtLocation.from_dict(data)" type="CourtLocation">
+        Classmethod that reconstructs a `CourtLocation` instance from a dictionary.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Serialize Location" tag="method" label="to_dict / from_dict">
+
+    ```python
+    from padelkit import CourtLocation
+
+    loc = CourtLocation(club="Club de Pádel Sol", city="Madrid", country="Spain")
+    restored = CourtLocation.from_dict(loc.to_dict())
+    assert restored == loc
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

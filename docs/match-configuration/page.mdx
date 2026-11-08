@@ -100,3 +100,37 @@ The `MatchConfiguration` dataclass groups together all scoring formats, rules, s
 
   </Col>
 </Row>
+
+---
+
+## Dictionary Serialization {{ tag: 'methods', label: 'to_dict / from_dict' }}
+
+<Row>
+  <Col>
+
+    <Properties>
+      <Property name="config.to_dict()" type="dict[str, Any]">
+        Serializes all match rules and `set_starting_servers` into a JSON-compatible dictionary.
+      </Property>
+      <Property name="MatchConfiguration.from_dict(data)" type="MatchConfiguration">
+        Classmethod that reconstructs a `MatchConfiguration` from a dictionary.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Serialize Configuration" tag="method" label="to_dict / from_dict">
+
+    ```python
+    from padelkit import MatchConfiguration
+
+    cfg = MatchConfiguration(advantage_method="gold_point")
+    restored = MatchConfiguration.from_dict(cfg.to_dict())
+    assert restored == cfg
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
