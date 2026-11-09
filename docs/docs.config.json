@@ -5,7 +5,7 @@
   ],
   "pages": {
     "/": {
-      "title": "API Documentation",
+      "title": "PadelKit Docs",
       "description": "Learn everything there is to know about the PadelKit library and integrate it into your Python applications."
     },
     "/quickstart": {
