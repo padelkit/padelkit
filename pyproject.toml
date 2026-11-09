@@ -42,7 +42,8 @@ dev = [
     "pytest",
     "ruff",
     "build",
-    "twine"
+    "twine",
+    "hatchling",
 ]
 blender = [
     "bpy>=4.0.0; python_version == '3.11' or python_version == '3.13'"

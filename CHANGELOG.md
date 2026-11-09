@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - Unreleased
+## [0.1.0] - 2026-11-09
 
 ### Added
 - `padelkit.camera` module (`Camera`, `CameraIntrinsics`, `CameraExtrinsics`, `CameraDistortion`, `CameraPreset`, `DistortionModel`) for 3D-to-2D projection, lens distortion (Brown-Conrady & Fisheye), 2D-to-3D ray/plane intersection, and automatic 6-DoF camera calibration from 2D court landmarks (`Camera.from_landmarks()`, `floor_homography`).
@@ -22,5 +22,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `padelkit.court` module with `Court`, `CourtDimensions`, `CourtLocation`, 17-point 2D/3D `CourtLandmark` model, and `CENTERED` / `CORNER_BASED` coordinate systems.
 - `padelkit.scoring` module with `Match`, `MatchConfiguration`, `MatchScore`, `MatchScoreHistory`, `Team`, `Player`, `ServingState`, and `ServingEngine`.
 
-[0.1.0]: https://github.com/padelkit/padelkit/compare/v0.0.1...HEAD
+[0.1.0]: https://github.com/padelkit/padelkit/compare/v0.0.1...v0.1.0
 [0.0.1]: https://github.com/padelkit/padelkit/releases/tag/v0.0.1

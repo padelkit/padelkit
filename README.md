@@ -48,11 +48,11 @@ shot = BallState.from_shot(
 )
 trajectory = engine.simulate(shot, duration=2.5)
 
-# 4. 3D Visualization, CSV Replay & Synthetic CV Passes (Three.js)
-timeline = MatchTimeline.demo_rally(court=court, fps=60.0)
-timeline.to_csv("demo_rally.csv")
+# 4. Universal Match Format (.parquet), 3D Visualization & Synthetic CV Passes (Three.js)
+timeline = MatchTimeline.demo_rally(court=court, fps=60.0, bake_skeleton=True)
+timeline.to_parquet("demo_rally.parquet")
 
-viz = PadelVisualizer.from_csv("demo_rally.csv", court=court)
+viz = PadelVisualizer.from_parquet("demo_rally.parquet")
 viz.export_html("padel_studio.html")
 
 # 5. Event-Sourced Match Scoring Engine
@@ -66,7 +66,7 @@ print(match.history.get_current_score())
 - **Court Geometry (`padelkit.court`):** Official FIP dimensions, enclosure variants, and 17-point 2D/3D landmark coordinate systems (`CENTERED` and `CORNER_BASED`).
 - **Camera & 3D Projection (`padelkit.camera`):** Intrinsics (`FOV` & physical sensor models), 6-DoF extrinsics (`look_at`, `euler`, OpenCV/OpenGL matrices), lens distortion (`Brown-Conrady` & `Fisheye`), vectorized 3D-to-2D projection, and 2D-to-3D ray/plane intersection.
 - **9D Ball Physics & Dynamics (`padelkit.physics`):** RK4 aerodynamic integrator with felt-adjusted drag, Spindt Magnus lift, atmospheric density modeling (`from_atmosphere`), analytical Coulomb Sliding-to-Rolling rebound physics across turf/glass/fence/net, and vectorized `simulate_batch()`.
-- **3D Visualizer & Replay Studio (`padelkit.viz`):** Interactive Three.js 3D court studio supporting CSV match replay, real-time live streaming (`serve()` + `push_frame()`), standalone HTML/Jupyter export, and CV render passes (`RGB`, `Semantic Segmentation`, `Depth`, and `17 Landmarks`).
+- **3D Visualizer & Replay Studio (`padelkit.viz`):** Interactive Three.js 3D court studio supporting Universal Match Format (`.parquet`), CSV match replay, 17-joint 3D skeletal baking (`bake_skeletal_poses()`), Mixamo `.glb` animation library playback, real-time live streaming (`serve()` + `push_frame()`), standalone HTML/Jupyter export, and CV render passes (`RGB`, `Semantic Segmentation`, `Depth`, and `17 Landmarks`).
 - **Scoring System (`padelkit.scoring`):** Full event-sourced match, set, game, tie-break, and serving rotation engine.
 
 ## Contributing

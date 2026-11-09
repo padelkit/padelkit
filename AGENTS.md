@@ -18,7 +18,7 @@ This document serves as the single source of truth regarding the architecture, d
   - `padelkit[blender]`: `bpy>=4.0.0` (for headless photorealistic synthetic rendering)
 
 ## Versioning & Documentation (`docs/`)
-- **Current Version:** `0.1.0` (unreleased; `0.0.1` is the initial published version on PyPI). While `0.1.0` remains unreleased, accumulate all changes under `## [0.1.0] - Unreleased` in `CHANGELOG.md`.
+- **Current Version:** `0.1.0` (published on PyPI; `0.1.1` is the next development cycle). During development of `0.1.1`, accumulate changes under `## [0.1.1] - Unreleased` in `CHANGELOG.md`.
 - **Single Source of Truth for Version:** `pyproject.toml` defines `version = "X.Y.Z"`. `src/padelkit/__init__.py` reads it dynamically via `importlib.metadata.version("padelkit")`, and `tests/test_version_and_docs.py` verifies consistency across `pyproject.toml`, `padelkit.__version__`, `CHANGELOG.md`, and `docs/docs.config.json`.
 - **Branching & CI/CD Workflow:**
   - `develop` is the integration branch for all contributor Pull Requests (`CONTRIBUTING.md`). Pushing to `docs/**` on `develop` triggers the Vercel Preview Deploy Hook (`VERCEL_PREVIEW_DEPLOY_HOOK_URL`).
