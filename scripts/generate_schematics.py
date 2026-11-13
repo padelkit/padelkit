@@ -30,7 +30,12 @@ from padelkit.camera import (
     CameraIntrinsics,
 )
 from padelkit.court import CoordinateSystem, Court, CourtLandmark
-from padelkit.physics import BallPhysicsEngine, BallState
+from padelkit.physics import (
+    BallPhysicsEngine,
+    BallProperties,
+    BallState,
+    SurfaceMaterials,
+)
 from padelkit.scoring import MatchConfiguration, Player, ServingEngine, Team, TeamId
 
 
@@ -209,6 +214,28 @@ class SvgCanvas:
             attrs["rx"] = _fmt(rx)
         ET.SubElement(cp, "rect", attrs)
         return ET.SubElement(self.root, "g", {"clip-path": f"url(#{clip_id})"})
+
+    def radial_gradient(
+        self,
+        grad_id: str,
+        stops: Sequence[tuple[str, str]],
+        *,
+        cx: str = "35%",
+        cy: str = "35%",
+        r: str = "65%",
+    ) -> None:
+        """Register a `<radialGradient>` in `<defs>`."""
+        rg = ET.SubElement(
+            self.defs,
+            "radialGradient",
+            {"id": grad_id, "cx": cx, "cy": cy, "r": r},
+        )
+        for offset_pct, stop_color in stops:
+            ET.SubElement(
+                rg,
+                "stop",
+                {"offset": offset_pct, "stop-color": stop_color},
+            )
 
     def set_target(self, target: ET.Element | None = None) -> None:
         """Set the active parent XML element (`None` resets to root `<svg>`)."""
@@ -754,17 +781,17 @@ def build_fip_court_3d_scene(
     """
     scene = Scene3D()
 
-    # 1. Court floor base (bias +20 so floor always renders underneath court lines and walls)
+    # 1. Court floor base (bias +100 so floor always renders underneath court lines and walls)
     scene.add_face(
         [(-5.0, -10.0, 0.0), (5.0, -10.0, 0.0), (5.0, 10.0, 0.0), (-5.0, 10.0, 0.0)],
         fill=palette.court_floor,
         fill_opacity=1.0,
         stroke=palette.court_line_fg,
         stroke_width=1.8,
-        layer_bias=20.0,
+        layer_bias=100.0,
     )
 
-    # Floor court markings (service lines & center service line)
+    # Floor court markings (bias +50 keeps markings strictly above floor & below 3D walls/net)
     for p1, p2 in [
         ((-5.0, -7.0, 0.0), (5.0, -7.0, 0.0)),
         ((-5.0, 7.0, 0.0), (5.0, 7.0, 0.0)),
@@ -777,7 +804,7 @@ def build_fip_court_3d_scene(
             stroke=palette.court_line_fg,
             stroke_width=1.4,
             opacity=0.90,
-            layer_bias=18.0,
+            layer_bias=50.0,
         )
 
     # 2. 3D Net at Y = 0 (posts 0.92m, center 0.88m catenary)
@@ -1175,6 +1202,15 @@ def render_court_landmarks_3d(palette: ThemePalette) -> str:
         stroke_width=2.0,
         marker_end="arrow-danger",
     )
+    svg.text(
+        x_u + 11,
+        x_v + 4,
+        "+X",
+        fill=palette.accent_danger,
+        size=9.5,
+        weight="700",
+        mono=True,
+    )
     svg.line(
         o_u,
         o_v,
@@ -1184,6 +1220,15 @@ def render_court_landmarks_3d(palette: ThemePalette) -> str:
         stroke_width=2.0,
         marker_end="arrow-primary",
     )
+    svg.text(
+        y_u + 12,
+        y_v - 4,
+        "+Y",
+        fill=palette.accent_primary,
+        size=9.5,
+        weight="700",
+        mono=True,
+    )
     svg.line(
         o_u,
         o_v,
@@ -1192,6 +1237,15 @@ def render_court_landmarks_3d(palette: ThemePalette) -> str:
         stroke=palette.accent_tertiary,
         stroke_width=2.0,
         marker_end="arrow-tertiary",
+    )
+    svg.text(
+        z_u,
+        z_v - 11,
+        "+Z",
+        fill=palette.accent_tertiary,
+        size=9.5,
+        weight="700",
+        mono=True,
     )
 
     # Draw numbered badges 1..17 with clean non-overlapping offsets
@@ -1209,7 +1263,7 @@ def render_court_landmarks_3d(palette: ThemePalette) -> str:
         11: (24, -4),
         12: (-24, -6),
         13: (22, 10),
-        14: (-24, -12),
+        14: (-26, -8),
         15: (22, -14),
         16: (-22, -14),
         17: (22, -14),
@@ -1262,20 +1316,41 @@ def render_court_landmarks_3d(palette: ThemePalette) -> str:
 
     # Right panel table of 17 landmarks
     svg.text(
-        668,
-        88,
-        "INDEX  COURT LANDMARK ENUM        (X, Y, Z)",
+        666,
+        85,
+        "IDX",
         fill=palette.text_muted,
-        size=9.5,
+        size=9.0,
         weight="700",
         mono=True,
         anchor="start",
     )
+    svg.text(
+        696,
+        85,
+        "COURT LANDMARK ENUM",
+        fill=palette.text_muted,
+        size=9.0,
+        weight="700",
+        mono=True,
+        anchor="start",
+    )
+    svg.text(
+        926,
+        85,
+        "(X, Y, Z)",
+        fill=palette.text_muted,
+        size=9.0,
+        weight="700",
+        mono=True,
+        anchor="end",
+    )
+    svg.line(666, 97, 926, 97, stroke=palette.border, stroke_width=1.0)
     for idx, landmark in enumerate(members, start=1):
         xyz = pts_3d[landmark.value]
         is_wall = idx >= 14
         color = palette.accent_secondary if is_wall else palette.accent_primary
-        row_y = 96 + idx * 23.8
+        row_y = 97 + idx * 23.7
         svg.callout_badge(678, row_y, str(idx), color=color)
         svg.text(
             696,
@@ -1339,8 +1414,8 @@ def render_court_dimensions(palette: ThemePalette) -> str:
         anchor="start",
     )
 
-    cx0, cy0 = 68.0, 146.0
-    scale = 20.5  # 20m -> 410px, 10m -> 205px
+    cx0, cy0 = 48.0, 148.0
+    scale = 19.2  # 20m -> 384px, 10m -> 192px
     cw = dims.length * scale
     ch = dims.width * scale
     svc_px = dims.service_line_distance_from_back * scale
@@ -1402,6 +1477,15 @@ def render_court_dimensions(palette: ThemePalette) -> str:
         stroke_width=2.6,
         dash="5 3",
     )
+    svg.text(
+        cx0 + cw / 2,
+        cy0 + ch + 18,
+        "NET",
+        fill=palette.accent_secondary,
+        size=8.5,
+        weight="700",
+        mono=True,
+    )
 
     # Extension guides and clean non-overlapping dimension arrows
     svg.line(cx0, cy0, cx0, cy0 - 34, stroke=palette.border, dash="2 2")
@@ -1416,10 +1500,19 @@ def render_court_dimensions(palette: ThemePalette) -> str:
         color=palette.accent_primary,
     )
 
+    svg.line(cx0 + cw, cy0, cx0 + cw + 60, cy0, stroke=palette.border, dash="2 2")
+    svg.line(
+        cx0 + cw,
+        cy0 + ch,
+        cx0 + cw + 60,
+        cy0 + ch,
+        stroke=palette.border,
+        dash="2 2",
+    )
     svg.dimension_arrow(
-        cx0 + cw + 34,
+        cx0 + cw + 52,
         cy0,
-        cx0 + cw + 34,
+        cx0 + cw + 52,
         cy0 + ch,
         f"width = {dims.width:.1f} m",
         marker_key="secondary",
@@ -1427,8 +1520,8 @@ def render_court_dimensions(palette: ThemePalette) -> str:
     )
 
     # Bottom sub-dimensions with extension lines so arrows are clearly visible
-    y_dim1 = cy0 + ch + 30
-    y_dim2 = cy0 + ch + 72
+    y_dim1 = cy0 + ch + 36
+    y_dim2 = cy0 + ch + 76
     svg.line(cx0, cy0 + ch, cx0, y_dim1 + 8, stroke=palette.border, dash="2 2")
     svg.line(
         cx0 + svc_px,
@@ -1447,22 +1540,22 @@ def render_court_dimensions(palette: ThemePalette) -> str:
         dash="2 2",
     )
 
-    svg.dimension_arrow(
-        cx0,
+    svg.line(
+        cx0 + 4,
         y_dim1,
-        cx0 + svc_px,
+        cx0 + svc_px - 4,
         y_dim1,
-        "3.0 m",
-        marker_key="tertiary",
-        color=palette.accent_tertiary,
-        label_offset=(0, -18),
+        stroke=palette.accent_tertiary,
+        stroke_width=1.6,
+        marker_start="arrow-tertiary",
+        marker_end="arrow-tertiary",
     )
     svg.text(
-        cx0 + svc_px + 8,
+        cx0 + svc_px + 10,
         y_dim1,
-        "service_line_distance_from_back = 3.0 m",
+        f"service_line_distance_from_back = {dims.service_line_distance_from_back:.1f} m",
         fill=palette.accent_tertiary,
-        size=10.0,
+        size=9.5,
         weight="600",
         mono=True,
         anchor="start",
@@ -1473,9 +1566,17 @@ def render_court_dimensions(palette: ThemePalette) -> str:
         y_dim2,
         cx0 + cw / 2,
         y_dim2,
-        "service box = 7.0 m",
+        "7.0 m",
         marker_key="muted",
         color=palette.text_muted,
+    )
+    svg.text(
+        cx0 + 0.5 * (svc_px + cw / 2),
+        y_dim2 + 18,
+        "service box depth (net to service line)",
+        fill=palette.text_muted,
+        size=8.8,
+        mono=True,
     )
 
     # Right panel top: Side Wall Profile (V1 3.0m vs V2 4.0m with Glass vs Mesh modules)
@@ -1490,7 +1591,7 @@ def render_court_dimensions(palette: ThemePalette) -> str:
     )
     svg.text(
         608,
-        88,
+        86,
         "B. SIDE WALL ELEVATION (GLASS vs MESH)",
         fill=palette.text_primary,
         size=11.2,
@@ -1499,14 +1600,39 @@ def render_court_dimensions(palette: ThemePalette) -> str:
         anchor="start",
     )
 
-    ex0, ey_floor = 616.0, 234.0
-    escale_x = 13.0  # 20m -> 260px
-    escale_z = 26.0  # 4m -> 104px
+    ex0, ey_floor = 618.0, 232.0
+    escale_x = 11.8  # 20m -> 236px
+    escale_z = 22.0  # 4m -> 88px
     w_len = 20.0 * escale_x
     h_4m = dims.back_wall_height * escale_z
     h_3m = dims.side_wall_height * escale_z
     h_2m = 2.0 * escale_z
     step_2m = 2.0 * escale_x
+
+    # Header annotation positioned cleanly above the 4.0m roofline
+    svg.text(
+        ex0 + w_len / 2,
+        ey_floor - h_4m - 22,
+        "side_wall = 3.0m  |  end step = 4.0m",
+        fill=palette.text_primary,
+        size=9.2,
+        weight="600",
+        mono=True,
+    )
+
+    # Left height ticks (0m, 2m, 3m, 4m)
+    for h_m in (0, 2, 3, 4):
+        ty = ey_floor - h_m * escale_z
+        svg.line(ex0 - 4, ty, ex0, ty, stroke=palette.border, stroke_width=1.0)
+        svg.text(
+            ex0 - 6,
+            ty + 0.5,
+            f"{h_m}m",
+            fill=palette.text_muted,
+            size=7.8,
+            mono=True,
+            anchor="end",
+        )
 
     # Full 3m / 4m metallic mesh background envelope
     v1_poly = [
@@ -1559,6 +1685,27 @@ def render_court_dimensions(palette: ThemePalette) -> str:
             stroke_width=0.9,
         )
 
+    # Central 2.0m entry doorway cutout (X in [9m, 11m])
+    door_x = ex0 + 9.0 * escale_x
+    svg.rect(
+        door_x,
+        ey_floor - h_2m,
+        step_2m,
+        h_2m,
+        fill=palette.bg_panel,
+        stroke=palette.text_muted,
+        stroke_width=1.0,
+        dash="2 2",
+    )
+    svg.text(
+        door_x + step_2m / 2,
+        ey_floor - h_2m / 2,
+        "2m",
+        fill=palette.text_muted,
+        size=7.5,
+        mono=True,
+    )
+
     svg.line(
         ex0 - 6,
         ey_floor,
@@ -1568,31 +1715,81 @@ def render_court_dimensions(palette: ThemePalette) -> str:
         stroke_width=2.0,
     )
 
-    svg.dimension_arrow(
-        ex0 + w_len + 26,
+    # Staggered vertical 3.0m and 4.0m dimension arrows on right
+    svg.line(
+        ex0 + w_len,
+        ey_floor - h_3m,
+        ex0 + w_len + 28,
+        ey_floor - h_3m,
+        stroke=palette.border,
+        dash="2 2",
+    )
+    svg.line(
+        ex0 + w_len,
         ey_floor - h_4m,
-        ex0 + w_len + 26,
+        ex0 + w_len + 60,
+        ey_floor - h_4m,
+        stroke=palette.border,
+        dash="2 2",
+    )
+    svg.dimension_arrow(
+        ex0 + w_len + 20,
+        ey_floor - h_3m,
+        ex0 + w_len + 20,
+        ey_floor,
+        "3.0m",
+        marker_key="secondary",
+        color=palette.accent_secondary,
+        label_offset=(0, 8),
+    )
+    svg.dimension_arrow(
+        ex0 + w_len + 54,
+        ey_floor - h_4m,
+        ex0 + w_len + 54,
         ey_floor,
         "4.0m",
         marker_key="primary",
         color=palette.accent_primary,
+        label_offset=(0, -14),
+    )
+
+    # Swatch legend below floor line
+    svg.rect(
+        618,
+        251,
+        10,
+        10,
+        fill=palette.glass_fill,
+        stroke=palette.glass_stroke,
+        rx=2,
     )
     svg.text(
-        ex0 + w_len / 2,
-        ey_floor - h_3m - 12,
-        "side_wall_height = 3.0m (Step = 4.0m)",
-        fill=palette.text_primary,
-        size=9.5,
-        weight="600",
-        mono=True,
-    )
-    svg.text(
-        ex0 + w_len / 2,
-        ey_floor + 18,
-        "Blue: Tempered Glass (3m/2m) | Dashed: Metallic Mesh",
+        634,
+        256,
+        "Tempered Glass (3m / 2m)",
         fill=palette.text_muted,
-        size=9.0,
+        size=8.8,
         mono=True,
+        anchor="start",
+    )
+    svg.rect(
+        774,
+        251,
+        10,
+        10,
+        fill=palette.fence_fill,
+        stroke=palette.fence_stroke,
+        dash="2 2",
+        rx=2,
+    )
+    svg.text(
+        790,
+        256,
+        "Metallic Mesh (4m / 3m)",
+        fill=palette.text_muted,
+        size=8.8,
+        mono=True,
+        anchor="start",
     )
 
     # Right panel bottom: Net Height Profile (0.92m posts vs 0.88m center sag)
@@ -1607,7 +1804,7 @@ def render_court_dimensions(palette: ThemePalette) -> str:
     )
     svg.text(
         608,
-        314,
+        312,
         "C. NET CATENARY PROFILE (WIDTH = 10.0m)",
         fill=palette.text_primary,
         size=11.2,
@@ -1616,10 +1813,10 @@ def render_court_dimensions(palette: ThemePalette) -> str:
         anchor="start",
     )
 
-    nx0, ny_floor = 636.0, 462.0
-    nw = 250.0
-    post_h = 88.0
-    center_h = 70.0  # Exaggerated sag for visual clarity of 0.88m vs 0.92m
+    nx0, ny_floor = 638.0, 444.0
+    nw = 244.0
+    post_h = 84.0
+    center_h = 66.0  # Exaggerated sag for visual clarity of 0.88m vs 0.92m
 
     net_d = (
         f"M {_fmt(nx0)} {_fmt(ny_floor - post_h)} "
@@ -1635,6 +1832,24 @@ def render_court_dimensions(palette: ThemePalette) -> str:
         fill=palette.glass_fill,
         opacity=0.35,
     )
+    # Subtle vertical net mesh ribs clipped under the quadratic top cord
+    for k_net in range(1, 10):
+        frac = k_net / 10.0
+        xm = nx0 + frac * nw
+        top_sag = (
+            (1.0 - frac) ** 2 * post_h
+            + 2 * (1.0 - frac) * frac * (center_h - 14.0)
+            + frac**2 * post_h
+        )
+        svg.line(
+            xm,
+            ny_floor,
+            xm,
+            ny_floor - top_sag,
+            stroke=palette.accent_secondary,
+            stroke_width=0.7,
+            opacity=0.35,
+        )
     # Center strap & posts
     svg.line(
         nx0 + nw / 2,
@@ -1673,14 +1888,23 @@ def render_court_dimensions(palette: ThemePalette) -> str:
         ny_floor - post_h,
         f"posts: {dims.net_height_posts:.2f}m",
         color=palette.accent_secondary,
-        offset=(36, -18),
+        offset=(42, -16),
     )
     svg.callout_badge(
         nx0 + nw / 2,
         ny_floor - center_h + 7,
         f"center: {dims.net_height_center:.2f}m",
         color=palette.accent_tertiary,
-        offset=(0, -24),
+        offset=(36, -24),
+    )
+    svg.dimension_arrow(
+        nx0,
+        ny_floor + 24,
+        nx0 + nw,
+        ny_floor + 24,
+        f"width = {dims.width:.1f} m",
+        marker_key="muted",
+        color=palette.text_muted,
     )
 
     return svg.to_xml_string()
@@ -1747,9 +1971,9 @@ def render_court_coordinate_systems(palette: ThemePalette) -> str:
         )
 
         pts = court.landmarks_2d(coordinate_system=sys_enum)
-        cx_mid = px + 222.0
-        cy_mid = 256.0
-        sx, sy = 15.0, 11.2  # 10m -> 150px, 20m -> 224px
+        cx_mid = px + 224.0
+        cy_mid = 258.0
+        sx, sy = 13.4, 9.8  # 10m -> 134px, 20m -> 196px
 
         def to_uv(
             world_xy: tuple[float, float],
@@ -1785,6 +2009,17 @@ def render_court_coordinate_systems(palette: ThemePalette) -> str:
             u2, v2 = to_uv(pts[k_b])
             svg.line(u1, v1, u2, v2, stroke=col, stroke_width=1.6, dash=dash)
 
+        net_l_uv = to_uv(pts["net_left"])
+        svg.text(
+            net_l_uv[0] - 18,
+            net_l_uv[1],
+            "NET",
+            fill=palette.accent_secondary,
+            size=8.5,
+            weight="700",
+            mono=True,
+        )
+
         origin_key = (
             "center" if sys_enum is CoordinateSystem.CENTERED else "floor_near_left"
         )
@@ -1792,18 +2027,18 @@ def render_court_coordinate_systems(palette: ThemePalette) -> str:
         svg.line(
             ox,
             oy,
-            ox + 56,
+            ox + 44,
             oy,
             stroke=palette.accent_danger,
             stroke_width=2.4,
             marker_end="arrow-danger",
         )
         svg.text(
-            ox + 68,
-            oy,
+            ox + 26,
+            oy + 13,
             "+X",
             fill=palette.accent_danger,
-            size=11.0,
+            size=10.5,
             weight="700",
             mono=True,
         )
@@ -1811,28 +2046,28 @@ def render_court_coordinate_systems(palette: ThemePalette) -> str:
             ox,
             oy,
             ox,
-            oy - 56,
+            oy - 44,
             stroke=palette.accent_primary,
             stroke_width=2.4,
             marker_end="arrow-primary",
         )
         svg.text(
-            ox,
-            oy - 68,
+            ox - 16,
+            oy - 28,
             "+Y",
             fill=palette.accent_primary,
-            size=11.0,
+            size=10.5,
             weight="700",
             mono=True,
         )
-        svg.circle(ox, oy, 5.0, fill=palette.accent_danger, stroke=palette.bg_panel)
+        svg.circle(ox, oy, 4.5, fill=palette.accent_danger, stroke=palette.bg_panel)
 
         for key, off in [
-            ("floor_near_left", (-62, 16)),
-            ("floor_near_right", (62, 16)),
-            ("center", (66, 0)),
-            ("floor_far_left", (-62, -16)),
-            ("floor_far_right", (62, -16)),
+            ("floor_near_left", (-54, 22)),
+            ("floor_near_right", (54, 22)),
+            ("center", (102, 0)),
+            ("floor_far_left", (-54, -20)),
+            ("floor_far_right", (54, -20)),
         ]:
             wx, wy = pts[key]
             u, v = to_uv((wx, wy))
@@ -1847,6 +2082,21 @@ def render_court_coordinate_systems(palette: ThemePalette) -> str:
                 ),
                 offset=off,
             )
+
+        range_text = (
+            "X ∈ [-5.0, +5.0] m   |   Y ∈ [-10.0, +10.0] m"
+            if sys_enum is CoordinateSystem.CENTERED
+            else "X ∈ [0.0, +10.0] m   |   Y ∈ [0.0, +20.0] m"
+        )
+        svg.text(
+            px + 222.0,
+            401.0,
+            range_text,
+            fill=palette.text_muted,
+            size=9.5,
+            weight="600",
+            mono=True,
+        )
 
     return svg.to_xml_string()
 
@@ -1885,8 +2135,11 @@ def render_camera_frustum_3d(palette: ThemePalette) -> str:
 
     court = Court.fip_standard()
     bcast_cam = Camera.broadcast_near(court=court)
-    frustum = bcast_cam.frustum_corners_world(near_m=2.4, far_m=15.0)
-    cam_pos = bcast_cam.extrinsics.position
+    frustum = bcast_cam.frustum_corners_world(near_m=2.2, far_m=13.0)
+    cam_pos = np.asarray(bcast_cam.extrinsics.position, dtype=np.float64)
+    cam_r = np.asarray(bcast_cam.extrinsics.right, dtype=np.float64)
+    cam_d = np.asarray(bcast_cam.extrinsics.down, dtype=np.float64)
+    cam_f = np.asarray(bcast_cam.extrinsics.forward, dtype=np.float64)
 
     observer = Camera(
         intrinsics=CameraIntrinsics.from_fov(
@@ -1904,6 +2157,7 @@ def render_camera_frustum_3d(palette: ThemePalette) -> str:
     preset_pts = np.asarray(
         [
             cam_pos,
+            cam_pos - 0.9 * cam_f,
             (0.0, 0.0, 10.5),
             (-4.8, -9.8, 3.6),
             (5.8, 0.0, 2.4),
@@ -1921,7 +2175,8 @@ def render_camera_frustum_3d(palette: ThemePalette) -> str:
         rect_y=64.0,
         rect_w=580.0,
         rect_h=412.0,
-        padding_px=42.0,
+        padding_px=44.0,
+        shift_uv=(6.0, 0.0),
     )
 
     clip_g = svg.clip_group("clip-frustum-3d", 24, 64, 580, 412, rx=10)
@@ -1961,7 +2216,97 @@ def render_camera_frustum_3d(palette: ThemePalette) -> str:
         stroke_width=2.0,
     )
 
-    # Optical axis ray from broadcast_near camera to court center
+    # 3D wireframe camera body + lens hood aligned with extrinsics (right, down, forward)
+    hw, hh, blen, llen = 0.42, 0.28, 0.85, 0.45
+    front_ring = [
+        cam_pos - hw * cam_r - hh * cam_d,
+        cam_pos + hw * cam_r - hh * cam_d,
+        cam_pos + hw * cam_r + hh * cam_d,
+        cam_pos - hw * cam_r + hh * cam_d,
+    ]
+    back_ring = [pt - blen * cam_f for pt in front_ring]
+    hood_ring = [
+        cam_pos + llen * cam_f - 0.56 * cam_r - 0.40 * cam_d,
+        cam_pos + llen * cam_f + 0.56 * cam_r - 0.40 * cam_d,
+        cam_pos + llen * cam_f + 0.56 * cam_r + 0.40 * cam_d,
+        cam_pos + llen * cam_f - 0.56 * cam_r + 0.40 * cam_d,
+    ]
+    front_uv = [projector.project_point(p) for p in front_ring]
+    back_uv = [projector.project_point(p) for p in back_ring]
+    hood_uv = [projector.project_point(p) for p in hood_ring]
+    svg.polygon(
+        back_uv,
+        fill=palette.bg_canvas,
+        fill_opacity=0.85,
+        stroke=palette.accent_secondary,
+        stroke_width=1.4,
+    )
+    for k in range(4):
+        svg.line(
+            back_uv[k][0],
+            back_uv[k][1],
+            front_uv[k][0],
+            front_uv[k][1],
+            stroke=palette.accent_secondary,
+            stroke_width=1.4,
+        )
+        svg.line(
+            front_uv[k][0],
+            front_uv[k][1],
+            hood_uv[k][0],
+            hood_uv[k][1],
+            stroke=palette.accent_secondary,
+            stroke_width=1.4,
+        )
+    svg.polygon(
+        hood_uv,
+        fill=palette.accent_secondary,
+        fill_opacity=0.22,
+        stroke=palette.accent_secondary,
+        stroke_width=1.6,
+    )
+
+    # Local OpenCV Camera Axes (+Xc right, +Yc down, +Zc forward)
+    xc_uv = projector.project_point(cam_pos + 1.8 * cam_r)
+    yc_uv = projector.project_point(cam_pos + 1.8 * cam_d)
+    svg.line(
+        c_uv[0],
+        c_uv[1],
+        xc_uv[0],
+        xc_uv[1],
+        stroke=palette.accent_danger,
+        stroke_width=1.8,
+        marker_end="arrow-danger",
+    )
+    svg.text(
+        xc_uv[0] + 10,
+        xc_uv[1] + 2,
+        "+Xc",
+        fill=palette.accent_danger,
+        size=8.5,
+        weight="700",
+        mono=True,
+    )
+    svg.line(
+        c_uv[0],
+        c_uv[1],
+        yc_uv[0],
+        yc_uv[1],
+        stroke=palette.accent_tertiary,
+        stroke_width=1.8,
+        marker_end="arrow-tertiary",
+    )
+    svg.text(
+        yc_uv[0] - 12,
+        yc_uv[1] + 6,
+        "+Yc",
+        fill=palette.accent_tertiary,
+        size=8.5,
+        weight="700",
+        mono=True,
+    )
+
+    # Optical axis ray (+Zc) from broadcast_near camera to court center
     center_uv = projector.project_point((0.0, 0.0, 0.0))
     svg.line(
         c_uv[0],
@@ -1969,68 +2314,71 @@ def render_camera_frustum_3d(palette: ThemePalette) -> str:
         center_uv[0],
         center_uv[1],
         stroke=palette.accent_tertiary,
-        stroke_width=2.2,
+        stroke_width=2.0,
         marker_end="arrow-tertiary",
-    )
-    svg.circle(
-        c_uv[0], c_uv[1], 5.5, fill=palette.accent_secondary, stroke=palette.bg_panel
     )
     svg.callout_badge(
         c_uv[0],
         c_uv[1],
         "broadcast_near",
         color=palette.accent_secondary,
-        offset=(18, 22),
+        offset=(56, 22),
     )
     svg.callout_badge(
         center_uv[0],
         center_uv[1],
         "World (0,0,0)",
         color=palette.accent_primary,
-        offset=(46, -24),
+        offset=(-64, 24),
     )
 
     # Other camera presets markers
     for label, pos_xyz, off in [
-        ("overhead_zenith", (0.0, 0.0, 10.5), (0, -18)),
-        ("corner_near_left", (-4.8, -9.8, 3.6), (-64, 24)),
-        ("side_net_right", (5.8, 0.0, 2.4), (56, -12)),
+        ("overhead_zenith", (0.0, 0.0, 10.5), (66, -6)),
+        ("corner_near_left", (-4.8, -9.8, 3.6), (58, 36)),
+        ("side_net_right", (5.8, 0.0, 2.4), (62, 6)),
     ]:
         pu, pv = projector.project_point(pos_xyz)
         svg.callout_badge(pu, pv, label, color=palette.accent_tertiary, offset=off)
 
     svg.set_target(None)
 
-    # Right panel: Coordinate frame transformation summary
+    # Right panel: Coordinate frame transformation pipeline
     frames = [
         (
             "1. World Frame (Meters)",
             "(X, Y, Z) at Court Net Center",
-            "+X: Right  |  +Y: Far Wall  |  +Z: Up",
+            "+X: Right  |  +Y: Far  |  +Z: Up",
+            None,
             palette.accent_primary,
-            106.0,
+            86.0,
+            84.0,
         ),
         (
             "2. Camera Frame (OpenCV vs OpenGL)",
-            "Extrinsics: R (3×3), t = -R @ C",
-            "OpenCV: +X right, +Y down, +Z forward",
+            "Extrinsics: R (3×3),  t = -R @ C",
+            "OpenCV: +X right, +Y down, +Z fwd",
+            "OpenGL: +X right, +Y up,   -Z fwd",
             palette.accent_secondary,
-            228.0,
+            202.0,
+            106.0,
         ),
         (
             "3. Image Sensor Plane (Pixels)",
             "Intrinsics Matrix K (fx, fy, cx, cy)",
-            "u = fx*(X_c/Z_c)+cx, v = fy*(Y_c/Z_c)+cy",
+            "u = fx*(Xc/Zc)+cx, v = fy*(Yc/Zc)+cy",
+            "Models: NONE | BROWN_CONRADY | FISHEYE",
             palette.accent_tertiary,
-            350.0,
+            340.0,
+            106.0,
         ),
     ]
-    for f_title, f_sub, f_axes, f_col, fy in frames:
+    for f_title, f_sub, f_line3, f_line4, f_col, fy, fh in frames:
         svg.rect(
             636,
             fy,
             282,
-            92,
+            fh,
             fill=palette.bg_canvas,
             stroke=f_col,
             stroke_width=1.5,
@@ -2038,30 +2386,74 @@ def render_camera_frustum_3d(palette: ThemePalette) -> str:
         )
         svg.text(
             650,
-            fy + 24,
+            fy + 20,
             f_title,
             fill=f_col,
-            size=11.5,
+            size=11.0,
             weight="700",
             anchor="start",
         )
         svg.text(
             650,
-            fy + 46,
+            fy + 41,
             f_sub,
             fill=palette.text_primary,
-            size=10.0,
+            size=9.6,
             mono=True,
             anchor="start",
         )
         svg.text(
             650,
-            fy + 68,
-            f_axes,
+            fy + 61,
+            f_line3,
             fill=palette.text_muted,
-            size=9.5,
+            size=9.2,
             mono=True,
             anchor="start",
+        )
+        if f_line4:
+            svg.text(
+                650,
+                fy + 81,
+                f_line4,
+                fill=palette.text_muted,
+                size=9.0,
+                mono=True,
+                anchor="start",
+            )
+
+    # Inter-card transform arrows
+    for y_top, y_bot, label_txt, col, mk in [
+        (170.0, 202.0, "[R | t]", palette.accent_secondary, "secondary"),
+        (308.0, 340.0, "K, dist", palette.accent_tertiary, "tertiary"),
+    ]:
+        svg.line(
+            777,
+            y_top + 2,
+            777,
+            y_bot - 3,
+            stroke=col,
+            stroke_width=1.6,
+            marker_end=f"arrow-{mk}",
+        )
+        svg.rect(
+            786,
+            0.5 * (y_top + y_bot) - 8,
+            56,
+            16,
+            fill=palette.bg_panel,
+            stroke=col,
+            stroke_width=0.9,
+            rx=4,
+        )
+        svg.text(
+            814,
+            0.5 * (y_top + y_bot) + 0.5,
+            label_txt,
+            fill=col,
+            size=8.8,
+            weight="700",
+            mono=True,
         )
 
     return svg.to_xml_string()
@@ -2081,8 +2473,8 @@ def render_camera_sensor_projection(palette: ThemePalette) -> str:
         "landmarks_px = cam.project_court_landmarks()  |  Resolution = 1920×1080  |  Principal Point (cx=960, cy=540)",
     )
 
-    sx0, sy0 = 48.0, 82.0
-    sw, sh = 640.0, 360.0  # Exact 16:9 scaled from 1920x1080 (scale = 1/3)
+    sx0, sy0 = 58.0, 82.0
+    sw, sh = 624.0, 351.0  # Exact 16:9 scaled from 1920x1080
     scale = sw / 1920.0
 
     svg.rect(
@@ -2109,14 +2501,14 @@ def render_camera_sensor_projection(palette: ThemePalette) -> str:
         )
 
     court = Court.fip_standard()
-    # Elevated wide broadcast camera so all 17 landmarks (including near baseline & 4m walls) fall cleanly inside the 1920x1080 sensor!
+    # Elevated wide broadcast camera so all 17 landmarks fall cleanly inside the 1920x1080 sensor with generous margins
     cam = Camera(
         intrinsics=CameraIntrinsics.from_fov(
             width_px=1920, height_px=1080, horizontal_fov_deg=60.0
         ),
         extrinsics=CameraExtrinsics.from_look_at(
-            position=(0.0, -23.0, 10.5),
-            target=(0.0, -1.0, 1.0),
+            position=(0.0, -24.5, 11.4),
+            target=(0.0, -0.5, 0.7),
         ),
     )
     proj_pts = cam.project_court_landmarks(court=court)
@@ -2170,6 +2562,18 @@ def render_camera_sensor_projection(palette: ThemePalette) -> str:
                 dash=obj.dash,
             )
 
+    # Top-right sensor HUD tag
+    svg.text(
+        sx0 + sw - 12,
+        sy0 + 18,
+        "1920 × 1080 px (16:9)",
+        fill=palette.text_muted,
+        size=9.2,
+        weight="600",
+        mono=True,
+        anchor="end",
+    )
+
     # Principal point crosshair (cx, cy)
     cx_px = sx0 + 960.0 * scale
     cy_px = sy0 + 540.0 * scale
@@ -2194,7 +2598,7 @@ def render_camera_sensor_projection(palette: ThemePalette) -> str:
         cy_px,
         "(cx, cy)",
         color=palette.accent_danger,
-        offset=(56, -12),
+        offset=(58, -16),
     )
 
     # Draw all 17 projected landmarks inside the sensor
@@ -2202,10 +2606,10 @@ def render_camera_sensor_projection(palette: ThemePalette) -> str:
         1: (-24, -12),
         2: (24, -12),
         3: (-24, 4),
-        4: (0, 15),
+        4: (0, 16),
         5: (24, 4),
         6: (-24, 0),
-        7: (-22, 12),
+        7: (-24, 16),
         8: (24, 0),
         9: (-28, 8),
         10: (0, -16),
@@ -2237,13 +2641,14 @@ def render_camera_sensor_projection(palette: ThemePalette) -> str:
         marker_end="arrow-tertiary",
     )
     svg.text(
-        sx0 + 82,
-        sy0 - 9,
+        sx0 + 68,
+        sy0 - 11,
         "+u (width_px = 1920)",
         fill=palette.accent_tertiary,
-        size=10.0,
+        size=9.5,
         weight="700",
         mono=True,
+        anchor="start",
     )
     svg.line(
         sx0,
@@ -2255,57 +2660,119 @@ def render_camera_sensor_projection(palette: ThemePalette) -> str:
         marker_end="arrow-tertiary",
     )
     svg.text(
-        sx0 - 12,
-        sy0 + 74,
+        sx0 - 8,
+        sy0 + 58,
         "+v",
         fill=palette.accent_tertiary,
-        size=10.0,
+        size=9.5,
         weight="700",
         mono=True,
+        anchor="end",
+    )
+    svg.text(
+        sx0 - 8,
+        sy0 + 72,
+        "1080",
+        fill=palette.accent_tertiary,
+        size=8.5,
+        mono=True,
+        anchor="end",
+    )
+    svg.circle(sx0, sy0, 4.0, fill=palette.accent_tertiary, stroke=palette.bg_canvas)
+    svg.text(
+        sx0 - 8,
+        sy0 - 10,
+        "(0,0)",
+        fill=palette.accent_tertiary,
+        size=8.5,
+        weight="700",
+        mono=True,
+        anchor="end",
     )
 
     # Right callout panel: Calibration matrix K & unprojection
     svg.rect(
-        706,
+        700,
         82,
-        170,
-        360,
+        178,
+        351,
         fill=palette.bg_panel,
         stroke=palette.border,
         rx=8,
     )
     svg.text(
-        791,
-        110,
+        789,
+        108,
         "Intrinsic Matrix K",
         fill=palette.text_primary,
         size=11.5,
         weight="700",
     )
-    k_lines = [
-        "[ fx   s  cx ]",
-        "[  0  fy  cy ]",
-        "[  0   0   1 ]",
-        "",
-        f"fx = {cam.intrinsics.fx:.1f} px",
-        f"fy = {cam.intrinsics.fy:.1f} px",
-        f"cx = {cam.intrinsics.cx:.1f} px",
-        f"cy = {cam.intrinsics.cy:.1f} px",
-        f"HFOV = {cam.intrinsics.fov_horizontal_deg:.1f}°",
-        "",
-        "center_uv:",
-        f"({proj_pts['center'][0]:.0f}, {proj_pts['center'][1]:.1f})",
+    svg.polyline(
+        [(738, 123), (731, 123), (731, 181), (738, 181)],
+        stroke=palette.accent_secondary,
+        stroke_width=1.6,
+    )
+    svg.polyline(
+        [(840, 123), (847, 123), (847, 181), (840, 181)],
+        stroke=palette.accent_secondary,
+        stroke_width=1.6,
+    )
+    k_symbolic = [
+        "fx   0   cx",
+        " 0  fy   cy",
+        " 0   0    1",
     ]
-    for i, line_txt in enumerate(k_lines):
+    for i, sym_txt in enumerate(k_symbolic):
         svg.text(
-            720,
-            138 + i * 22,
-            line_txt,
-            fill=palette.accent_secondary if i < 3 else palette.text_muted,
-            size=9.8,
+            789,
+            133 + i * 19,
+            sym_txt,
+            fill=palette.accent_secondary,
+            size=10.2,
+            weight="600",
+            mono=True,
+        )
+    svg.line(714, 194, 864, 194, stroke=palette.border, stroke_width=1.0)
+    k_values = [
+        (f"fx   = {cam.intrinsics.fx:6.1f} px", palette.text_primary),
+        (f"fy   = {cam.intrinsics.fy:6.1f} px", palette.text_primary),
+        (f"cx   = {cam.intrinsics.cx:6.1f} px", palette.text_primary),
+        (f"cy   = {cam.intrinsics.cy:6.1f} px", palette.text_primary),
+        (f"HFOV =   {cam.intrinsics.fov_horizontal_deg:.1f}°", palette.text_muted),
+        (f"VFOV =   {cam.intrinsics.fov_vertical_deg:.1f}°", palette.text_muted),
+    ]
+    for i, (val_txt, col) in enumerate(k_values):
+        svg.text(
+            716,
+            214 + i * 21,
+            val_txt,
+            fill=col,
+            size=9.5,
             mono=True,
             anchor="start",
         )
+    svg.line(714, 344, 864, 344, stroke=palette.border, stroke_width=1.0)
+    svg.text(
+        716,
+        365,
+        "proj_pts['center']:",
+        fill=palette.accent_primary,
+        size=9.2,
+        weight="600",
+        mono=True,
+        anchor="start",
+    )
+    svg.text(
+        716,
+        387,
+        f"({proj_pts['center'][0]:.0f}, {proj_pts['center'][1]:.1f}) px",
+        fill=palette.text_primary,
+        size=9.8,
+        weight="700",
+        mono=True,
+        anchor="start",
+    )
 
     return svg.to_xml_string()
 
@@ -2349,11 +2816,11 @@ def render_camera_distortion_grid(palette: ThemePalette) -> str:
     ]
 
     intr = CameraIntrinsics.from_fov(
-        width_px=260, height_px=190, horizontal_fov_deg=86.0
+        width_px=260, height_px=190, horizontal_fov_deg=80.0
     )
     extr = CameraExtrinsics.from_look_at(
-        position=(0.0, -14.2, 6.4),
-        target=(0.0, -0.5, 0.8),
+        position=(0.0, -16.8, 8.2),
+        target=(0.0, 0.0, 0.6),
     )
 
     # Complete connected 3D court wireframe (floor, service lines, net, and full 3D walls with vertical posts)
@@ -2465,10 +2932,31 @@ def render_camera_distortion_grid(palette: ThemePalette) -> str:
                 uv[:, 1] += vp_y
                 svg.polyline(
                     rdp_simplify_2d(uv, epsilon=0.40),
-                    stroke=accent if not is_wall else palette.glass_stroke,
-                    stroke_width=1.7 if not is_wall else 1.15,
-                    opacity=1.0 if not is_wall else 0.75,
+                    stroke=accent if not is_wall else palette.fence_stroke,
+                    stroke_width=1.8 if not is_wall else 1.1,
+                    opacity=1.0 if not is_wall else 0.70,
                 )
+
+        # Principal point crosshair at optical center
+        oc_x, oc_y = vp_x + 130.0, vp_y + 95.0
+        svg.line(
+            oc_x - 5,
+            oc_y,
+            oc_x + 5,
+            oc_y,
+            stroke=palette.accent_danger,
+            stroke_width=1.2,
+            opacity=0.75,
+        )
+        svg.line(
+            oc_x,
+            oc_y - 5,
+            oc_x,
+            oc_y + 5,
+            stroke=palette.accent_danger,
+            stroke_width=1.2,
+            opacity=0.75,
+        )
 
         svg.set_target(None)
 
@@ -2507,52 +2995,94 @@ def render_physics_forces_9d(palette: ThemePalette) -> str:
         rx=10,
     )
 
-    bx, by = 260.0, 220.0
-    r_ball = 48.0
+    bx, by = 264.0, 228.0
+    r_ball = 46.0
 
-    # Airflow streamlines
-    for dy in (-68, -42, 42, 68):
-        svg.line(
-            70,
-            by + dy,
-            450,
-            by + dy,
-            stroke=palette.grid_line,
-            stroke_width=1.2,
-            dash="6 4",
+    # Ball radial gradient for 3D spherical contrast in both light & dark themes
+    grad_id = f"ball-grad-{palette.mode}"
+    stops = (
+        [("0%", "#ecfccb"), ("55%", "#84cc16"), ("100%", "#365314")]
+        if palette.mode == "dark"
+        else [("0%", "#fef9c3"), ("55%", "#a3e635"), ("100%", "#4d7c0f")]
+    )
+    svg.radial_gradient(grad_id, stops)
+
+    # Asymmetric curved streamlines showing Magnus pressure differential for counter-clockwise Backspin:
+    # Tighter curved streamlines above (-ΔP low pressure) and wider spaced below (+ΔP high pressure)
+    upper_streams = [
+        f"M 440 {_fmt(by - 48)} C 350 {_fmt(by - 58)}, 285 {_fmt(by - 88)}, 72 {_fmt(by - 44)}",
+        f"M 440 {_fmt(by - 76)} C 355 {_fmt(by - 84)}, 290 {_fmt(by - 110)}, 72 {_fmt(by - 70)}",
+    ]
+    lower_streams = [
+        f"M 440 {_fmt(by + 44)} C 345 {_fmt(by + 58)}, 280 {_fmt(by + 74)}, 72 {_fmt(by + 68)}",
+        f"M 440 {_fmt(by + 76)} C 345 {_fmt(by + 88)}, 280 {_fmt(by + 102)}, 72 {_fmt(by + 96)}",
+    ]
+    for st_d in upper_streams + lower_streams:
+        svg.path(
+            st_d,
+            stroke=palette.text_muted,
+            stroke_width=1.15,
+            dash="5 4",
+            opacity=0.48,
+            marker_end="arrow-muted",
         )
+    svg.text(
+        118,
+        by - 98,
+        "-ΔP (Low Pressure)",
+        fill=palette.accent_secondary,
+        size=8.8,
+        weight="600",
+        mono=True,
+    )
+    svg.text(
+        118,
+        by + 116,
+        "+ΔP (High Pressure)",
+        fill=palette.text_muted,
+        size=8.8,
+        weight="600",
+        mono=True,
+    )
 
-    # Spinning padel ball body & seam
+    # Spinning padel ball body & curved seam
     svg.circle(
         bx,
         by,
         r_ball,
-        fill=palette.court_floor,
+        fill=f"url(#{grad_id})",
         stroke=palette.accent_tertiary,
-        stroke_width=2.5,
+        stroke_width=2.2,
     )
     seam_d = (
-        f"M {_fmt(bx - 34)} {_fmt(by - 34)} "
-        f"Q {_fmt(bx + 18)} {_fmt(by)} {_fmt(bx - 34)} {_fmt(by + 34)}"
+        f"M {_fmt(bx - 30)} {_fmt(by - 34)} "
+        f"Q {_fmt(bx + 16)} {_fmt(by)} {_fmt(bx - 30)} {_fmt(by + 34)}"
     )
-    svg.path(seam_d, stroke=palette.accent_tertiary, stroke_width=1.8, dash="4 3")
+    svg.path(
+        seam_d,
+        stroke=palette.court_line_fg,
+        stroke_width=1.8,
+        dash="4 3",
+        opacity=0.75,
+    )
 
-    # Spin arc around ball (w)
+    # Counter-clockwise backspin arc (+ω_x out of page) in clean top-right sector
     spin_arc = (
-        f"M {_fmt(bx - 64)} {_fmt(by - 18)} "
-        f"A 66 66 0 0 1 {_fmt(bx + 18)} {_fmt(by - 64)}"
+        f"M {_fmt(bx + 54)} {_fmt(by - 26)} "
+        f"A 60 60 0 0 0 {_fmt(bx + 9)} {_fmt(by - 59)}"
     )
     svg.path(
         spin_arc,
         stroke=palette.accent_tertiary,
-        stroke_width=2.0,
+        stroke_width=2.2,
         marker_end="arrow-tertiary",
     )
     svg.callout_badge(
-        bx - 42,
-        by - 64,
-        "ω (Spin rad/s)",
+        bx + 36,
+        by - 48,
+        "ω (Backspin)",
         color=palette.accent_tertiary,
+        offset=(46, -24),
     )
 
     # Force & Velocity vectors from ball center
@@ -2568,9 +3098,9 @@ def render_physics_forces_9d(palette: ThemePalette) -> str:
     svg.callout_badge(
         bx + 150,
         by - 32,
-        "v (Velocity m/s)",
+        "v (Velocity)",
         color=palette.accent_primary,
-        offset=(10, -18),
+        offset=(18, -20),
     )
 
     svg.line(
@@ -2587,75 +3117,76 @@ def render_physics_forces_9d(palette: ThemePalette) -> str:
         by + 29,
         "F_drag (-v̂)",
         color=palette.accent_danger,
-        offset=(-10, 22),
+        offset=(0, 22),
     )
 
     svg.line(
         bx,
         by,
         bx,
-        by + 118,
+        by + 114,
         stroke=palette.court_line_fg,
         stroke_width=2.4,
         marker_end="arrow-fg",
     )
     svg.callout_badge(
         bx,
-        by + 118,
+        by + 114,
         "F_g = m·g (-Z)",
         color=palette.court_line_fg,
-        offset=(64, 0),
+        offset=(66, 0),
     )
 
     svg.line(
         bx,
         by,
         bx - 26,
-        by - 122,
+        by - 120,
         stroke=palette.accent_secondary,
         stroke_width=2.8,
         marker_end="arrow-secondary",
     )
     svg.callout_badge(
         bx - 26,
-        by - 122,
+        by - 120,
         "F_magnus ∝ ω × v",
         color=palette.accent_secondary,
-        offset=(56, -8),
+        offset=(-56, -12),
     )
+    svg.circle(bx, by, 4.0, fill=palette.court_line_fg, stroke=palette.bg_panel)
 
     sample = BallState.from_shot(
         position=(0.0, -6.0, 1.2),
-        velocity=(0.0, 22.0, 3.5),
-        topspin_rpm=2100.0,
-        sidespin_rpm=-450.0,
+        velocity=(0.0, 20.0, 4.2),
+        topspin_rpm=-1800.0,
+        sidespin_rpm=0.0,
     )
     wx, wy, wz = sample.angular_velocity
     lines = [
         ("1. Quadratic Felt Drag", palette.accent_danger),
-        ("Cd = Cd0 + fuzz_factor (0.507 + 0.04)", palette.text_muted),
+        ("Cd = 0.50 + 0.15 · fuzz_factor", palette.text_muted),
         ("F_drag = -½ ρ A Cd |v| v", palette.text_primary),
         ("2. Spindt Non-Linear Magnus Lift", palette.accent_secondary),
-        ("Spin Ratio S = (r · |ω|) / |v|", palette.text_muted),
-        ("Cl = 1 / (2.022 + 0.981 / S)", palette.text_primary),
-        ("F_magnus = ½ ρ A Cl |v|² (ω × v)/|ω × v|", palette.text_primary),
-        ("3. Sample BallState.from_shot()", palette.accent_primary),
+        ("Spin Ratio S = (R · |ω|) / |v|", palette.text_muted),
+        ("Cl = 1 / (2.32 + 0.4 / (S + 0.1))", palette.text_primary),
+        ("F_magnus = ½ ρ A Cl |v|² (ω̂ × v̂)", palette.text_primary),
+        ("3. Sample Backspin BallState", palette.accent_primary),
         (
-            f"Speed: {sample.speed_kmh:.1f} km/h | Spin: {sample.spin_rpm:.0f} RPM",
+            f"Speed: {sample.speed_kmh:.1f} km/h | Spin: -1800 RPM",
             palette.text_muted,
         ),
         (
-            f"ω = ({wx:.0f}, {wy:.0f}, {wz:.0f}) rad/s",
+            f"ω = ({wx:+.0f}, {wy + 0.0:.0f}, {wz + 0.0:.0f}) rad/s",
             palette.text_muted,
         ),
     ]
     for i, (txt, col) in enumerate(lines):
         svg.text(
             578,
-            96 + i * 28.5,
+            94 + i * 29.0,
             txt,
             fill=col,
-            size=10.2,
+            size=10.0,
             weight="700" if txt[:2].endswith(".") else "500",
             mono=True,
             anchor="start",
@@ -2693,49 +3224,64 @@ def render_physics_trajectories(palette: ThemePalette) -> str:
         (
             "Topspin Smash (+2400 RPM)",
             BallState.from_shot(
-                position=(0.0, -2.5, 2.65),
-                velocity=(0.0, 23.0, -3.2),
+                position=(0.0, -3.2, 2.70),
+                velocity=(0.0, 21.5, -2.5),
                 topspin_rpm=2400.0,
             ),
-            1.28,
+            1.15,
             palette.accent_danger,
+            "High Rebound",
+            (0, -18),
         ),
         (
             "Flat Drive (0 RPM)",
             BallState.from_shot(
-                position=(0.0, -8.2, 1.10),
-                velocity=(0.0, 19.8, 3.0),
+                position=(0.0, -8.5, 1.15),
+                velocity=(0.0, 21.2, 2.9),
                 topspin_rpm=0.0,
             ),
-            1.45,
+            1.48,
             palette.accent_secondary,
+            "Mid Rebound",
+            (-48, 0),
         ),
         (
-            "Backspin Bandeja (-1800 RPM)",
+            "Backspin Bandeja (-2000 RPM)",
             BallState.from_shot(
                 position=(0.0, -4.0, 2.15),
-                velocity=(0.0, 14.5, -0.4),
-                topspin_rpm=-1800.0,
+                velocity=(0.0, 14.2, -0.8),
+                topspin_rpm=-2000.0,
             ),
-            1.55,
+            1.45,
             palette.accent_primary,
+            "Low Skid",
+            (-20, 13),
         ),
     ]
 
-    x0, y_floor = 480.0, 366.0
-    sx, sz = 40.0, 56.0
+    x0, y_floor = 466.0, 366.0
+    sx, sz = 39.0, 56.0
 
     def yz_to_uv(y_m: float, z_m: float) -> tuple[float, float]:
         return x0 + y_m * sx, y_floor - z_m * sz
+
+    x_left, _ = yz_to_uv(-10.0, 0.0)
+    x_right, _ = yz_to_uv(10.0, 0.0)
 
     # Reference elevation grid
     for z_grid in (1.0, 2.0, 3.0, 4.0):
         _, gv = yz_to_uv(0.0, z_grid)
         svg.line(
-            80, gv, 880, gv, stroke=palette.grid_line, stroke_width=1.0, dash="4 4"
+            x_left,
+            gv,
+            x_right,
+            gv,
+            stroke=palette.grid_line,
+            stroke_width=1.0,
+            dash="4 4",
         )
         svg.text(
-            68,
+            x_left - 12,
             gv,
             f"{z_grid:.0f}m",
             fill=palette.text_muted,
@@ -2744,16 +3290,33 @@ def render_physics_trajectories(palette: ThemePalette) -> str:
             anchor="end",
         )
 
-    # Court floor, service lines, net, and 3m glass + 1m mesh back walls
-    svg.line(80, y_floor, 880, y_floor, stroke=palette.court_line_fg, stroke_width=2.4)
-    for x_wall in (80.0, 880.0):
+    # Court floor, service lines, net, and translucent 3m glass + 1m mesh back walls
+    svg.line(
+        x_left,
+        y_floor,
+        x_right,
+        y_floor,
+        stroke=palette.court_line_fg,
+        stroke_width=2.4,
+    )
+    for x_wall, slab_x in [(x_left, x_left - 8.0), (x_right, x_right)]:
+        svg.rect(
+            slab_x,
+            y_floor - 3.0 * sz,
+            8.0,
+            3.0 * sz,
+            fill=palette.glass_fill,
+            stroke=palette.glass_stroke,
+            stroke_width=1.2,
+            opacity=0.35,
+        )
         svg.line(
             x_wall,
             y_floor,
             x_wall,
             y_floor - 3.0 * sz,
             stroke=palette.glass_stroke,
-            stroke_width=3.5,
+            stroke_width=3.2,
         )
         svg.line(
             x_wall,
@@ -2773,17 +3336,25 @@ def render_physics_trajectories(palette: ThemePalette) -> str:
         stroke_width=3.2,
     )
 
-    for y_tick, lbl in [
-        (-10.0, "Y = -10m (Near Wall)"),
-        (-7.0, "-7m"),
-        (0.0, "Y = 0m (Net 0.88m)"),
-        (7.0, "+7m"),
-        (10.0, "Y = +10m (Far Wall)"),
+    for y_tick, lbl, anc, dx in [
+        (-10.0, "Y = -10m (Near)", "start", -8.0),
+        (-7.0, "-7m", "middle", 0.0),
+        (0.0, "Y = 0m (Net 0.88m)", "middle", 0.0),
+        (7.0, "+7m", "middle", 0.0),
+        (10.0, "Y = +10m (Far)", "end", 8.0),
     ]:
         tu, _ = yz_to_uv(y_tick, 0.0)
-        svg.text(tu, y_floor + 20, lbl, fill=palette.text_muted, size=9.5, mono=True)
+        svg.text(
+            tu + dx,
+            y_floor + 20,
+            lbl,
+            fill=palette.text_muted,
+            size=9.5,
+            mono=True,
+            anchor=anc,
+        )
 
-    for idx, (label, init_state, dur, color) in enumerate(shots):
+    for idx, (label, init_state, dur, color, tail_lbl, tail_off) in enumerate(shots):
         traj = engine.simulate(init_state, duration=dur, dt=0.002)
         pos = traj.positions
         uv_raw = np.column_stack([x0 + pos[:, 1] * sx, y_floor - pos[:, 2] * sz])
@@ -2816,14 +3387,49 @@ def render_physics_trajectories(palette: ThemePalette) -> str:
                 bu, bv, 5.0, fill=palette.bg_panel, stroke=color, stroke_width=2.2
             )
 
-        lx = 104.0 + idx * 276.0
+        if tail_lbl == "Low Skid":
+            bu_last, bv_last = yz_to_uv(
+                traj.bounces[-1].position[1], traj.bounces[-1].position[2]
+            )
+            svg.line(
+                x_right + 8,
+                bv_last,
+                x_right + 17,
+                bv_last,
+                stroke=color,
+                stroke_width=1.2,
+                dash="2 2",
+            )
+            svg.text(
+                x_right + 20,
+                bv_last,
+                tail_lbl,
+                fill=color,
+                size=8.8,
+                weight="700",
+                mono=True,
+                anchor="start",
+            )
+        else:
+            tx_end, ty_end = uv_clean[-1]
+            svg.text(
+                tx_end + tail_off[0],
+                ty_end + tail_off[1],
+                tail_lbl,
+                fill=color,
+                size=8.8,
+                weight="700",
+                mono=True,
+            )
+
+        lx = 92.0 + idx * 278.0
         svg.line(lx, 92, lx + 28, 92, stroke=color, stroke_width=2.8)
         svg.text(
             lx + 36,
             92,
             label,
             fill=color,
-            size=10.5,
+            size=10.2,
             weight="700",
             mono=True,
             anchor="start",
@@ -2846,43 +3452,43 @@ def render_physics_rebound_regimes(palette: ThemePalette) -> str:
         "Analytical Coulomb friction threshold μ_crit determines tangential slip vs. surface grip during impact",
     )
 
+    surf = SurfaceMaterials.fip_standard()
+    alpha = BallProperties.fip_standard().inertia_ratio
+
     panels = [
         (
             "1. ContactRegime.SLIDING",
-            "Tempered Glass (μ = 0.20 < μ_crit)",
-            "High tangential slip; spin slides smoothly",
-            "v_t' = v_t - s·μ·(1 + e)·v_n",
+            f"Tempered Glass (μ={surf.glass_friction:.2f}, e={surf.glass_cor:.2f})",
+            "Partial slip impulse; retains spin across contact",
+            "J_t = -μ · |J_n| · v̂_slip",
+            "|J_t| = μ·|J_n| < |J_roll|  (slip ≠ 0)",
             palette.accent_secondary,
             24.0,
-            (180, 175),
-            (255, 255),
-            (340, 210),
+            "sliding",
         ),
         (
             "2. ContactRegime.ROLLING",
-            "Sandy Turf Floor (μ = 0.55 ≥ μ_crit)",
-            "Full surface grip; backspin bites low & slow",
-            "v_t' = 5/7·v_t + 2/7·r·(ω × n)",
+            f"Sandy Turf Floor (μ={surf.floor_friction:.2f}, e={surf.floor_cor:.2f})",
+            "Full surface grip; backspin reverses into forward roll",
+            "v_t' + ω' × (-R·n̂) = 0  (Grip Lock)",
+            f"α = I/(mR²) ≈ {alpha:.2f}  |  |J_t| ≤ μ·|J_n|",
             palette.accent_primary,
             336.0,
-            (490, 165),
-            (575, 255),
-            (655, 232),
+            "rolling",
         ),
         (
             "3. ContactRegime.DAMPED",
-            "Net & Metallic Fence (e = 0.22 / 0.45)",
-            "Viscoelastic mesh energy absorption",
-            "v_n' = -e_mesh · v_n  (Deadened rebound)",
+            f"Net & Fence Mesh (e_net={surf.net_damping:.2f}, e_fence={surf.fence_cor:.2f})",
+            "Viscoelastic mesh absorbs normal impact velocity",
+            "v_n' = -net_damping · v_n",
+            "v_t' = 0.70·v_t  (Deadened drop)",
             palette.accent_danger,
             648.0,
-            (795, 165),
-            (880, 255),
-            (922, 240),
+            "damped",
         ),
     ]
 
-    for title, sub, desc, formula, col, px, p_in, p_hit, p_out in panels:
+    for title, sub, desc, formula1, formula2, col, px, mode in panels:
         svg.rect(
             px,
             64,
@@ -2894,7 +3500,7 @@ def render_physics_rebound_regimes(palette: ThemePalette) -> str:
         )
         svg.text(
             px + 16,
-            88,
+            86,
             title,
             fill=col,
             size=11.5,
@@ -2904,101 +3510,263 @@ def render_physics_rebound_regimes(palette: ThemePalette) -> str:
         )
         svg.text(
             px + 16,
-            106,
+            105,
             sub,
             fill=palette.text_primary,
-            size=10.0,
+            size=9.5,
             weight="600",
             mono=True,
             anchor="start",
         )
         svg.text(
             px + 16,
-            124,
+            122,
             desc,
             fill=palette.text_muted,
-            size=9.5,
+            size=9.2,
             anchor="start",
         )
 
-        surf_y = 255.0
-        svg.rect(
-            px + 20,
-            surf_y,
-            248,
-            14,
-            fill=palette.court_floor,
-            stroke=palette.court_line_fg,
-            stroke_width=1.6,
-            rx=3,
-        )
-        hx = px + 144.0
-        svg.line(
-            hx,
-            surf_y,
-            hx,
-            surf_y - 78,
-            stroke=palette.text_muted,
-            stroke_width=1.3,
-            dash="3 3",
-            marker_end="arrow-muted",
-        )
-        svg.text(
-            hx + 12, surf_y - 72, "n̂", fill=palette.text_muted, size=10.0, mono=True
-        )
-
-        in_x = hx - (p_hit[0] - p_in[0])
-        out_x = hx + (p_out[0] - p_hit[0])
-        svg.line(
-            in_x,
-            p_in[1],
-            hx - 8,
-            surf_y - 10,
-            stroke=palette.text_muted,
-            stroke_width=2.0,
-            marker_end="arrow-muted",
-        )
-        svg.text(
-            in_x + 8,
-            p_in[1] - 10,
-            "v_in",
-            fill=palette.text_muted,
-            size=10.0,
-            mono=True,
-        )
-        svg.line(
-            hx + 8,
-            surf_y - 10,
-            out_x,
-            p_out[1],
-            stroke=col,
-            stroke_width=2.4,
-            marker_end=(
-                "arrow-secondary"
-                if col == palette.accent_secondary
-                else (
-                    "arrow-primary" if col == palette.accent_primary else "arrow-danger"
+        if mode in ("sliding", "rolling"):
+            surf_y = 252.0
+            hx = px + 144.0
+            if mode == "sliding":
+                # Tempered glass slab with translucent sky tint & specular shine lines
+                svg.rect(
+                    px + 20,
+                    surf_y,
+                    248,
+                    16,
+                    fill=palette.glass_fill,
+                    stroke=palette.glass_stroke,
+                    stroke_width=1.8,
+                    opacity=0.45,
+                    rx=3,
                 )
-            ),
-        )
-        svg.text(
-            out_x - 10,
-            p_out[1] - 12,
-            "v_out",
-            fill=col,
-            size=10.5,
-            weight="700",
-            mono=True,
-        )
-        svg.circle(
-            hx, surf_y - 12, 11.0, fill=palette.bg_canvas, stroke=col, stroke_width=2.2
-        )
+                for sx_off in (36, 56, 240):
+                    svg.line(
+                        px + sx_off,
+                        surf_y + 13,
+                        px + sx_off + 12,
+                        surf_y + 3,
+                        stroke=palette.glass_stroke,
+                        stroke_width=1.2,
+                        opacity=0.65,
+                    )
+                in_p = (hx - 74, 174)
+                out_p = (hx + 82, 186)
+            else:
+                # Sandy turf floor speckled with aggregate dots
+                svg.rect(
+                    px + 20,
+                    surf_y,
+                    248,
+                    16,
+                    fill=palette.court_floor,
+                    stroke=palette.court_line_fg,
+                    stroke_width=1.6,
+                    rx=3,
+                )
+                for dx in (*range(32, 138, 18), *range(244, 258, 12)):
+                    svg.circle(
+                        px + dx,
+                        surf_y + 5 + (dx % 3) * 3,
+                        1.1,
+                        fill=palette.text_muted,
+                        opacity=0.55,
+                    )
+                in_p = (hx - 74, 166)
+                out_p = (hx + 66, 206)
+
+            # Normal vector n-hat
+            svg.line(
+                hx,
+                surf_y,
+                hx,
+                surf_y - 74,
+                stroke=palette.text_muted,
+                stroke_width=1.3,
+                dash="3 3",
+                marker_end="arrow-muted",
+            )
+            svg.text(
+                hx + 11,
+                surf_y - 68,
+                "n̂",
+                fill=palette.text_muted,
+                size=10.0,
+                mono=True,
+            )
+            # Incident & exit velocities
+            svg.line(
+                in_p[0],
+                in_p[1],
+                hx - 8,
+                surf_y - 10,
+                stroke=palette.text_muted,
+                stroke_width=2.0,
+                marker_end="arrow-muted",
+            )
+            svg.text(
+                in_p[0] + 6,
+                in_p[1] - 11,
+                "v_in",
+                fill=palette.text_muted,
+                size=9.5,
+                mono=True,
+            )
+            svg.line(
+                hx + 8,
+                surf_y - 10,
+                out_p[0],
+                out_p[1],
+                stroke=col,
+                stroke_width=2.4,
+                marker_end=(
+                    "arrow-secondary" if mode == "sliding" else "arrow-primary"
+                ),
+            )
+            svg.text(
+                out_p[0] - 8,
+                out_p[1] - 12,
+                "v_out",
+                fill=col,
+                size=10.0,
+                weight="700",
+                mono=True,
+            )
+            # Ball & regime-specific tangential cue
+            svg.circle(
+                hx,
+                surf_y - 12,
+                11.0,
+                fill=palette.bg_canvas,
+                stroke=col,
+                stroke_width=2.2,
+            )
+            if mode == "sliding":
+                # Tangential slip arrow along interface
+                svg.line(
+                    hx - 24,
+                    surf_y + 8,
+                    hx + 28,
+                    surf_y + 8,
+                    stroke=palette.accent_secondary,
+                    stroke_width=1.8,
+                    marker_end="arrow-secondary",
+                )
+                svg.text(
+                    hx + 54,
+                    surf_y + 8,
+                    "slip > 0",
+                    fill=palette.accent_secondary,
+                    size=8.5,
+                    weight="700",
+                    mono=True,
+                )
+            else:
+                # Forward-rolling grip spin arc over exit path
+                roll_arc = (
+                    f"M {_fmt(hx - 14)} {_fmt(surf_y - 24)} "
+                    f"A 16 16 0 0 1 {_fmt(hx + 16)} {_fmt(surf_y - 22)}"
+                )
+                svg.path(
+                    roll_arc,
+                    stroke=palette.accent_primary,
+                    stroke_width=1.8,
+                    marker_end="arrow-primary",
+                )
+                svg.text(
+                    hx + 54,
+                    surf_y + 8,
+                    "v_grip = 0",
+                    fill=palette.accent_primary,
+                    size=8.5,
+                    weight="700",
+                    mono=True,
+                )
+        else:
+            # Panel 3: Vertical bowed mesh net + deadened vertical drop
+            floor_y = 262.0
+            net_x = px + 194.0
+            svg.line(
+                px + 24,
+                floor_y,
+                px + 264,
+                floor_y,
+                stroke=palette.court_line_fg,
+                stroke_width=1.8,
+            )
+            # Tensioned vertical mesh cord visibly bowing rightward on impact
+            svg.path(
+                f"M {_fmt(net_x)} 148 Q {_fmt(net_x + 20)} 202 {_fmt(net_x)} {_fmt(floor_y)}",
+                stroke=palette.accent_danger,
+                stroke_width=2.6,
+                dash="4 2",
+            )
+            svg.circle(net_x, 148, 3.5, fill=palette.pillar_stroke)
+            svg.text(
+                net_x + 18,
+                156,
+                "Net Mesh",
+                fill=palette.text_muted,
+                size=8.8,
+                mono=True,
+                anchor="start",
+            )
+            # Incident ball vector hitting net
+            hx_net = net_x + 2.0
+            hy_net = 200.0
+            svg.line(
+                px + 56,
+                172,
+                hx_net - 12,
+                hy_net - 3,
+                stroke=palette.text_muted,
+                stroke_width=2.2,
+                marker_end="arrow-muted",
+            )
+            svg.text(
+                px + 72,
+                160,
+                "v_in",
+                fill=palette.text_muted,
+                size=9.5,
+                mono=True,
+            )
+            # Deadened rebound dropping steep & slow
+            svg.line(
+                hx_net - 10,
+                hy_net + 10,
+                hx_net - 36,
+                floor_y - 10,
+                stroke=palette.accent_danger,
+                stroke_width=2.4,
+                marker_end="arrow-danger",
+            )
+            svg.text(
+                hx_net - 58,
+                floor_y - 14,
+                "v_out",
+                fill=palette.accent_danger,
+                size=10.0,
+                weight="700",
+                mono=True,
+            )
+            svg.circle(
+                hx_net - 6,
+                hy_net,
+                11.0,
+                fill=palette.bg_canvas,
+                stroke=col,
+                stroke_width=2.2,
+            )
 
         svg.rect(
             px + 16,
-            296,
+            290,
             256,
-            42,
+            52,
             fill=palette.bg_canvas,
             stroke=col,
             stroke_width=1.2,
@@ -3006,11 +3774,19 @@ def render_physics_rebound_regimes(palette: ThemePalette) -> str:
         )
         svg.text(
             px + 144,
-            317,
-            formula,
+            308,
+            formula1,
             fill=col,
-            size=10.0,
+            size=9.6,
             weight="700",
+            mono=True,
+        )
+        svg.text(
+            px + 144,
+            328,
+            formula2,
+            fill=palette.text_muted,
+            size=8.6,
             mono=True,
         )
 
@@ -3049,10 +3825,38 @@ def render_serving_rotations(palette: ThemePalette) -> str:
         rx=10,
     )
 
-    cx0, cy0 = 64.0, 124.0
+    cx0, cy0 = 64.0, 134.0
     scale = 22.0  # 20m -> 440px, 10m -> 220px
     cw, ch = 20.0 * scale, 10.0 * scale
     svc = 3.0 * scale
+
+    svg.text(
+        cx0 + cw * 0.25,
+        112,
+        "SERVING HALF",
+        fill=palette.text_muted,
+        size=9.5,
+        weight="700",
+        mono=True,
+    )
+    svg.text(
+        cx0 + cw * 0.50,
+        112,
+        "NET (0.88m)",
+        fill=palette.accent_tertiary,
+        size=9.5,
+        weight="700",
+        mono=True,
+    )
+    svg.text(
+        cx0 + cw * 0.75,
+        112,
+        "RECEIVING HALF",
+        fill=palette.text_muted,
+        size=9.5,
+        weight="700",
+        mono=True,
+    )
 
     svg.rect(
         cx0,
@@ -3114,49 +3918,101 @@ def render_serving_rotations(palette: ThemePalette) -> str:
         dash="4 3",
     )
 
+    # Box quadrant labels inside receiving boxes
+    svg.text(
+        cx0 + cw * 0.67,
+        cy0 + 18,
+        "Deuce Box (0, 2, 4)",
+        fill=palette.accent_primary,
+        size=8.8,
+        weight="700",
+        mono=True,
+    )
+    svg.text(
+        cx0 + cw * 0.67,
+        cy0 + ch - 18,
+        "Ad Box (1, 3, 5)",
+        fill=palette.accent_secondary,
+        size=8.8,
+        weight="700",
+        mono=True,
+    )
+
+    # Diagonal serves: server stance dot -> bounce target ring inside diagonal service box
+    s_deuce = (cx0 + 44, cy0 + ch * 0.78)
+    b_deuce = (cx0 + cw * 0.68, cy0 + ch * 0.28)
     svg.line(
-        cx0 + 42,
-        cy0 + ch * 0.78,
-        cx0 + cw * 0.68,
-        cy0 + ch * 0.24,
+        s_deuce[0],
+        s_deuce[1],
+        b_deuce[0] - 6,
+        b_deuce[1] + 2,
         stroke=palette.accent_primary,
         stroke_width=2.2,
         marker_end="arrow-primary",
     )
-    svg.callout_badge(
-        cx0 + 42,
-        cy0 + ch * 0.78,
-        "S (right)",
-        color=palette.accent_primary,
+    svg.circle(
+        b_deuce[0],
+        b_deuce[1],
+        5.5,
+        fill=palette.bg_canvas,
+        stroke=palette.accent_primary,
+        stroke_width=2.0,
     )
     svg.callout_badge(
-        cx0 + cw * 0.80,
-        cy0 + ch * 0.22,
+        s_deuce[0],
+        s_deuce[1],
+        "S (right)",
+        color=palette.accent_primary,
+        offset=(12, 22),
+    )
+    svg.callout_badge(
+        cx0 + cw * 0.88,
+        cy0 + ch * 0.24,
         "R (right)",
         color=palette.accent_primary,
     )
 
+    s_ad = (cx0 + 44, cy0 + ch * 0.22)
+    b_ad = (cx0 + cw * 0.68, cy0 + ch * 0.72)
     svg.line(
-        cx0 + 42,
-        cy0 + ch * 0.22,
-        cx0 + cw * 0.68,
-        cy0 + ch * 0.76,
+        s_ad[0],
+        s_ad[1],
+        b_ad[0] - 6,
+        b_ad[1] - 2,
         stroke=palette.accent_secondary,
         stroke_width=2.2,
         dash="5 3",
         marker_end="arrow-secondary",
     )
-    svg.callout_badge(
-        cx0 + 42,
-        cy0 + ch * 0.22,
-        "S (left)",
-        color=palette.accent_secondary,
+    svg.circle(
+        b_ad[0],
+        b_ad[1],
+        5.5,
+        fill=palette.bg_canvas,
+        stroke=palette.accent_secondary,
+        stroke_width=2.0,
     )
     svg.callout_badge(
-        cx0 + cw * 0.80,
-        cy0 + ch * 0.78,
+        s_ad[0],
+        s_ad[1],
+        "S (left)",
+        color=palette.accent_secondary,
+        offset=(12, -22),
+    )
+    svg.callout_badge(
+        cx0 + cw * 0.88,
+        cy0 + ch * 0.76,
         "R (left)",
         color=palette.accent_secondary,
+    )
+
+    svg.text(
+        cx0 + cw / 2,
+        384,
+        "First bounce must land inside diagonally opposite service box",
+        fill=palette.text_muted,
+        size=9.2,
+        mono=True,
     )
 
     team_a = Team(
@@ -3177,7 +4033,7 @@ def render_serving_rotations(palette: ThemePalette) -> str:
 
     svg.text(
         598,
-        92,
+        88,
         "4-Game ServingEngine Rotation Cycle",
         fill=palette.text_primary,
         size=12.0,
@@ -3202,7 +4058,7 @@ def render_serving_rotations(palette: ThemePalette) -> str:
             and st_even.player is not None
             and st_even.receiver is not None
         )
-        ry = 114.0 + g_idx * 72.0
+        ry = 108.0 + g_idx * 72.0
         col = (
             palette.accent_primary
             if st_even.team == TeamId.A
@@ -3211,32 +4067,60 @@ def render_serving_rotations(palette: ThemePalette) -> str:
         svg.rect(
             598,
             ry,
-            320,
-            58,
+            290,
+            52,
             fill=palette.bg_canvas,
             stroke=col,
             stroke_width=1.4,
             rx=8,
         )
         svg.text(
-            612,
-            ry + 20,
-            f"Game {g_idx + 1} (total_games={g_idx}) -> Team {st_even.team.value}",
+            610,
+            ry + 18,
+            f"Game {g_idx + 1} (games={g_idx}) -> Team {st_even.team.value}",
             fill=col,
-            size=10.5,
+            size=10.2,
             weight="700",
             mono=True,
             anchor="start",
         )
         svg.text(
-            612,
-            ry + 41,
-            f"Server: {st_even.player.name} | Deuce Recv: {st_even.receiver.name}",
+            610,
+            ry + 37,
+            f"Srv: {st_even.player.name} | Recv: {st_even.receiver.name}",
             fill=palette.text_muted,
-            size=9.5,
+            size=9.0,
             mono=True,
             anchor="start",
         )
+        if g_idx < 3:
+            svg.line(
+                743,
+                ry + 53,
+                743,
+                ry + 69,
+                stroke=palette.text_muted,
+                stroke_width=1.5,
+                marker_end="arrow-muted",
+            )
+
+    # Cyclic return loop from Game 4 back to Game 1
+    svg.polyline(
+        [(888, 350), (912, 350), (912, 134), (892, 134)],
+        stroke=palette.accent_primary,
+        stroke_width=1.6,
+        dash="4 3",
+        marker_end="arrow-primary",
+    )
+    svg.text(
+        743,
+        398,
+        "Repeats modulo 4 every 4 games",
+        fill=palette.accent_primary,
+        size=9.0,
+        weight="600",
+        mono=True,
+    )
 
     return svg.to_xml_string()
 

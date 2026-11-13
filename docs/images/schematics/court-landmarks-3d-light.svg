@@ -30,8 +30,8 @@
   <rect x="24" y="64" width="615" height="452" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" rx="10" />
   <rect x="652" y="64" width="284" height="452" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" rx="10" />
   <g clip-path="url(#clip-court-3d)">
-    <line x1="115.0" y1="274.0" x2="285.3" y2="208.8" stroke="#0f172a" stroke-width="1.4" stroke-linecap="round" opacity="0.9" />
     <polygon points="419.1,428.2 587.5,329.5 242.7,191.8 73.4,252.9" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.8" stroke-linejoin="round" />
+    <line x1="115.0" y1="274.0" x2="285.3" y2="208.8" stroke="#0f172a" stroke-width="1.4" stroke-linecap="round" opacity="0.9" />
     <line x1="445.6" y1="347.2" x2="204.8" y2="239.6" stroke="#0f172a" stroke-width="1.4" stroke-linecap="round" opacity="0.9" />
     <line x1="224.4" y1="329.5" x2="395.7" y2="252.9" stroke="#0f172a" stroke-width="1.4" stroke-linecap="round" opacity="0.9" />
     <line x1="355.0" y1="395.7" x2="525.1" y2="304.5" stroke="#0f172a" stroke-width="1.4" stroke-linecap="round" opacity="0.9" />
@@ -101,8 +101,11 @@
     <line x1="73.4" y1="252.9" x2="66" y2="167.7" stroke="#0284c7" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="3 3" />
     <line x1="242.7" y1="191.8" x2="240.7" y2="113.8" stroke="#0284c7" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="3 3" />
     <line x1="315.2" y1="288.9" x2="345.3" y2="275.5" stroke="#e11d48" stroke-width="2" stroke-linecap="round" marker-end="url(#arrow-danger)" />
+    <text x="356.3" y="279.5" fill="#e11d48" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="700" text-anchor="middle" dominant-baseline="middle">+X</text>
     <line x1="315.2" y1="288.9" x2="278.6" y2="272.6" stroke="#059669" stroke-width="2" stroke-linecap="round" marker-end="url(#arrow-primary)" />
+    <text x="290.6" y="268.6" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="700" text-anchor="middle" dominant-baseline="middle">+Y</text>
     <line x1="315.2" y1="288.9" x2="315.2" y2="249.4" stroke="#d97706" stroke-width="2" stroke-linecap="round" marker-end="url(#arrow-tertiary)" />
+    <text x="315.2" y="238.4" fill="#d97706" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="700" text-anchor="middle" dominant-baseline="middle">+Z</text>
     <line x1="419.1" y1="428.2" x2="441.1" y2="442.2" stroke="#059669" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="2 2" opacity="0.8" />
     <circle cx="419.1" cy="428.2" r="3.2" fill="#059669" stroke="#ffffff" stroke-width="1.5" />
     <rect x="431.6" y="433.2" width="19" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
@@ -155,10 +158,10 @@
     <circle cx="242.7" cy="191.8" r="3.2" fill="#059669" stroke="#ffffff" stroke-width="1.5" />
     <rect x="253.3" y="192.8" width="22.8" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
     <text x="264.7" y="202.3" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">13</text>
-    <line x1="423.3" y1="324.3" x2="399.3" y2="312.3" stroke="#0284c7" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="2 2" opacity="0.8" />
+    <line x1="423.3" y1="324.3" x2="397.3" y2="316.3" stroke="#0284c7" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="2 2" opacity="0.8" />
     <circle cx="423.3" cy="324.3" r="3.2" fill="#0284c7" stroke="#ffffff" stroke-width="1.5" />
-    <rect x="387.9" y="303.3" width="22.8" height="18" fill="#ffffff" stroke="#0284c7" stroke-width="1.4" rx="9" />
-    <text x="399.3" y="312.8" fill="#0284c7" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">14</text>
+    <rect x="385.9" y="307.3" width="22.8" height="18" fill="#ffffff" stroke="#0284c7" stroke-width="1.4" rx="9" />
+    <text x="397.3" y="316.8" fill="#0284c7" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">14</text>
     <line x1="597" y1="235.7" x2="619" y2="221.7" stroke="#0284c7" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="2 2" opacity="0.8" />
     <circle cx="597" cy="235.7" r="3.2" fill="#0284c7" stroke="#ffffff" stroke-width="1.5" />
     <rect x="607.6" y="212.7" width="22.8" height="18" fill="#ffffff" stroke="#0284c7" stroke-width="1.4" rx="9" />
@@ -177,73 +180,76 @@
     <rect x="218" y="485" width="10" height="10" fill="#f1f5f9" stroke="#64748b" stroke-width="1" rx="2" stroke-dasharray="2 2" />
     <text x="234" y="490" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="500" text-anchor="start" dominant-baseline="middle">Metallic Mesh (4m / 3m)</text>
   </g>
-  <text x="668" y="88" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="700" text-anchor="start" dominant-baseline="middle">INDEX  COURT LANDMARK ENUM        (X, Y, Z)</text>
-  <rect x="668.5" y="110.8" width="19" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
-  <text x="678" y="120.3" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">1</text>
-  <text x="696" y="120.3" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">floor_near_left</text>
-  <text x="926" y="120.3" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(  -5,  -10,  0)</text>
-  <rect x="668.5" y="134.6" width="19" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
-  <text x="678" y="144.1" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">2</text>
-  <text x="696" y="144.1" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">floor_near_right</text>
-  <text x="926" y="144.1" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(   5,  -10,  0)</text>
-  <rect x="668.5" y="158.4" width="19" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
-  <text x="678" y="167.9" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">3</text>
-  <text x="696" y="167.9" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">service_near_left</text>
-  <text x="926" y="167.9" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(  -5,   -7,  0)</text>
-  <rect x="668.5" y="182.2" width="19" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
-  <text x="678" y="191.7" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">4</text>
-  <text x="696" y="191.7" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">service_near_center</text>
-  <text x="926" y="191.7" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(   0,   -7,  0)</text>
-  <rect x="668.5" y="206" width="19" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
-  <text x="678" y="215.5" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">5</text>
-  <text x="696" y="215.5" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">service_near_right</text>
-  <text x="926" y="215.5" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(   5,   -7,  0)</text>
-  <rect x="668.5" y="229.8" width="19" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
-  <text x="678" y="239.3" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">6</text>
-  <text x="696" y="239.3" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">net_left</text>
-  <text x="926" y="239.3" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(  -5,    0,  0)</text>
-  <rect x="668.5" y="253.6" width="19" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
-  <text x="678" y="263.1" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">7</text>
-  <text x="696" y="263.1" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">center</text>
-  <text x="926" y="263.1" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(   0,    0,  0)</text>
-  <rect x="668.5" y="277.4" width="19" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
-  <text x="678" y="286.9" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">8</text>
-  <text x="696" y="286.9" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">net_right</text>
-  <text x="926" y="286.9" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(   5,    0,  0)</text>
-  <rect x="668.5" y="301.2" width="19" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
-  <text x="678" y="310.7" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">9</text>
-  <text x="696" y="310.7" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">service_far_left</text>
-  <text x="926" y="310.7" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(  -5,    7,  0)</text>
+  <text x="666" y="85" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="700" text-anchor="start" dominant-baseline="middle">IDX</text>
+  <text x="696" y="85" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="700" text-anchor="start" dominant-baseline="middle">COURT LANDMARK ENUM</text>
+  <text x="926" y="85" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="700" text-anchor="end" dominant-baseline="middle">(X, Y, Z)</text>
+  <line x1="666" y1="97" x2="926" y2="97" stroke="#cbd5e1" stroke-width="1" stroke-linecap="round" />
+  <rect x="668.5" y="111.7" width="19" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
+  <text x="678" y="121.2" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">1</text>
+  <text x="696" y="121.2" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">floor_near_left</text>
+  <text x="926" y="121.2" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(  -5,  -10,  0)</text>
+  <rect x="668.5" y="135.4" width="19" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
+  <text x="678" y="144.9" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">2</text>
+  <text x="696" y="144.9" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">floor_near_right</text>
+  <text x="926" y="144.9" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(   5,  -10,  0)</text>
+  <rect x="668.5" y="159.1" width="19" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
+  <text x="678" y="168.6" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">3</text>
+  <text x="696" y="168.6" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">service_near_left</text>
+  <text x="926" y="168.6" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(  -5,   -7,  0)</text>
+  <rect x="668.5" y="182.8" width="19" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
+  <text x="678" y="192.3" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">4</text>
+  <text x="696" y="192.3" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">service_near_center</text>
+  <text x="926" y="192.3" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(   0,   -7,  0)</text>
+  <rect x="668.5" y="206.5" width="19" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
+  <text x="678" y="216" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">5</text>
+  <text x="696" y="216" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">service_near_right</text>
+  <text x="926" y="216" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(   5,   -7,  0)</text>
+  <rect x="668.5" y="230.2" width="19" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
+  <text x="678" y="239.7" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">6</text>
+  <text x="696" y="239.7" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">net_left</text>
+  <text x="926" y="239.7" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(  -5,    0,  0)</text>
+  <rect x="668.5" y="253.9" width="19" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
+  <text x="678" y="263.4" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">7</text>
+  <text x="696" y="263.4" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">center</text>
+  <text x="926" y="263.4" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(   0,    0,  0)</text>
+  <rect x="668.5" y="277.6" width="19" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
+  <text x="678" y="287.1" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">8</text>
+  <text x="696" y="287.1" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">net_right</text>
+  <text x="926" y="287.1" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(   5,    0,  0)</text>
+  <rect x="668.5" y="301.3" width="19" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
+  <text x="678" y="310.8" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">9</text>
+  <text x="696" y="310.8" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">service_far_left</text>
+  <text x="926" y="310.8" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(  -5,    7,  0)</text>
   <rect x="666.6" y="325" width="22.8" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
   <text x="678" y="334.5" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">10</text>
   <text x="696" y="334.5" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">service_far_center</text>
   <text x="926" y="334.5" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(   0,    7,  0)</text>
-  <rect x="666.6" y="348.8" width="22.8" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
-  <text x="678" y="358.3" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">11</text>
-  <text x="696" y="358.3" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">service_far_right</text>
-  <text x="926" y="358.3" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(   5,    7,  0)</text>
-  <rect x="666.6" y="372.6" width="22.8" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
-  <text x="678" y="382.1" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">12</text>
-  <text x="696" y="382.1" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">floor_far_left</text>
-  <text x="926" y="382.1" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(  -5,   10,  0)</text>
-  <rect x="666.6" y="396.4" width="22.8" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
-  <text x="678" y="405.9" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">13</text>
-  <text x="696" y="405.9" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">floor_far_right</text>
-  <text x="926" y="405.9" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(   5,   10,  0)</text>
-  <rect x="666.6" y="420.2" width="22.8" height="18" fill="#ffffff" stroke="#0284c7" stroke-width="1.4" rx="9" />
-  <text x="678" y="429.7" fill="#0284c7" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">14</text>
-  <text x="696" y="429.7" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">wall_top_near_left</text>
-  <text x="926" y="429.7" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(  -5,  -10,  4)</text>
-  <rect x="666.6" y="444" width="22.8" height="18" fill="#ffffff" stroke="#0284c7" stroke-width="1.4" rx="9" />
-  <text x="678" y="453.5" fill="#0284c7" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">15</text>
-  <text x="696" y="453.5" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">wall_top_near_right</text>
-  <text x="926" y="453.5" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(   5,  -10,  4)</text>
-  <rect x="666.6" y="467.8" width="22.8" height="18" fill="#ffffff" stroke="#0284c7" stroke-width="1.4" rx="9" />
-  <text x="678" y="477.3" fill="#0284c7" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">16</text>
-  <text x="696" y="477.3" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">wall_top_far_left</text>
-  <text x="926" y="477.3" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(  -5,   10,  4)</text>
-  <rect x="666.6" y="491.6" width="22.8" height="18" fill="#ffffff" stroke="#0284c7" stroke-width="1.4" rx="9" />
-  <text x="678" y="501.1" fill="#0284c7" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">17</text>
-  <text x="696" y="501.1" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">wall_top_far_right</text>
-  <text x="926" y="501.1" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(   5,   10,  4)</text>
+  <rect x="666.6" y="348.7" width="22.8" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
+  <text x="678" y="358.2" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">11</text>
+  <text x="696" y="358.2" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">service_far_right</text>
+  <text x="926" y="358.2" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(   5,    7,  0)</text>
+  <rect x="666.6" y="372.4" width="22.8" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
+  <text x="678" y="381.9" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">12</text>
+  <text x="696" y="381.9" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">floor_far_left</text>
+  <text x="926" y="381.9" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(  -5,   10,  0)</text>
+  <rect x="666.6" y="396.1" width="22.8" height="18" fill="#ffffff" stroke="#059669" stroke-width="1.4" rx="9" />
+  <text x="678" y="405.6" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">13</text>
+  <text x="696" y="405.6" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">floor_far_right</text>
+  <text x="926" y="405.6" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(   5,   10,  0)</text>
+  <rect x="666.6" y="419.8" width="22.8" height="18" fill="#ffffff" stroke="#0284c7" stroke-width="1.4" rx="9" />
+  <text x="678" y="429.3" fill="#0284c7" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">14</text>
+  <text x="696" y="429.3" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">wall_top_near_left</text>
+  <text x="926" y="429.3" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(  -5,  -10,  4)</text>
+  <rect x="666.6" y="443.5" width="22.8" height="18" fill="#ffffff" stroke="#0284c7" stroke-width="1.4" rx="9" />
+  <text x="678" y="453" fill="#0284c7" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">15</text>
+  <text x="696" y="453" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">wall_top_near_right</text>
+  <text x="926" y="453" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(   5,  -10,  4)</text>
+  <rect x="666.6" y="467.2" width="22.8" height="18" fill="#ffffff" stroke="#0284c7" stroke-width="1.4" rx="9" />
+  <text x="678" y="476.7" fill="#0284c7" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">16</text>
+  <text x="696" y="476.7" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">wall_top_far_left</text>
+  <text x="926" y="476.7" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(  -5,   10,  4)</text>
+  <rect x="666.6" y="490.9" width="22.8" height="18" fill="#ffffff" stroke="#0284c7" stroke-width="1.4" rx="9" />
+  <text x="678" y="500.4" fill="#0284c7" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">17</text>
+  <text x="696" y="500.4" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">wall_top_far_right</text>
+  <text x="926" y="500.4" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="end" dominant-baseline="middle">(   5,   10,  4)</text>
 </svg>

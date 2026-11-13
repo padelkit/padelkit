@@ -26,80 +26,112 @@
   <text x="28" y="47" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11" font-weight="400" text-anchor="start" dominant-baseline="middle">length = 20.0m  |  width = 10.0m  |  service_line_distance_from_back = 3.0m  |  net = 0.88m / 0.92m</text>
   <rect x="24" y="64" width="550" height="432" fill="#0f172a" stroke="#1e293b" stroke-width="1" rx="10" />
   <text x="42" y="88" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11.5" font-weight="700" text-anchor="start" dominant-baseline="middle">A. TOP-DOWN FLOOR PLAN (20.0m × 10.0m)</text>
-  <rect x="68" y="146" width="410" height="205" fill="#111c2d" stroke="#f8fafc" stroke-width="2.2" />
-  <line x1="109" y1="142" x2="109" y2="150" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
-  <line x1="109" y1="347" x2="109" y2="355" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
-  <line x1="150" y1="142" x2="150" y2="150" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
-  <line x1="150" y1="347" x2="150" y2="355" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
-  <line x1="191" y1="142" x2="191" y2="150" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
-  <line x1="191" y1="347" x2="191" y2="355" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
-  <line x1="232" y1="142" x2="232" y2="150" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
-  <line x1="232" y1="347" x2="232" y2="355" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
-  <line x1="273" y1="142" x2="273" y2="150" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
-  <line x1="273" y1="347" x2="273" y2="355" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
-  <line x1="314" y1="142" x2="314" y2="150" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
-  <line x1="314" y1="347" x2="314" y2="355" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
-  <line x1="355" y1="142" x2="355" y2="150" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
-  <line x1="355" y1="347" x2="355" y2="355" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
-  <line x1="396" y1="142" x2="396" y2="150" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
-  <line x1="396" y1="347" x2="396" y2="355" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
-  <line x1="437" y1="142" x2="437" y2="150" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
-  <line x1="437" y1="347" x2="437" y2="355" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
-  <line x1="129.5" y1="146" x2="129.5" y2="351" stroke="#f8fafc" stroke-width="1.6" stroke-linecap="round" />
-  <line x1="416.5" y1="146" x2="416.5" y2="351" stroke="#f8fafc" stroke-width="1.6" stroke-linecap="round" />
-  <line x1="129.5" y1="248.5" x2="416.5" y2="248.5" stroke="#f8fafc" stroke-width="1.6" stroke-linecap="round" />
-  <line x1="273" y1="138" x2="273" y2="359" stroke="#38bdf8" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="5 3" />
-  <line x1="68" y1="146" x2="68" y2="112" stroke="#1e293b" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 2" />
-  <line x1="478" y1="146" x2="478" y2="112" stroke="#1e293b" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 2" />
-  <line x1="68" y1="122" x2="478" y2="122" stroke="#34d399" stroke-width="1.5" stroke-linecap="round" marker-start="url(#arrow-primary)" marker-end="url(#arrow-primary)" />
-  <rect x="219.2" y="113" width="107.5" height="18" fill="#0f172a" stroke="#34d399" stroke-width="1" rx="4" />
-  <text x="273" y="122.5" fill="#34d399" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="middle">length = 20.0 m</text>
-  <line x1="512" y1="146" x2="512" y2="351" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" marker-start="url(#arrow-secondary)" marker-end="url(#arrow-secondary)" />
-  <rect x="461.5" y="239.5" width="101" height="18" fill="#0f172a" stroke="#38bdf8" stroke-width="1" rx="4" />
-  <text x="512" y="249" fill="#38bdf8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="middle">width = 10.0 m</text>
-  <line x1="68" y1="351" x2="68" y2="389" stroke="#1e293b" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 2" />
-  <line x1="129.5" y1="351" x2="129.5" y2="431" stroke="#1e293b" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 2" />
-  <line x1="273" y1="351" x2="273" y2="431" stroke="#1e293b" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 2" />
-  <line x1="68" y1="381" x2="129.5" y2="381" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round" marker-start="url(#arrow-tertiary)" marker-end="url(#arrow-tertiary)" />
-  <rect x="77.5" y="354" width="42.5" height="18" fill="#0f172a" stroke="#fbbf24" stroke-width="1" rx="4" />
-  <text x="98.8" y="363.5" fill="#fbbf24" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="middle">3.0 m</text>
-  <text x="137.5" y="381" fill="#fbbf24" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="600" text-anchor="start" dominant-baseline="middle">service_line_distance_from_back = 3.0 m</text>
-  <line x1="129.5" y1="423" x2="273" y2="423" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" marker-start="url(#arrow-muted)" marker-end="url(#arrow-muted)" />
-  <rect x="134.5" y="414" width="133.5" height="18" fill="#0f172a" stroke="#94a3b8" stroke-width="1" rx="4" />
-  <text x="201.2" y="423.5" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="middle">service box = 7.0 m</text>
+  <rect x="48" y="148" width="384" height="192" fill="#111c2d" stroke="#f8fafc" stroke-width="2.2" />
+  <line x1="86.4" y1="144" x2="86.4" y2="152" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+  <line x1="86.4" y1="336" x2="86.4" y2="344" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+  <line x1="124.8" y1="144" x2="124.8" y2="152" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+  <line x1="124.8" y1="336" x2="124.8" y2="344" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+  <line x1="163.2" y1="144" x2="163.2" y2="152" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+  <line x1="163.2" y1="336" x2="163.2" y2="344" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+  <line x1="201.6" y1="144" x2="201.6" y2="152" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+  <line x1="201.6" y1="336" x2="201.6" y2="344" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+  <line x1="240" y1="144" x2="240" y2="152" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+  <line x1="240" y1="336" x2="240" y2="344" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+  <line x1="278.4" y1="144" x2="278.4" y2="152" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+  <line x1="278.4" y1="336" x2="278.4" y2="344" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+  <line x1="316.8" y1="144" x2="316.8" y2="152" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+  <line x1="316.8" y1="336" x2="316.8" y2="344" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+  <line x1="355.2" y1="144" x2="355.2" y2="152" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+  <line x1="355.2" y1="336" x2="355.2" y2="344" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+  <line x1="393.6" y1="144" x2="393.6" y2="152" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+  <line x1="393.6" y1="336" x2="393.6" y2="344" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+  <line x1="105.6" y1="148" x2="105.6" y2="340" stroke="#f8fafc" stroke-width="1.6" stroke-linecap="round" />
+  <line x1="374.4" y1="148" x2="374.4" y2="340" stroke="#f8fafc" stroke-width="1.6" stroke-linecap="round" />
+  <line x1="105.6" y1="244" x2="374.4" y2="244" stroke="#f8fafc" stroke-width="1.6" stroke-linecap="round" />
+  <line x1="240" y1="140" x2="240" y2="348" stroke="#38bdf8" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="5 3" />
+  <text x="240" y="358" fill="#38bdf8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="8.5" font-weight="700" text-anchor="middle" dominant-baseline="middle">NET</text>
+  <line x1="48" y1="148" x2="48" y2="114" stroke="#1e293b" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 2" />
+  <line x1="432" y1="148" x2="432" y2="114" stroke="#1e293b" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 2" />
+  <line x1="48" y1="124" x2="432" y2="124" stroke="#34d399" stroke-width="1.5" stroke-linecap="round" marker-start="url(#arrow-primary)" marker-end="url(#arrow-primary)" />
+  <rect x="186.2" y="115" width="107.5" height="18" fill="#0f172a" stroke="#34d399" stroke-width="1" rx="4" />
+  <text x="240" y="124.5" fill="#34d399" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="middle">length = 20.0 m</text>
+  <line x1="432" y1="148" x2="492" y2="148" stroke="#1e293b" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 2" />
+  <line x1="432" y1="340" x2="492" y2="340" stroke="#1e293b" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 2" />
+  <line x1="484" y1="148" x2="484" y2="340" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" marker-start="url(#arrow-secondary)" marker-end="url(#arrow-secondary)" />
+  <rect x="433.5" y="235" width="101" height="18" fill="#0f172a" stroke="#38bdf8" stroke-width="1" rx="4" />
+  <text x="484" y="244.5" fill="#38bdf8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="middle">width = 10.0 m</text>
+  <line x1="48" y1="340" x2="48" y2="384" stroke="#1e293b" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 2" />
+  <line x1="105.6" y1="340" x2="105.6" y2="424" stroke="#1e293b" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 2" />
+  <line x1="240" y1="340" x2="240" y2="424" stroke="#1e293b" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 2" />
+  <line x1="52" y1="376" x2="101.6" y2="376" stroke="#fbbf24" stroke-width="1.6" stroke-linecap="round" marker-start="url(#arrow-tertiary)" marker-end="url(#arrow-tertiary)" />
+  <text x="115.6" y="376" fill="#fbbf24" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">service_line_distance_from_back = 3.0 m</text>
+  <line x1="105.6" y1="416" x2="240" y2="416" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" marker-start="url(#arrow-muted)" marker-end="url(#arrow-muted)" />
+  <rect x="151.6" y="407" width="42.5" height="18" fill="#0f172a" stroke="#94a3b8" stroke-width="1" rx="4" />
+  <text x="172.8" y="416.5" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="middle">7.0 m</text>
+  <text x="172.8" y="434" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="8.8" font-weight="500" text-anchor="middle" dominant-baseline="middle">service box depth (net to service line)</text>
   <rect x="590" y="64" width="346" height="214" fill="#0f172a" stroke="#1e293b" stroke-width="1" rx="10" />
-  <text x="608" y="88" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11.2" font-weight="700" text-anchor="start" dominant-baseline="middle">B. SIDE WALL ELEVATION (GLASS vs MESH)</text>
-  <polygon points="616,234 616,130 642,130 642,156 850,156 850,130 876,130 876,234" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5" stroke-linejoin="round" fill-opacity="0.7" stroke-dasharray="4 3" />
-  <polygon points="616,234 616,156 642,156 642,182 668,182 668,234" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.8" stroke-linejoin="round" fill-opacity="0.5" />
-  <polygon points="876,234 876,156 850,156 850,182 824,182 824,234" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.8" stroke-linejoin="round" fill-opacity="0.5" />
-  <line x1="642" y1="234" x2="642" y2="130" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
-  <line x1="668" y1="234" x2="668" y2="156" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
-  <line x1="694" y1="234" x2="694" y2="156" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
-  <line x1="720" y1="234" x2="720" y2="156" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
-  <line x1="746" y1="234" x2="746" y2="156" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
-  <line x1="772" y1="234" x2="772" y2="156" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
-  <line x1="798" y1="234" x2="798" y2="156" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
-  <line x1="824" y1="234" x2="824" y2="156" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
-  <line x1="850" y1="234" x2="850" y2="130" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
-  <line x1="610" y1="234" x2="882" y2="234" stroke="#f8fafc" stroke-width="2" stroke-linecap="round" />
-  <line x1="902" y1="130" x2="902" y2="234" stroke="#34d399" stroke-width="1.5" stroke-linecap="round" marker-start="url(#arrow-primary)" marker-end="url(#arrow-primary)" />
-  <rect x="884" y="173" width="36" height="18" fill="#0f172a" stroke="#34d399" stroke-width="1" rx="4" />
-  <text x="902" y="182.5" fill="#34d399" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="middle">4.0m</text>
-  <text x="746" y="144" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="middle" dominant-baseline="middle">side_wall_height = 3.0m (Step = 4.0m)</text>
-  <text x="746" y="252" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="middle" dominant-baseline="middle">Blue: Tempered Glass (3m/2m) | Dashed: Metallic Mesh</text>
+  <text x="608" y="86" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11.2" font-weight="700" text-anchor="start" dominant-baseline="middle">B. SIDE WALL ELEVATION (GLASS vs MESH)</text>
+  <text x="736" y="122" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.2" font-weight="600" text-anchor="middle" dominant-baseline="middle">side_wall = 3.0m  |  end step = 4.0m</text>
+  <line x1="614" y1="232" x2="618" y2="232" stroke="#1e293b" stroke-width="1" stroke-linecap="round" />
+  <text x="612" y="232.5" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="7.8" font-weight="500" text-anchor="end" dominant-baseline="middle">0m</text>
+  <line x1="614" y1="188" x2="618" y2="188" stroke="#1e293b" stroke-width="1" stroke-linecap="round" />
+  <text x="612" y="188.5" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="7.8" font-weight="500" text-anchor="end" dominant-baseline="middle">2m</text>
+  <line x1="614" y1="166" x2="618" y2="166" stroke="#1e293b" stroke-width="1" stroke-linecap="round" />
+  <text x="612" y="166.5" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="7.8" font-weight="500" text-anchor="end" dominant-baseline="middle">3m</text>
+  <line x1="614" y1="144" x2="618" y2="144" stroke="#1e293b" stroke-width="1" stroke-linecap="round" />
+  <text x="612" y="144.5" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="7.8" font-weight="500" text-anchor="end" dominant-baseline="middle">4m</text>
+  <polygon points="618,232 618,144 641.6,144 641.6,166 830.4,166 830.4,144 854,144 854,232" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5" stroke-linejoin="round" fill-opacity="0.7" stroke-dasharray="4 3" />
+  <polygon points="618,232 618,166 641.6,166 641.6,188 665.2,188 665.2,232" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.8" stroke-linejoin="round" fill-opacity="0.5" />
+  <polygon points="854,232 854,166 830.4,166 830.4,188 806.8,188 806.8,232" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.8" stroke-linejoin="round" fill-opacity="0.5" />
+  <line x1="641.6" y1="232" x2="641.6" y2="144" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
+  <line x1="665.2" y1="232" x2="665.2" y2="166" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
+  <line x1="688.8" y1="232" x2="688.8" y2="166" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
+  <line x1="712.4" y1="232" x2="712.4" y2="166" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
+  <line x1="736" y1="232" x2="736" y2="166" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
+  <line x1="759.6" y1="232" x2="759.6" y2="166" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
+  <line x1="783.2" y1="232" x2="783.2" y2="166" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
+  <line x1="806.8" y1="232" x2="806.8" y2="166" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
+  <line x1="830.4" y1="232" x2="830.4" y2="144" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
+  <rect x="724.2" y="188" width="23.6" height="44" fill="#0f172a" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2 2" />
+  <text x="736" y="210" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="7.5" font-weight="500" text-anchor="middle" dominant-baseline="middle">2m</text>
+  <line x1="612" y1="232" x2="860" y2="232" stroke="#f8fafc" stroke-width="2" stroke-linecap="round" />
+  <line x1="854" y1="166" x2="882" y2="166" stroke="#1e293b" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 2" />
+  <line x1="854" y1="144" x2="914" y2="144" stroke="#1e293b" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 2" />
+  <line x1="874" y1="166" x2="874" y2="232" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" marker-start="url(#arrow-secondary)" marker-end="url(#arrow-secondary)" />
+  <rect x="856" y="198" width="36" height="18" fill="#0f172a" stroke="#38bdf8" stroke-width="1" rx="4" />
+  <text x="874" y="207.5" fill="#38bdf8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="middle">3.0m</text>
+  <line x1="908" y1="144" x2="908" y2="232" stroke="#34d399" stroke-width="1.5" stroke-linecap="round" marker-start="url(#arrow-primary)" marker-end="url(#arrow-primary)" />
+  <rect x="890" y="165" width="36" height="18" fill="#0f172a" stroke="#34d399" stroke-width="1" rx="4" />
+  <text x="908" y="174.5" fill="#34d399" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="middle">4.0m</text>
+  <rect x="618" y="251" width="10" height="10" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1" rx="2" />
+  <text x="634" y="256" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="8.8" font-weight="500" text-anchor="start" dominant-baseline="middle">Tempered Glass (3m / 2m)</text>
+  <rect x="774" y="251" width="10" height="10" fill="#1e293b" stroke="#94a3b8" stroke-width="1" rx="2" stroke-dasharray="2 2" />
+  <text x="790" y="256" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="8.8" font-weight="500" text-anchor="start" dominant-baseline="middle">Metallic Mesh (4m / 3m)</text>
   <rect x="590" y="290" width="346" height="206" fill="#0f172a" stroke="#1e293b" stroke-width="1" rx="10" />
-  <text x="608" y="314" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11.2" font-weight="700" text-anchor="start" dominant-baseline="middle">C. NET CATENARY PROFILE (WIDTH = 10.0m)</text>
-  <path d="M 636 374 Q 761 406 886 374 L 886 462 L 636 462 Z" fill="#0ea5e9" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.3" />
-  <line x1="761" y1="462" x2="761" y2="399" stroke="#f8fafc" stroke-width="2" stroke-linecap="round" />
-  <line x1="636" y1="462" x2="636" y2="374" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round" />
-  <line x1="886" y1="462" x2="886" y2="374" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round" />
-  <line x1="624" y1="462" x2="898" y2="462" stroke="#f8fafc" stroke-width="2" stroke-linecap="round" />
-  <line x1="636" y1="374" x2="672" y2="356" stroke="#38bdf8" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="2 2" opacity="0.8" />
-  <circle cx="636" cy="374" r="3.2" fill="#38bdf8" stroke="#0f172a" stroke-width="1.5" />
-  <rect x="628.6" y="347" width="86.8" height="18" fill="#090d16" stroke="#38bdf8" stroke-width="1.4" rx="9" />
-  <text x="672" y="356.5" fill="#38bdf8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">posts: 0.92m</text>
-  <line x1="761" y1="399" x2="761" y2="375" stroke="#fbbf24" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="2 2" opacity="0.8" />
-  <circle cx="761" cy="399" r="3.2" fill="#fbbf24" stroke="#0f172a" stroke-width="1.5" />
-  <rect x="714.4" y="366" width="93.2" height="18" fill="#090d16" stroke="#fbbf24" stroke-width="1.4" rx="9" />
-  <text x="761" y="375.5" fill="#fbbf24" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">center: 0.88m</text>
+  <text x="608" y="312" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11.2" font-weight="700" text-anchor="start" dominant-baseline="middle">C. NET CATENARY PROFILE (WIDTH = 10.0m)</text>
+  <path d="M 638 360 Q 760 392 882 360 L 882 444 L 638 444 Z" fill="#0ea5e9" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.3" />
+  <line x1="662.4" y1="444" x2="662.4" y2="365.8" stroke="#38bdf8" stroke-width="0.7" stroke-linecap="round" opacity="0.3" />
+  <line x1="686.8" y1="444" x2="686.8" y2="370.2" stroke="#38bdf8" stroke-width="0.7" stroke-linecap="round" opacity="0.3" />
+  <line x1="711.2" y1="444" x2="711.2" y2="373.4" stroke="#38bdf8" stroke-width="0.7" stroke-linecap="round" opacity="0.3" />
+  <line x1="735.6" y1="444" x2="735.6" y2="375.4" stroke="#38bdf8" stroke-width="0.7" stroke-linecap="round" opacity="0.3" />
+  <line x1="760" y1="444" x2="760" y2="376" stroke="#38bdf8" stroke-width="0.7" stroke-linecap="round" opacity="0.3" />
+  <line x1="784.4" y1="444" x2="784.4" y2="375.4" stroke="#38bdf8" stroke-width="0.7" stroke-linecap="round" opacity="0.3" />
+  <line x1="808.8" y1="444" x2="808.8" y2="373.4" stroke="#38bdf8" stroke-width="0.7" stroke-linecap="round" opacity="0.3" />
+  <line x1="833.2" y1="444" x2="833.2" y2="370.2" stroke="#38bdf8" stroke-width="0.7" stroke-linecap="round" opacity="0.3" />
+  <line x1="857.6" y1="444" x2="857.6" y2="365.8" stroke="#38bdf8" stroke-width="0.7" stroke-linecap="round" opacity="0.3" />
+  <line x1="760" y1="444" x2="760" y2="385" stroke="#f8fafc" stroke-width="2" stroke-linecap="round" />
+  <line x1="638" y1="444" x2="638" y2="360" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round" />
+  <line x1="882" y1="444" x2="882" y2="360" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round" />
+  <line x1="626" y1="444" x2="894" y2="444" stroke="#f8fafc" stroke-width="2" stroke-linecap="round" />
+  <line x1="638" y1="360" x2="680" y2="344" stroke="#38bdf8" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="2 2" opacity="0.8" />
+  <circle cx="638" cy="360" r="3.2" fill="#38bdf8" stroke="#0f172a" stroke-width="1.5" />
+  <rect x="636.6" y="335" width="86.8" height="18" fill="#090d16" stroke="#38bdf8" stroke-width="1.4" rx="9" />
+  <text x="680" y="344.5" fill="#38bdf8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">posts: 0.92m</text>
+  <line x1="760" y1="385" x2="796" y2="361" stroke="#fbbf24" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="2 2" opacity="0.8" />
+  <circle cx="760" cy="385" r="3.2" fill="#fbbf24" stroke="#0f172a" stroke-width="1.5" />
+  <rect x="749.4" y="352" width="93.2" height="18" fill="#090d16" stroke="#fbbf24" stroke-width="1.4" rx="9" />
+  <text x="796" y="361.5" fill="#fbbf24" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">center: 0.88m</text>
+  <line x1="638" y1="468" x2="882" y2="468" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" marker-start="url(#arrow-muted)" marker-end="url(#arrow-muted)" />
+  <rect x="709.5" y="459" width="101" height="18" fill="#0f172a" stroke="#94a3b8" stroke-width="1" rx="4" />
+  <text x="760" y="468.5" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="middle">width = 10.0 m</text>
 </svg>

@@ -25,45 +25,64 @@
   <text x="28" y="27" fill="#09090b" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="15" font-weight="700" text-anchor="start" dominant-baseline="middle">Impulse Contact Dynamics: Sliding vs. Rolling vs. Damped (ContactRegime)</text>
   <text x="28" y="47" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11" font-weight="400" text-anchor="start" dominant-baseline="middle">Analytical Coulomb friction threshold μ_crit determines tangential slip vs. surface grip during impact</text>
   <rect x="24" y="64" width="288" height="292" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" rx="10" />
-  <text x="40" y="88" fill="#0284c7" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11.5" font-weight="700" text-anchor="start" dominant-baseline="middle">1. ContactRegime.SLIDING</text>
-  <text x="40" y="106" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="600" text-anchor="start" dominant-baseline="middle">Tempered Glass (μ = 0.20 &lt; μ_crit)</text>
-  <text x="40" y="124" fill="#475569" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="9.5" font-weight="500" text-anchor="start" dominant-baseline="middle">High tangential slip; spin slides smoothly</text>
-  <rect x="44" y="255" width="248" height="14" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.6" rx="3" />
-  <line x1="168" y1="255" x2="168" y2="177" stroke="#475569" stroke-width="1.3" stroke-linecap="round" stroke-dasharray="3 3" marker-end="url(#arrow-muted)" />
-  <text x="180" y="183" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="500" text-anchor="middle" dominant-baseline="middle">n̂</text>
-  <line x1="93" y1="175" x2="160" y2="245" stroke="#475569" stroke-width="2" stroke-linecap="round" marker-end="url(#arrow-muted)" />
-  <text x="101" y="165" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="500" text-anchor="middle" dominant-baseline="middle">v_in</text>
-  <line x1="176" y1="245" x2="253" y2="210" stroke="#0284c7" stroke-width="2.4" stroke-linecap="round" marker-end="url(#arrow-secondary)" />
-  <text x="243" y="198" fill="#0284c7" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10.5" font-weight="700" text-anchor="middle" dominant-baseline="middle">v_out</text>
-  <circle cx="168" cy="243" r="11" fill="#f8fafc" stroke="#0284c7" stroke-width="2.2" />
-  <rect x="40" y="296" width="256" height="42" fill="#f8fafc" stroke="#0284c7" stroke-width="1.2" rx="6" />
-  <text x="168" y="317" fill="#0284c7" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="middle">v_t' = v_t - s·μ·(1 + e)·v_n</text>
+  <text x="40" y="86" fill="#0284c7" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11.5" font-weight="700" text-anchor="start" dominant-baseline="middle">1. ContactRegime.SLIDING</text>
+  <text x="40" y="105" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">Tempered Glass (μ=0.25, e=0.85)</text>
+  <text x="40" y="122" fill="#475569" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="9.2" font-weight="500" text-anchor="start" dominant-baseline="middle">Partial slip impulse; retains spin across contact</text>
+  <rect x="44" y="252" width="248" height="16" fill="#bae6fd" stroke="#0284c7" stroke-width="1.8" rx="3" opacity="0.5" />
+  <line x1="60" y1="265" x2="72" y2="255" stroke="#0284c7" stroke-width="1.2" stroke-linecap="round" opacity="0.7" />
+  <line x1="80" y1="265" x2="92" y2="255" stroke="#0284c7" stroke-width="1.2" stroke-linecap="round" opacity="0.7" />
+  <line x1="264" y1="265" x2="276" y2="255" stroke="#0284c7" stroke-width="1.2" stroke-linecap="round" opacity="0.7" />
+  <line x1="168" y1="252" x2="168" y2="178" stroke="#475569" stroke-width="1.3" stroke-linecap="round" stroke-dasharray="3 3" marker-end="url(#arrow-muted)" />
+  <text x="179" y="184" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="500" text-anchor="middle" dominant-baseline="middle">n̂</text>
+  <line x1="94" y1="174" x2="160" y2="242" stroke="#475569" stroke-width="2" stroke-linecap="round" marker-end="url(#arrow-muted)" />
+  <text x="100" y="163" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="500" text-anchor="middle" dominant-baseline="middle">v_in</text>
+  <line x1="176" y1="242" x2="250" y2="186" stroke="#0284c7" stroke-width="2.4" stroke-linecap="round" marker-end="url(#arrow-secondary)" />
+  <text x="242" y="174" fill="#0284c7" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="middle">v_out</text>
+  <circle cx="168" cy="240" r="11" fill="#f8fafc" stroke="#0284c7" stroke-width="2.2" />
+  <line x1="144" y1="260" x2="196" y2="260" stroke="#0284c7" stroke-width="1.8" stroke-linecap="round" marker-end="url(#arrow-secondary)" />
+  <text x="222" y="260" fill="#0284c7" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="8.5" font-weight="700" text-anchor="middle" dominant-baseline="middle">slip &gt; 0</text>
+  <rect x="40" y="290" width="256" height="52" fill="#f8fafc" stroke="#0284c7" stroke-width="1.2" rx="6" />
+  <text x="168" y="308" fill="#0284c7" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.6" font-weight="700" text-anchor="middle" dominant-baseline="middle">J_t = -μ · |J_n| · v̂_slip</text>
+  <text x="168" y="328" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="8.6" font-weight="500" text-anchor="middle" dominant-baseline="middle">|J_t| = μ·|J_n| &lt; |J_roll|  (slip ≠ 0)</text>
   <rect x="336" y="64" width="288" height="292" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" rx="10" />
-  <text x="352" y="88" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11.5" font-weight="700" text-anchor="start" dominant-baseline="middle">2. ContactRegime.ROLLING</text>
-  <text x="352" y="106" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="600" text-anchor="start" dominant-baseline="middle">Sandy Turf Floor (μ = 0.55 ≥ μ_crit)</text>
-  <text x="352" y="124" fill="#475569" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="9.5" font-weight="500" text-anchor="start" dominant-baseline="middle">Full surface grip; backspin bites low &amp; slow</text>
-  <rect x="356" y="255" width="248" height="14" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.6" rx="3" />
-  <line x1="480" y1="255" x2="480" y2="177" stroke="#475569" stroke-width="1.3" stroke-linecap="round" stroke-dasharray="3 3" marker-end="url(#arrow-muted)" />
-  <text x="492" y="183" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="500" text-anchor="middle" dominant-baseline="middle">n̂</text>
-  <line x1="395" y1="165" x2="472" y2="245" stroke="#475569" stroke-width="2" stroke-linecap="round" marker-end="url(#arrow-muted)" />
-  <text x="403" y="155" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="500" text-anchor="middle" dominant-baseline="middle">v_in</text>
-  <line x1="488" y1="245" x2="560" y2="232" stroke="#059669" stroke-width="2.4" stroke-linecap="round" marker-end="url(#arrow-primary)" />
-  <text x="550" y="220" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10.5" font-weight="700" text-anchor="middle" dominant-baseline="middle">v_out</text>
-  <circle cx="480" cy="243" r="11" fill="#f8fafc" stroke="#059669" stroke-width="2.2" />
-  <rect x="352" y="296" width="256" height="42" fill="#f8fafc" stroke="#059669" stroke-width="1.2" rx="6" />
-  <text x="480" y="317" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="middle">v_t' = 5/7·v_t + 2/7·r·(ω × n)</text>
+  <text x="352" y="86" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11.5" font-weight="700" text-anchor="start" dominant-baseline="middle">2. ContactRegime.ROLLING</text>
+  <text x="352" y="105" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">Sandy Turf Floor (μ=0.45, e=0.75)</text>
+  <text x="352" y="122" fill="#475569" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="9.2" font-weight="500" text-anchor="start" dominant-baseline="middle">Full surface grip; backspin reverses into forward roll</text>
+  <rect x="356" y="252" width="248" height="16" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.6" rx="3" />
+  <circle cx="368" cy="263" r="1.1" fill="#475569" stroke="none" stroke-width="1.5" opacity="0.6" />
+  <circle cx="386" cy="263" r="1.1" fill="#475569" stroke="none" stroke-width="1.5" opacity="0.6" />
+  <circle cx="404" cy="263" r="1.1" fill="#475569" stroke="none" stroke-width="1.5" opacity="0.6" />
+  <circle cx="422" cy="263" r="1.1" fill="#475569" stroke="none" stroke-width="1.5" opacity="0.6" />
+  <circle cx="440" cy="263" r="1.1" fill="#475569" stroke="none" stroke-width="1.5" opacity="0.6" />
+  <circle cx="458" cy="263" r="1.1" fill="#475569" stroke="none" stroke-width="1.5" opacity="0.6" />
+  <circle cx="580" cy="260" r="1.1" fill="#475569" stroke="none" stroke-width="1.5" opacity="0.6" />
+  <circle cx="592" cy="260" r="1.1" fill="#475569" stroke="none" stroke-width="1.5" opacity="0.6" />
+  <line x1="480" y1="252" x2="480" y2="178" stroke="#475569" stroke-width="1.3" stroke-linecap="round" stroke-dasharray="3 3" marker-end="url(#arrow-muted)" />
+  <text x="491" y="184" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="500" text-anchor="middle" dominant-baseline="middle">n̂</text>
+  <line x1="406" y1="166" x2="472" y2="242" stroke="#475569" stroke-width="2" stroke-linecap="round" marker-end="url(#arrow-muted)" />
+  <text x="412" y="155" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="500" text-anchor="middle" dominant-baseline="middle">v_in</text>
+  <line x1="488" y1="242" x2="546" y2="206" stroke="#059669" stroke-width="2.4" stroke-linecap="round" marker-end="url(#arrow-primary)" />
+  <text x="538" y="194" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="middle">v_out</text>
+  <circle cx="480" cy="240" r="11" fill="#f8fafc" stroke="#059669" stroke-width="2.2" />
+  <path d="M 466 228 A 16 16 0 0 1 496 230" fill="none" stroke="#059669" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-primary)" />
+  <text x="534" y="260" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="8.5" font-weight="700" text-anchor="middle" dominant-baseline="middle">v_grip = 0</text>
+  <rect x="352" y="290" width="256" height="52" fill="#f8fafc" stroke="#059669" stroke-width="1.2" rx="6" />
+  <text x="480" y="308" fill="#059669" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.6" font-weight="700" text-anchor="middle" dominant-baseline="middle">v_t' + ω' × (-R·n̂) = 0  (Grip Lock)</text>
+  <text x="480" y="328" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="8.6" font-weight="500" text-anchor="middle" dominant-baseline="middle">α = I/(mR²) ≈ 0.55  |  |J_t| ≤ μ·|J_n|</text>
   <rect x="648" y="64" width="288" height="292" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" rx="10" />
-  <text x="664" y="88" fill="#e11d48" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11.5" font-weight="700" text-anchor="start" dominant-baseline="middle">3. ContactRegime.DAMPED</text>
-  <text x="664" y="106" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="600" text-anchor="start" dominant-baseline="middle">Net &amp; Metallic Fence (e = 0.22 / 0.45)</text>
-  <text x="664" y="124" fill="#475569" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="9.5" font-weight="500" text-anchor="start" dominant-baseline="middle">Viscoelastic mesh energy absorption</text>
-  <rect x="668" y="255" width="248" height="14" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.6" rx="3" />
-  <line x1="792" y1="255" x2="792" y2="177" stroke="#475569" stroke-width="1.3" stroke-linecap="round" stroke-dasharray="3 3" marker-end="url(#arrow-muted)" />
-  <text x="804" y="183" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="500" text-anchor="middle" dominant-baseline="middle">n̂</text>
-  <line x1="707" y1="165" x2="784" y2="245" stroke="#475569" stroke-width="2" stroke-linecap="round" marker-end="url(#arrow-muted)" />
-  <text x="715" y="155" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="500" text-anchor="middle" dominant-baseline="middle">v_in</text>
-  <line x1="800" y1="245" x2="834" y2="240" stroke="#e11d48" stroke-width="2.4" stroke-linecap="round" marker-end="url(#arrow-danger)" />
-  <text x="824" y="228" fill="#e11d48" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10.5" font-weight="700" text-anchor="middle" dominant-baseline="middle">v_out</text>
-  <circle cx="792" cy="243" r="11" fill="#f8fafc" stroke="#e11d48" stroke-width="2.2" />
-  <rect x="664" y="296" width="256" height="42" fill="#f8fafc" stroke="#e11d48" stroke-width="1.2" rx="6" />
-  <text x="792" y="317" fill="#e11d48" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="middle">v_n' = -e_mesh · v_n  (Deadened rebound)</text>
+  <text x="664" y="86" fill="#e11d48" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11.5" font-weight="700" text-anchor="start" dominant-baseline="middle">3. ContactRegime.DAMPED</text>
+  <text x="664" y="105" fill="#09090b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="600" text-anchor="start" dominant-baseline="middle">Net &amp; Fence Mesh (e_net=0.30, e_fence=0.45)</text>
+  <text x="664" y="122" fill="#475569" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="9.2" font-weight="500" text-anchor="start" dominant-baseline="middle">Viscoelastic mesh absorbs normal impact velocity</text>
+  <line x1="672" y1="262" x2="912" y2="262" stroke="#0f172a" stroke-width="1.8" stroke-linecap="round" />
+  <path d="M 842 148 Q 862 202 842 262" fill="none" stroke="#e11d48" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 2" />
+  <circle cx="842" cy="148" r="3.5" fill="#334155" stroke="none" stroke-width="1.5" />
+  <text x="860" y="156" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="8.8" font-weight="500" text-anchor="start" dominant-baseline="middle">Net Mesh</text>
+  <line x1="704" y1="172" x2="832" y2="197" stroke="#475569" stroke-width="2.2" stroke-linecap="round" marker-end="url(#arrow-muted)" />
+  <text x="720" y="160" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="500" text-anchor="middle" dominant-baseline="middle">v_in</text>
+  <line x1="834" y1="210" x2="808" y2="252" stroke="#e11d48" stroke-width="2.4" stroke-linecap="round" marker-end="url(#arrow-danger)" />
+  <text x="786" y="248" fill="#e11d48" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="middle">v_out</text>
+  <circle cx="838" cy="200" r="11" fill="#f8fafc" stroke="#e11d48" stroke-width="2.2" />
+  <rect x="664" y="290" width="256" height="52" fill="#f8fafc" stroke="#e11d48" stroke-width="1.2" rx="6" />
+  <text x="792" y="308" fill="#e11d48" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.6" font-weight="700" text-anchor="middle" dominant-baseline="middle">v_n' = -net_damping · v_n</text>
+  <text x="792" y="328" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="8.6" font-weight="500" text-anchor="middle" dominant-baseline="middle">v_t' = 0.70·v_t  (Deadened drop)</text>
 </svg>

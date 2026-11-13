@@ -30,79 +30,100 @@
   <rect x="24" y="64" width="580" height="412" fill="#0f172a" stroke="#1e293b" stroke-width="1" rx="10" />
   <rect x="618" y="64" width="318" height="412" fill="#0f172a" stroke="#1e293b" stroke-width="1" rx="10" />
   <g clip-path="url(#clip-frustum-3d)">
-    <line x1="191.8" y1="249.3" x2="297.6" y2="204.9" stroke="#f8fafc" stroke-width="1.4" stroke-linecap="round" opacity="0.9" />
-    <polygon points="381.8,348.6 485.3,282.8 270.8,193.8 165.5,235.6" fill="#111c2d" stroke="#f8fafc" stroke-width="1.8" stroke-linejoin="round" />
-    <line x1="397.8" y1="295.4" x2="247.6" y2="225.9" stroke="#f8fafc" stroke-width="1.4" stroke-linecap="round" opacity="0.9" />
-    <line x1="260.7" y1="285.3" x2="366.7" y2="233.5" stroke="#f8fafc" stroke-width="1.4" stroke-linecap="round" opacity="0.9" />
-    <line x1="342.1" y1="327.9" x2="446.8" y2="266.8" stroke="#f8fafc" stroke-width="1.4" stroke-linecap="round" opacity="0.9" />
-    <polygon points="270.8,193.8 288.5,201.1 287.5,164.6 269.5,157.8" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.3" stroke-linejoin="round" fill-opacity="0.1" />
-    <polygon points="269.5,157.8 287.5,164.6 287.2,152.1 269.0,145.5" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
-    <polygon points="288.5,201.1 306.9,208.7 306.5,184.2 287.8,176.9" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.3" stroke-linejoin="round" fill-opacity="0.1" />
-    <polygon points="287.8,176.9 306.5,184.2 306.3,171.6 287.5,164.6" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
-    <polygon points="165.5,235.6 270.8,193.8 269.5,157.8 161.4,196.5" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.4" stroke-linejoin="round" fill-opacity="0.1" />
-    <polygon points="306.9,208.7 356.2,229.2 356.7,190.6 306.3,171.6" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
-    <polygon points="161.4,196.5 269.5,157.8 269.0,145.5 160.0,183.1" fill="#1e293b" stroke="#94a3b8" stroke-width="1.2" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
-    <line x1="366.7" y1="233.5" x2="366.9" y2="221.8" stroke="#cbd5e1" stroke-width="2.2" stroke-linecap="round" />
-    <polygon points="165.5,235.6 182.8,244.7 179.1,205.0 161.4,196.5" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.3" stroke-linejoin="round" fill-opacity="0.1" />
-    <polygon points="161.4,196.5 179.1,205.0 177.8,191.3 160.0,183.1" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
-    <polygon points="182.8,244.7 201.0,254.1 198.8,227.5 180.4,218.4" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.3" stroke-linejoin="round" fill-opacity="0.1" />
-    <polygon points="434.6,261.7 377.4,238.0 378.4,198.8 437.2,220.8" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
-    <polygon points="180.4,218.4 198.8,227.5 197.6,213.8 179.1,205.0" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
-    <line x1="316.8" y1="257.9" x2="316.7" y2="246.2" stroke="#f8fafc" stroke-width="1.6" stroke-linecap="round" />
-    <polygon points="260.7,285.3 366.7,233.5 366.9,221.8 357.3,226.5 347.5,231.4 337.5,236.2 327.2,241.2 316.7,246.2 305.9,251.3 294.9,256.5 283.6,261.8 272.0,267.1 260.1,272.5" fill="#38bdf8" stroke="#38bdf8" stroke-width="1.5" stroke-linejoin="round" fill-opacity="0.2" />
-    <polyline points="260.1,272.5 272.0,267.1 283.6,261.8 294.9,256.5 305.9,251.3 316.7,246.2 327.2,241.2 337.5,236.2 347.5,231.4 357.3,226.5 366.9,221.8" fill="none" stroke="#f8fafc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-    <polygon points="459.4,272.0 434.6,261.7 436.3,234.7 461.6,244.5" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.3" stroke-linejoin="round" fill-opacity="0.1" />
-    <polygon points="201.0,254.1 250.1,279.8 247.9,237.7 197.6,213.8" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
-    <polygon points="461.6,244.5 436.3,234.7 437.2,220.8 462.7,230.4" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
-    <polygon points="485.3,282.8 459.4,272.0 462.7,230.4 489.4,240.5" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.3" stroke-linejoin="round" fill-opacity="0.1" />
-    <line x1="260.7" y1="285.3" x2="260.1" y2="272.5" stroke="#cbd5e1" stroke-width="2.2" stroke-linecap="round" />
-    <polygon points="489.4,240.5 462.7,230.4 463.9,216.1 490.8,225.8" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
-    <polygon points="329.6,321.4 271.5,291.0 269.8,248.1 329.5,276.5" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
-    <polygon points="381.8,348.6 485.3,282.8 489.4,240.5 383.3,302.2" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.4" stroke-linejoin="round" fill-opacity="0.1" />
-    <polygon points="383.3,302.2 489.4,240.5 490.8,225.8 383.8,286.0" fill="#1e293b" stroke="#94a3b8" stroke-width="1.2" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
-    <polygon points="355.0,334.6 329.6,321.4 329.5,291.8 355.4,304.5" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.3" stroke-linejoin="round" fill-opacity="0.1" />
-    <polygon points="355.4,304.5 329.5,291.8 329.5,276.5 355.7,289.0" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
-    <polygon points="381.8,348.6 355.0,334.6 355.7,289.0 383.3,302.2" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.3" stroke-linejoin="round" fill-opacity="0.1" />
-    <polygon points="383.3,302.2 355.7,289.0 355.9,273.2 383.8,286.0" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
-    <line x1="500.6" y1="247.3" x2="127.4" y2="212.8" stroke="#38bdf8" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="4 3" opacity="0.8" />
-    <line x1="500.6" y1="247.3" x2="405.3" y2="112.2" stroke="#38bdf8" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="4 3" opacity="0.8" />
-    <line x1="500.6" y1="247.3" x2="449.3" y2="283.3" stroke="#38bdf8" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="4 3" opacity="0.8" />
-    <line x1="500.6" y1="247.3" x2="201.0" y2="434" stroke="#38bdf8" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="4 3" opacity="0.8" />
-    <polygon points="127.4,212.8 405.3,112.2 449.3,283.3 201.0,434" fill="#38bdf8" stroke="#38bdf8" stroke-width="1.4" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="5 3" />
-    <polygon points="438.7,241.5 480.5,218.8 489.4,255.1 448.5,279.7" fill="#38bdf8" stroke="#38bdf8" stroke-width="2" stroke-linejoin="round" fill-opacity="0.3" />
-    <line x1="500.6" y1="247.3" x2="316.8" y2="257.9" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round" marker-end="url(#arrow-tertiary)" />
-    <circle cx="500.6" cy="247.3" r="5.5" fill="#38bdf8" stroke="#0f172a" stroke-width="1.5" />
-    <line x1="500.6" y1="247.3" x2="518.6" y2="269.3" stroke="#38bdf8" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="2 2" opacity="0.8" />
-    <circle cx="500.6" cy="247.3" r="3.2" fill="#38bdf8" stroke="#0f172a" stroke-width="1.5" />
-    <rect x="468.8" y="260.3" width="99.6" height="18" fill="#090d16" stroke="#38bdf8" stroke-width="1.4" rx="9" />
-    <text x="518.6" y="269.8" fill="#38bdf8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">broadcast_near</text>
-    <line x1="316.8" y1="257.9" x2="362.8" y2="233.9" stroke="#34d399" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="2 2" opacity="0.8" />
-    <circle cx="316.8" cy="257.9" r="3.2" fill="#34d399" stroke="#0f172a" stroke-width="1.5" />
-    <rect x="316.2" y="224.9" width="93.2" height="18" fill="#090d16" stroke="#34d399" stroke-width="1.4" rx="9" />
-    <text x="362.8" y="234.4" fill="#34d399" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">World (0,0,0)</text>
-    <line x1="315.2" y1="106" x2="315.2" y2="88" stroke="#fbbf24" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="2 2" opacity="0.8" />
-    <circle cx="315.2" cy="106" r="3.2" fill="#fbbf24" stroke="#0f172a" stroke-width="1.5" />
-    <rect x="262.2" y="79" width="106" height="18" fill="#090d16" stroke="#fbbf24" stroke-width="1.4" rx="9" />
-    <text x="315.2" y="88.5" fill="#fbbf24" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">overhead_zenith</text>
-    <line x1="383.2" y1="289.8" x2="319.2" y2="313.8" stroke="#fbbf24" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="2 2" opacity="0.8" />
-    <circle cx="383.2" cy="289.8" r="3.2" fill="#fbbf24" stroke="#0f172a" stroke-width="1.5" />
-    <rect x="263.0" y="304.8" width="112.4" height="18" fill="#090d16" stroke="#fbbf24" stroke-width="1.4" rx="9" />
-    <text x="319.2" y="314.3" fill="#fbbf24" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">corner_near_left</text>
-    <line x1="374.9" y1="199.1" x2="430.9" y2="187.1" stroke="#fbbf24" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="2 2" opacity="0.8" />
-    <circle cx="374.9" cy="199.1" r="3.2" fill="#fbbf24" stroke="#0f172a" stroke-width="1.5" />
-    <rect x="381.1" y="178.1" width="99.6" height="18" fill="#090d16" stroke="#fbbf24" stroke-width="1.4" rx="9" />
-    <text x="430.9" y="187.6" fill="#fbbf24" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">side_net_right</text>
+    <polygon points="367.1,365.6 477.0,295.7 249.3,201.2 137.5,245.6" fill="#111c2d" stroke="#f8fafc" stroke-width="1.8" stroke-linejoin="round" />
+    <line x1="165.4" y1="260.2" x2="277.7" y2="213.0" stroke="#f8fafc" stroke-width="1.4" stroke-linecap="round" opacity="0.9" />
+    <line x1="384.2" y1="309.1" x2="224.7" y2="235.3" stroke="#f8fafc" stroke-width="1.4" stroke-linecap="round" opacity="0.9" />
+    <line x1="238.5" y1="298.4" x2="351.1" y2="243.4" stroke="#f8fafc" stroke-width="1.4" stroke-linecap="round" opacity="0.9" />
+    <line x1="325.0" y1="343.6" x2="436.2" y2="278.7" stroke="#f8fafc" stroke-width="1.4" stroke-linecap="round" opacity="0.9" />
+    <polygon points="249.3,201.2 268.1,208.9 267.0,170.2 247.9,163.0" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.3" stroke-linejoin="round" fill-opacity="0.1" />
+    <polygon points="247.9,163.0 267.0,170.2 266.7,156.9 247.4,149.9" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
+    <polygon points="268.1,208.9 287.6,217.0 287.2,191 267.4,183.3" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.3" stroke-linejoin="round" fill-opacity="0.1" />
+    <polygon points="267.4,183.3 287.2,191 287.0,177.7 267.0,170.2" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
+    <polygon points="137.5,245.6 249.3,201.2 247.9,163.0 133.2,204.1" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.4" stroke-linejoin="round" fill-opacity="0.1" />
+    <polygon points="287.6,217.0 339.9,238.8 340.5,197.8 287.0,177.7" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
+    <polygon points="133.2,204.1 247.9,163.0 247.4,149.9 131.7,189.8" fill="#1e293b" stroke="#94a3b8" stroke-width="1.2" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
+    <line x1="351.1" y1="243.4" x2="351.3" y2="230.9" stroke="#cbd5e1" stroke-width="2.2" stroke-linecap="round" />
+    <polygon points="137.5,245.6 155.9,255.2 152.0,213.1 133.2,204.1" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.3" stroke-linejoin="round" fill-opacity="0.1" />
+    <polygon points="133.2,204.1 152.0,213.1 150.6,198.5 131.7,189.8" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
+    <polygon points="155.9,255.2 175.2,265.3 172.8,236.9 153.3,227.3" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.3" stroke-linejoin="round" fill-opacity="0.1" />
+    <polygon points="423.2,273.3 362.4,248.1 363.6,206.5 426.0,229.9" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
+    <polygon points="153.3,227.3 172.8,236.9 171.6,222.4 152.0,213.1" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
+    <line x1="298.1" y1="269.3" x2="298.0" y2="256.8" stroke="#f8fafc" stroke-width="1.6" stroke-linecap="round" />
+    <polygon points="238.5,298.4 351.1,243.4 351.3,230.9 341.1,236.0 330.7,241.1 320.1,246.3 309.2,251.5 298.0,256.8 286.6,262.3 274.8,267.8 262.8,273.3 250.5,279.0 237.9,284.8" fill="#38bdf8" stroke="#38bdf8" stroke-width="1.5" stroke-linejoin="round" fill-opacity="0.2" />
+    <polyline points="237.9,284.8 250.5,279.0 262.8,273.3 274.8,267.8 286.6,262.3 298.0,256.8 309.2,251.5 320.1,246.3 330.7,241.1 341.1,236.0 351.3,230.9" fill="none" stroke="#f8fafc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <polygon points="449.5,284.2 423.2,273.3 425.0,244.6 451.8,255.1" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.3" stroke-linejoin="round" fill-opacity="0.1" />
+    <polygon points="175.2,265.3 227.4,292.5 225.0,247.8 171.6,222.4" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
+    <polygon points="451.8,255.1 425.0,244.6 426.0,229.9 453.0,240.1" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
+    <polygon points="477.0,295.7 449.5,284.2 453.0,240.1 481.4,250.7" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.3" stroke-linejoin="round" fill-opacity="0.1" />
+    <line x1="238.5" y1="298.4" x2="237.9" y2="284.8" stroke="#cbd5e1" stroke-width="2.2" stroke-linecap="round" />
+    <polygon points="481.4,250.7 453.0,240.1 454.2,224.8 482.9,235.2" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
+    <polygon points="311.7,336.6 250.0,304.4 248.2,258.9 311.6,289.0" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
+    <polygon points="367.1,365.6 477.0,295.7 481.4,250.7 368.7,316.2" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.4" stroke-linejoin="round" fill-opacity="0.1" />
+    <polygon points="368.7,316.2 481.4,250.7 482.9,235.2 369.3,299.1" fill="#1e293b" stroke="#94a3b8" stroke-width="1.2" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
+    <polygon points="338.7,350.7 311.7,336.6 311.6,305.2 339.1,318.7" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.3" stroke-linejoin="round" fill-opacity="0.1" />
+    <polygon points="339.1,318.7 311.6,305.2 311.6,289.0 339.4,302.3" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
+    <polygon points="367.1,365.6 338.7,350.7 339.4,302.3 368.7,316.2" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.3" stroke-linejoin="round" fill-opacity="0.1" />
+    <polygon points="368.7,316.2 339.4,302.3 339.6,285.5 369.3,299.1" fill="#1e293b" stroke="#94a3b8" stroke-width="1.1" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="4 3" />
+    <line x1="493.3" y1="258.0" x2="147.9" y2="226.1" stroke="#38bdf8" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="4 3" opacity="0.8" />
+    <line x1="493.3" y1="258.0" x2="402.1" y2="128.8" stroke="#38bdf8" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="4 3" opacity="0.8" />
+    <line x1="493.3" y1="258.0" x2="444.0" y2="292.6" stroke="#38bdf8" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="4 3" opacity="0.8" />
+    <line x1="493.3" y1="258.0" x2="214.1" y2="432" stroke="#38bdf8" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="4 3" opacity="0.8" />
+    <polygon points="147.9,226.1 402.1,128.8 444.0,292.6 214.1,432" fill="#38bdf8" stroke="#38bdf8" stroke-width="1.4" stroke-linejoin="round" fill-opacity="0.1" stroke-dasharray="5 3" />
+    <polygon points="433.0,252.4 473.6,230.1 482.3,265.7 442.5,289.6" fill="#38bdf8" stroke="#38bdf8" stroke-width="2" stroke-linejoin="round" fill-opacity="0.3" />
+    <polygon points="501.5,254.9 510.9,249.3 513.4,259.9 504.1,265.7" fill="#090d16" stroke="#38bdf8" stroke-width="1.4" stroke-linejoin="round" fill-opacity="0.8" />
+    <line x1="501.5" y1="254.9" x2="487.3" y2="255.5" stroke="#38bdf8" stroke-width="1.4" stroke-linecap="round" />
+    <line x1="487.3" y1="255.5" x2="477.8" y2="254.4" stroke="#38bdf8" stroke-width="1.4" stroke-linecap="round" />
+    <line x1="510.9" y1="249.3" x2="496.7" y2="249.9" stroke="#38bdf8" stroke-width="1.4" stroke-linecap="round" />
+    <line x1="496.7" y1="249.9" x2="490.4" y2="247.1" stroke="#38bdf8" stroke-width="1.4" stroke-linecap="round" />
+    <line x1="513.4" y1="259.9" x2="499.2" y2="260.4" stroke="#38bdf8" stroke-width="1.4" stroke-linecap="round" />
+    <line x1="499.2" y1="260.4" x2="494.0" y2="261.9" stroke="#38bdf8" stroke-width="1.4" stroke-linecap="round" />
+    <line x1="504.1" y1="265.7" x2="489.8" y2="266.1" stroke="#38bdf8" stroke-width="1.4" stroke-linecap="round" />
+    <line x1="489.8" y1="266.1" x2="481.5" y2="269.5" stroke="#38bdf8" stroke-width="1.4" stroke-linecap="round" />
+    <polygon points="477.8,254.4 490.4,247.1 494.0,261.9 481.5,269.5" fill="#38bdf8" stroke="#38bdf8" stroke-width="1.6" stroke-linejoin="round" fill-opacity="0.2" />
+    <line x1="493.3" y1="258.0" x2="512.9" y2="246.2" stroke="#fb7185" stroke-width="1.8" stroke-linecap="round" marker-end="url(#arrow-danger)" />
+    <text x="522.9" y="248.2" fill="#fb7185" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="8.5" font-weight="700" text-anchor="middle" dominant-baseline="middle">+Xc</text>
+    <line x1="493.3" y1="258.0" x2="501.4" y2="291.6" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round" marker-end="url(#arrow-tertiary)" />
+    <text x="489.4" y="297.6" fill="#fbbf24" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="8.5" font-weight="700" text-anchor="middle" dominant-baseline="middle">+Yc</text>
+    <line x1="493.3" y1="258.0" x2="298.1" y2="269.3" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" marker-end="url(#arrow-tertiary)" />
+    <line x1="493.3" y1="258.0" x2="549.3" y2="280.0" stroke="#38bdf8" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="2 2" opacity="0.8" />
+    <circle cx="493.3" cy="258.0" r="3.2" fill="#38bdf8" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="499.5" y="271.0" width="99.6" height="18" fill="#090d16" stroke="#38bdf8" stroke-width="1.4" rx="9" />
+    <text x="549.3" y="280.5" fill="#38bdf8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">broadcast_near</text>
+    <line x1="298.1" y1="269.3" x2="234.1" y2="293.3" stroke="#34d399" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="2 2" opacity="0.8" />
+    <circle cx="298.1" cy="269.3" r="3.2" fill="#34d399" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="187.5" y="284.3" width="93.2" height="18" fill="#090d16" stroke="#34d399" stroke-width="1.4" rx="9" />
+    <text x="234.1" y="293.8" fill="#34d399" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">World (0,0,0)</text>
+    <line x1="296.5" y1="108" x2="362.5" y2="102" stroke="#fbbf24" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="2 2" opacity="0.8" />
+    <circle cx="296.5" cy="108" r="3.2" fill="#fbbf24" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="309.5" y="93" width="106" height="18" fill="#090d16" stroke="#fbbf24" stroke-width="1.4" rx="9" />
+    <text x="362.5" y="102.5" fill="#fbbf24" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">overhead_zenith</text>
+    <line x1="368.6" y1="303.1" x2="426.6" y2="339.1" stroke="#fbbf24" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="2 2" opacity="0.8" />
+    <circle cx="368.6" cy="303.1" r="3.2" fill="#fbbf24" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="370.4" y="330.1" width="112.4" height="18" fill="#090d16" stroke="#fbbf24" stroke-width="1.4" rx="9" />
+    <text x="426.6" y="339.6" fill="#fbbf24" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">corner_near_left</text>
+    <line x1="359.8" y1="206.9" x2="421.8" y2="212.9" stroke="#fbbf24" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="2 2" opacity="0.8" />
+    <circle cx="359.8" cy="206.9" r="3.2" fill="#fbbf24" stroke="#0f172a" stroke-width="1.5" />
+    <rect x="372.0" y="203.9" width="99.6" height="18" fill="#090d16" stroke="#fbbf24" stroke-width="1.4" rx="9" />
+    <text x="421.8" y="213.4" fill="#fbbf24" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">side_net_right</text>
   </g>
-  <rect x="636" y="106" width="282" height="92" fill="#090d16" stroke="#34d399" stroke-width="1.5" rx="8" />
-  <text x="650" y="130" fill="#34d399" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="11.5" font-weight="700" text-anchor="start" dominant-baseline="middle">1. World Frame (Meters)</text>
-  <text x="650" y="152" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="500" text-anchor="start" dominant-baseline="middle">(X, Y, Z) at Court Net Center</text>
-  <text x="650" y="174" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="500" text-anchor="start" dominant-baseline="middle">+X: Right  |  +Y: Far Wall  |  +Z: Up</text>
-  <rect x="636" y="228" width="282" height="92" fill="#090d16" stroke="#38bdf8" stroke-width="1.5" rx="8" />
-  <text x="650" y="252" fill="#38bdf8" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="11.5" font-weight="700" text-anchor="start" dominant-baseline="middle">2. Camera Frame (OpenCV vs OpenGL)</text>
-  <text x="650" y="274" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="500" text-anchor="start" dominant-baseline="middle">Extrinsics: R (3×3), t = -R @ C</text>
-  <text x="650" y="296" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="500" text-anchor="start" dominant-baseline="middle">OpenCV: +X right, +Y down, +Z forward</text>
-  <rect x="636" y="350" width="282" height="92" fill="#090d16" stroke="#fbbf24" stroke-width="1.5" rx="8" />
-  <text x="650" y="374" fill="#fbbf24" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="11.5" font-weight="700" text-anchor="start" dominant-baseline="middle">3. Image Sensor Plane (Pixels)</text>
-  <text x="650" y="396" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="500" text-anchor="start" dominant-baseline="middle">Intrinsics Matrix K (fx, fy, cx, cy)</text>
-  <text x="650" y="418" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="500" text-anchor="start" dominant-baseline="middle">u = fx*(X_c/Z_c)+cx, v = fy*(Y_c/Z_c)+cy</text>
+  <rect x="636" y="86" width="282" height="84" fill="#090d16" stroke="#34d399" stroke-width="1.5" rx="8" />
+  <text x="650" y="106" fill="#34d399" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="11" font-weight="700" text-anchor="start" dominant-baseline="middle">1. World Frame (Meters)</text>
+  <text x="650" y="127" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.6" font-weight="500" text-anchor="start" dominant-baseline="middle">(X, Y, Z) at Court Net Center</text>
+  <text x="650" y="147" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.2" font-weight="500" text-anchor="start" dominant-baseline="middle">+X: Right  |  +Y: Far  |  +Z: Up</text>
+  <rect x="636" y="202" width="282" height="106" fill="#090d16" stroke="#38bdf8" stroke-width="1.5" rx="8" />
+  <text x="650" y="222" fill="#38bdf8" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="11" font-weight="700" text-anchor="start" dominant-baseline="middle">2. Camera Frame (OpenCV vs OpenGL)</text>
+  <text x="650" y="243" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.6" font-weight="500" text-anchor="start" dominant-baseline="middle">Extrinsics: R (3×3),  t = -R @ C</text>
+  <text x="650" y="263" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.2" font-weight="500" text-anchor="start" dominant-baseline="middle">OpenCV: +X right, +Y down, +Z fwd</text>
+  <text x="650" y="283" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="start" dominant-baseline="middle">OpenGL: +X right, +Y up,   -Z fwd</text>
+  <rect x="636" y="340" width="282" height="106" fill="#090d16" stroke="#fbbf24" stroke-width="1.5" rx="8" />
+  <text x="650" y="360" fill="#fbbf24" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="11" font-weight="700" text-anchor="start" dominant-baseline="middle">3. Image Sensor Plane (Pixels)</text>
+  <text x="650" y="381" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.6" font-weight="500" text-anchor="start" dominant-baseline="middle">Intrinsics Matrix K (fx, fy, cx, cy)</text>
+  <text x="650" y="401" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.2" font-weight="500" text-anchor="start" dominant-baseline="middle">u = fx*(Xc/Zc)+cx, v = fy*(Yc/Zc)+cy</text>
+  <text x="650" y="421" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="500" text-anchor="start" dominant-baseline="middle">Models: NONE | BROWN_CONRADY | FISHEYE</text>
+  <line x1="777" y1="172" x2="777" y2="199" stroke="#38bdf8" stroke-width="1.6" stroke-linecap="round" marker-end="url(#arrow-secondary)" />
+  <rect x="786" y="178" width="56" height="16" fill="#0f172a" stroke="#38bdf8" stroke-width="0.9" rx="4" />
+  <text x="814" y="186.5" fill="#38bdf8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="8.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">[R | t]</text>
+  <line x1="777" y1="310" x2="777" y2="337" stroke="#fbbf24" stroke-width="1.6" stroke-linecap="round" marker-end="url(#arrow-tertiary)" />
+  <rect x="786" y="316" width="56" height="16" fill="#0f172a" stroke="#fbbf24" stroke-width="0.9" rx="4" />
+  <text x="814" y="324.5" fill="#fbbf24" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="8.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">K, dist</text>
 </svg>
