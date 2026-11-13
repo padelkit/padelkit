@@ -19,6 +19,14 @@
   </Property>
 </Properties>
 
+<AddedIn version="0.1.1">
+  <Properties>
+    <Property name="offline" type="bool" optional default="True">
+      Embeds the minified Three.js `r170.0` bundle directly inside generated HTML documents so exported files run with zero internet access or `file://` restrictions. Set `offline=False` to load Three.js from the jsDelivr CDN via an ES module import map for smaller HTML files.
+    </Property>
+  </Properties>
+</AddedIn>
+
 ---
 
 ## Create from Parquet or CSV {{ tag: 'classmethod', label: 'from_parquet / from_csv' }}
@@ -96,6 +104,10 @@
         Registers an additional [`Camera`](/camera) viewpoint in the 3D scene and returns `self`.
       </Property>
     </Properties>
+
+    <AddedIn version="0.1.1">
+      `export_html(path, offline=...)`, `to_html(live_stream_url=..., offline=...)`, and `serve(..., offline=...)` all accept an optional `offline: bool` override (`True` by default) to switch between the embedded Three.js runtime and CDN import-map mode per call.
+    </AddedIn>
 
   </Col>
   <Col sticky>

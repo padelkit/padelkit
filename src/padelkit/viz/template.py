@@ -1,6 +1,89 @@
 # ruff: noqa: E501
 """Self-contained Three.js 3D Visualizer and Synthetic Data Studio template."""
 
+from __future__ import annotations
+
+import functools
+import gzip
+import importlib.resources
+import json
+from typing import Any
+
+_THREEJS_VERSION = "0.170.0"
+
+_CDN_IMPORTMAP_HTML = f"""  <script type="importmap">
+    {{
+      "imports": {{
+        "three": "https://cdn.jsdelivr.net/npm/three@{_THREEJS_VERSION}/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@{_THREEJS_VERSION}/examples/jsm/"
+      }}
+    }}
+  </script>"""
+
+_CDN_SCRIPT_OPEN = """  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+    import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";"""
+
+_CDN_SCRIPT_CLOSE = "  </script>"
+
+_OFFLINE_SCRIPT_CLOSE = """    })();
+  </script>"""
+
+
+@functools.lru_cache(maxsize=1)
+def get_threejs_vendor_bundle() -> str:
+    """Loads and decompresses the bundled minified Three.js runtime (MIT)."""
+    pkg = __package__ or "padelkit.viz"
+    compressed = (
+        importlib.resources.files(pkg)
+        .joinpath("vendor/three.bundle.min.js.gz")
+        .read_bytes()
+    )
+    bundle_js = gzip.decompress(compressed).decode("utf-8")
+    return bundle_js.replace("</script", "<\\/script")
+
+
+def render_viewer_html(config: dict[str, Any], *, offline: bool = True) -> str:
+    """Renders the PadelKit 3D Studio HTML document for ``config``.
+
+    Args:
+        config: Serialized visualizer configuration (court, cameras, timeline,
+            optional Base64 GLB library, and optional SSE stream URL).
+        offline: When ``True`` (default), embeds the vendored Three.js bundle
+            inline so the exported HTML works without internet access or local
+            servers (including ``file://`` URLs). When ``False``, uses an ES
+            module import map pointing to the jsDelivr CDN.
+    """
+    if offline:
+        importmap_html = ""
+        bundle_js = get_threejs_vendor_bundle()
+        script_open = (
+            "  <script>\n"
+            f"{bundle_js}\n"
+            "  </script>\n"
+            "  <script>\n"
+            "    (function () {\n"
+            '      "use strict";\n'
+            "      const { THREE, OrbitControls, GLTFLoader, SkeletonUtils } = "
+            "globalThis.__PADELKIT_THREE_BUNDLE__;"
+        )
+        script_close = _OFFLINE_SCRIPT_CLOSE
+    else:
+        importmap_html = _CDN_IMPORTMAP_HTML
+        script_open = _CDN_SCRIPT_OPEN
+        script_close = _CDN_SCRIPT_CLOSE
+
+    cfg_json = json.dumps(config).replace("</", "<\\/")
+    html_out = THREEJS_VIEWER_HTML_TEMPLATE.replace(
+        "__PADELKIT_IMPORTMAP__", importmap_html
+    )
+    html_out = html_out.replace("__PADELKIT_SCRIPT_OPEN__", script_open)
+    html_out = html_out.replace("__PADELKIT_SCRIPT_CLOSE__", script_close)
+    return html_out.replace("__PADELKIT_CONFIG_JSON__", cfg_json)
+
+
 THREEJS_VIEWER_HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -209,14 +292,7 @@ THREEJS_VIEWER_HTML_TEMPLATE = """<!DOCTYPE html>
       display: inline-block;
     }
   </style>
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
-      }
-    }
-  </script>
+__PADELKIT_IMPORTMAP__
 </head>
 <body>
   <div id="canvas-container"></div>
@@ -299,11 +375,7 @@ THREEJS_VIEWER_HTML_TEMPLATE = """<!DOCTYPE html>
     <span id="time-readout" class="time-readout">0.00s / 0.00s</span>
   </div>
 
-  <script type="module">
-    import * as THREE from "three";
-    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-    import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-    import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
+__PADELKIT_SCRIPT_OPEN__
 
     const CONFIG = __PADELKIT_CONFIG_JSON__;
 
@@ -1709,7 +1781,7 @@ THREEJS_VIEWER_HTML_TEMPLATE = """<!DOCTYPE html>
       orbitCam.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
-  </script>
+__PADELKIT_SCRIPT_CLOSE__
 </body>
 </html>
 """

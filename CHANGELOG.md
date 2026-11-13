@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - Unreleased
+
+### Added
+- Offline self-contained Three.js HTML export (`offline=True` by default on `PadelVisualizer`, `from_parquet`, `from_csv`, `to_html`, `export_html`, and `serve`) bundling a gzip-compressed Three.js r170 runtime (`three`, `OrbitControls`, `GLTFLoader`, `SkeletonUtils`) in `padelkit.viz.vendor` so exported HTML studios run with zero internet access or `file://` restrictions, while preserving lightweight jsDelivr CDN loading via `offline=False`.
+
 ## [0.1.0] - 2026-11-09
 
 ### Added
@@ -22,5 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `padelkit.court` module with `Court`, `CourtDimensions`, `CourtLocation`, 17-point 2D/3D `CourtLandmark` model, and `CENTERED` / `CORNER_BASED` coordinate systems.
 - `padelkit.scoring` module with `Match`, `MatchConfiguration`, `MatchScore`, `MatchScoreHistory`, `Team`, `Player`, `ServingState`, and `ServingEngine`.
 
+[0.1.1]: https://github.com/padelkit/padelkit/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/padelkit/padelkit/compare/v0.0.1...v0.1.0
 [0.0.1]: https://github.com/padelkit/padelkit/releases/tag/v0.0.1

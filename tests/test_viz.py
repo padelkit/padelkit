@@ -323,3 +323,82 @@ def test_parquet_universal_match_format_and_skeletal_baking(tmp_path: Path):
     html_str = viz.to_html()
     assert "kp3dGroup" in html_str
     assert '"kp3d"' in html_str
+
+
+def test_padel_visualizer_offline_and_cdn_modes(tmp_path: Path):
+    import http.client
+    import importlib.resources
+
+    from padelkit.viz.template import get_threejs_vendor_bundle
+
+    bundle = get_threejs_vendor_bundle()
+    assert "__PADELKIT_THREE_BUNDLE__" in bundle
+    assert "</script" not in bundle.lower()
+
+    license_text = (
+        importlib.resources.files("padelkit.viz")
+        .joinpath("vendor/THREEJS_LICENSE.txt")
+        .read_text(encoding="utf-8")
+    )
+    assert "The MIT License" in license_text
+
+    court = Court.fip_standard()
+    timeline = MatchTimeline.demo_rally(court=court, fps=10.0, bake_skeleton=True)
+    parquet_path = tmp_path / "offline_test.parquet"
+    timeline.to_parquet(parquet_path)
+
+    # 1. Default offline=True produces a fully self-contained HTML (no CDN)
+    viz_offline = PadelVisualizer.from_parquet(parquet_path)
+    assert viz_offline.offline is True
+    offline_html = viz_offline.export_html(tmp_path / "offline.html").read_text(
+        encoding="utf-8"
+    )
+    assert "cdn.jsdelivr.net" not in offline_html
+    assert 'type="importmap"' not in offline_html
+    assert "globalThis.__PADELKIT_THREE_BUNDLE__" in offline_html
+    assert "WebGLRenderer" in offline_html
+
+    # 2. Per-call override offline=False produces lightweight CDN importmap HTML
+    cdn_html = viz_offline.export_html(tmp_path / "cdn.html", offline=False).read_text(
+        encoding="utf-8"
+    )
+    assert "https://cdn.jsdelivr.net/npm/three@0.170.0/" in cdn_html
+    assert 'type="importmap"' in cdn_html
+    assert "globalThis.__PADELKIT_THREE_BUNDLE__" not in cdn_html
+    assert len(offline_html) > len(cdn_html) + 300_000
+
+    # 3. Instance default offline=False can also be overridden to offline=True
+    viz_cdn = PadelVisualizer(court=court, timeline=timeline, offline=False)
+    assert "cdn.jsdelivr.net" in viz_cdn.to_html()
+    assert "cdn.jsdelivr.net" not in viz_cdn.to_html(offline=True)
+
+    # 4. serve() honors offline parameter on "/"
+    server = viz_offline.serve(port=0, open_browser=False, background=True)
+    try:
+        port = server.server_address[1]
+        conn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+        conn.request("GET", "/")
+        resp = conn.getresponse()
+        served_html = resp.read().decode("utf-8")
+        conn.close()
+        assert resp.status == 200
+        assert "globalThis.__PADELKIT_THREE_BUNDLE__" in served_html
+        assert "cdn.jsdelivr.net" not in served_html
+    finally:
+        viz_offline.stop_server()
+
+    server_cdn = viz_offline.serve(
+        port=0, open_browser=False, background=True, offline=False
+    )
+    try:
+        port = server_cdn.server_address[1]
+        conn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+        conn.request("GET", "/")
+        resp = conn.getresponse()
+        served_cdn = resp.read().decode("utf-8")
+        conn.close()
+        assert resp.status == 200
+        assert "https://cdn.jsdelivr.net/npm/three@0.170.0/" in served_cdn
+        assert "globalThis.__PADELKIT_THREE_BUNDLE__" not in served_cdn
+    finally:
+        viz_offline.stop_server()

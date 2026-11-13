@@ -13,7 +13,7 @@ from ..camera.camera import Camera
 from ..camera.enums import CameraPreset
 from ..court.court import Court
 from ..court.enums import CoordinateSystem
-from .template import THREEJS_VIEWER_HTML_TEMPLATE
+from .template import render_viewer_html
 from .timeline import FrameState, MatchTimeline
 
 
@@ -21,12 +21,15 @@ class PadelVisualizer:
     """Interactive 3D Three.js visualizer and synthetic pass inspector for PadelKit.
 
     Supports three operating modes:
-    1. **CSV / Timeline Replay Mode**: Load a :class:`MatchTimeline` or CSV file
-       via :meth:`from_csv` and scrub through the match at any speed or camera angle.
+    1. **Parquet / CSV / Timeline Replay Mode**: Load a :class:`MatchTimeline`,
+       ``.parquet`` or ``.csv`` file via :meth:`from_parquet` / :meth:`from_csv`
+       and scrub through the match at any speed or camera angle.
     2. **Real-Time Live Streaming Mode**: Start a local server with :meth:`serve`
        and stream :class:`FrameState` updates in real time via :meth:`push_frame`.
     3. **Standalone HTML / Jupyter Notebook Mode**: Export a zero-dependency
-       HTML file with :meth:`export_html` or render directly inside a Jupyter cell.
+       offline HTML file with :meth:`export_html` (with embedded Three.js by
+       default, or optional CDN loading via ``offline=False``) or render
+       directly inside a Jupyter cell.
     """
 
     def __init__(
@@ -35,6 +38,7 @@ class PadelVisualizer:
         cameras: list[Camera] | None = None,
         timeline: MatchTimeline | None = None,
         animation_library_dir: str | Path | None = None,
+        offline: bool = True,
     ) -> None:
         self.timeline: MatchTimeline = (
             timeline
@@ -55,6 +59,7 @@ class PadelVisualizer:
         self.animation_library_dir: Path | None = (
             Path(animation_library_dir) if animation_library_dir is not None else None
         )
+        self.offline: bool = bool(offline)
         self._subscribers: list[queue.Queue[str]] = []
         self._server: ThreadingHTTPServer | None = None
 
@@ -69,6 +74,7 @@ class PadelVisualizer:
         court: Court | None = None,
         cameras: list[Camera] | None = None,
         animation_library_dir: str | Path | None = None,
+        offline: bool = True,
     ) -> "PadelVisualizer":
         """Creates a :class:`PadelVisualizer` pre-loaded with a CSV match timeline."""
         c = court or Court.fip_standard()
@@ -78,6 +84,7 @@ class PadelVisualizer:
             cameras=cameras,
             timeline=timeline,
             animation_library_dir=animation_library_dir,
+            offline=offline,
         )
 
     @classmethod
@@ -87,6 +94,7 @@ class PadelVisualizer:
         court: Court | None = None,
         cameras: list[Camera] | None = None,
         animation_library_dir: str | Path | None = None,
+        offline: bool = True,
     ) -> "PadelVisualizer":
         """Creates a :class:`PadelVisualizer` pre-loaded with a Parquet match file."""
         timeline = MatchTimeline.from_parquet(parquet_path, court=court)
@@ -95,6 +103,7 @@ class PadelVisualizer:
             cameras=cameras,
             timeline=timeline,
             animation_library_dir=animation_library_dir,
+            offline=offline,
         )
 
     def add_camera(self, camera: Camera) -> "PadelVisualizer":
@@ -193,18 +202,33 @@ class PadelVisualizer:
     # HTML Export & Jupyter Notebook Integration
     # ------------------------------------------------------------------ #
 
-    def to_html(self, live_stream_url: str | None = None) -> str:
-        """Generates the self-contained Three.js HTML application string."""
-        cfg_json = json.dumps(self.build_config(live_stream_url=live_stream_url))
-        return THREEJS_VIEWER_HTML_TEMPLATE.replace(
-            "__PADELKIT_CONFIG_JSON__", cfg_json
-        )
+    def to_html(
+        self,
+        live_stream_url: str | None = None,
+        offline: bool | None = None,
+    ) -> str:
+        """Generates the Three.js HTML application string.
 
-    def export_html(self, path: str | Path) -> Path:
+        Args:
+            live_stream_url: Optional SSE endpoint URL used by :meth:`serve`.
+            offline: If ``True``, embeds the minified Three.js bundle directly in
+                the HTML so it works with zero internet access (including
+                ``file://`` URLs). If ``False``, uses a jsDelivr CDN import map.
+                Defaults to ``self.offline`` (``True``).
+        """
+        use_offline = self.offline if offline is None else bool(offline)
+        cfg = self.build_config(live_stream_url=live_stream_url)
+        return render_viewer_html(cfg, offline=use_offline)
+
+    def export_html(
+        self,
+        path: str | Path,
+        offline: bool | None = None,
+    ) -> Path:
         """Writes the standalone Three.js 3D viewer to an HTML file on disk."""
         out_path = Path(path)
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(self.to_html(), encoding="utf-8")
+        out_path.write_text(self.to_html(offline=offline), encoding="utf-8")
         return out_path
 
     def _repr_html_(self) -> str:
@@ -236,6 +260,7 @@ class PadelVisualizer:
         port: int = 8765,
         open_browser: bool = True,
         background: bool = False,
+        offline: bool | None = None,
     ) -> ThreadingHTTPServer:
         """Starts the local interactive 3D visualization and live-streaming server."""
         visualizer = self
@@ -243,7 +268,10 @@ class PadelVisualizer:
         class _ViewerHandler(BaseHTTPRequestHandler):
             def do_GET(self) -> None:  # noqa: N802
                 if self.path in ("/", "/index.html"):
-                    body = visualizer.to_html(live_stream_url="/events").encode("utf-8")
+                    body = visualizer.to_html(
+                        live_stream_url="/events",
+                        offline=offline,
+                    ).encode("utf-8")
                     self.send_response(200)
                     self.send_header("Content-Type", "text/html; charset=utf-8")
                     self.send_header("Content-Length", str(len(body)))
