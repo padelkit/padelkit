@@ -1123,24 +1123,7 @@ def render_court_landmarks_3d(palette: ThemePalette) -> str:
         "17 Standardized 3D Court Landmarks (CourtLandmark)",
         "Floor landmarks 1–13 (Z = 0.0 m)  |  Back-wall top corners 14–17 (Z = 4.0 m)  |  CoordinateSystem.CENTERED",
     )
-    svg.rect(
-        24,
-        64,
-        615,
-        452,
-        fill=palette.bg_panel,
-        stroke=palette.border,
-        rx=10,
-    )
-    svg.rect(
-        652,
-        64,
-        284,
-        452,
-        fill=palette.bg_panel,
-        stroke=palette.border,
-        rx=10,
-    )
+    svg.line(646, 68, 646, 512, stroke=palette.border, stroke_width=1.0)
 
     court = Court.fip_standard()
     pts_3d = court.landmarks_3d(CoordinateSystem.CENTERED)
@@ -1278,8 +1261,8 @@ def render_court_landmarks_3d(palette: ThemePalette) -> str:
         dx, dy = offsets[idx]
         svg.callout_badge(u, v, str(idx), color=color, offset=(dx, dy))
 
-    # Material legend pill at bottom-left of 3D panel
-    svg.rect(38, 476, 360, 28, fill=palette.bg_canvas, stroke=palette.border, rx=6)
+    # Borderless material legend at bottom-left of 3D view
+    svg.rect(38, 476, 360, 28, fill=palette.bg_canvas, opacity=0.88, rx=6)
     svg.rect(
         48, 485, 10, 10, fill=palette.glass_fill, stroke=palette.glass_stroke, rx=2
     )
@@ -1393,16 +1376,8 @@ def render_court_dimensions(palette: ThemePalette) -> str:
     court = Court.fip_standard()
     dims = court.dimensions
 
-    # Left panel: Horizontal 2D Court Plan (Length along X, Width along Y)
-    svg.rect(
-        24,
-        64,
-        550,
-        432,
-        fill=palette.bg_panel,
-        stroke=palette.border,
-        rx=10,
-    )
+    # Left zone: Horizontal 2D Court Plan (Length along X, Width along Y)
+    svg.line(582, 68, 582, 496, stroke=palette.border, stroke_width=1.0)
     svg.text(
         42,
         88,
@@ -1579,16 +1554,7 @@ def render_court_dimensions(palette: ThemePalette) -> str:
         mono=True,
     )
 
-    # Right panel top: Side Wall Profile (V1 3.0m vs V2 4.0m with Glass vs Mesh modules)
-    svg.rect(
-        590,
-        64,
-        346,
-        214,
-        fill=palette.bg_panel,
-        stroke=palette.border,
-        rx=10,
-    )
+    # Right zone top: Side Wall Profile (V1 3.0m vs V2 4.0m with Glass vs Mesh modules)
     svg.text(
         608,
         86,
@@ -1792,16 +1758,8 @@ def render_court_dimensions(palette: ThemePalette) -> str:
         anchor="start",
     )
 
-    # Right panel bottom: Net Height Profile (0.92m posts vs 0.88m center sag)
-    svg.rect(
-        590,
-        290,
-        346,
-        206,
-        fill=palette.bg_panel,
-        stroke=palette.border,
-        rx=10,
-    )
+    # Right zone bottom: Net Height Profile (0.92m posts vs 0.88m center sag)
+    svg.line(596, 284, 936, 284, stroke=palette.border, stroke_width=1.0)
     svg.text(
         608,
         312,
@@ -1940,16 +1898,8 @@ def render_court_coordinate_systems(palette: ThemePalette) -> str:
         ),
     ]
 
+    svg.line(480, 68, 480, 412, stroke=palette.border, stroke_width=1.0)
     for sys_enum, px, title, subtitle in systems:
-        svg.rect(
-            px,
-            64,
-            444,
-            352,
-            fill=palette.bg_panel,
-            stroke=palette.border,
-            rx=10,
-        )
         svg.text(
             px + 20,
             88,
@@ -2060,7 +2010,7 @@ def render_court_coordinate_systems(palette: ThemePalette) -> str:
             weight="700",
             mono=True,
         )
-        svg.circle(ox, oy, 4.5, fill=palette.accent_danger, stroke=palette.bg_panel)
+        svg.circle(ox, oy, 4.5, fill=palette.accent_danger, stroke=palette.bg_canvas)
 
         for key, off in [
             ("floor_near_left", (-54, 22)),
@@ -2114,24 +2064,7 @@ def render_camera_frustum_3d(palette: ThemePalette) -> str:
         "Projective Camera Frustum & Coordinate Systems (padelkit.camera)",
         "1. World (X, Y, Z)  ->  2. OpenCV Camera (+X right, +Y down, +Z forward)  ->  3. Sensor Pixels (u, v)",
     )
-    svg.rect(
-        24,
-        64,
-        580,
-        412,
-        fill=palette.bg_panel,
-        stroke=palette.border,
-        rx=10,
-    )
-    svg.rect(
-        618,
-        64,
-        318,
-        412,
-        fill=palette.bg_panel,
-        stroke=palette.border,
-        rx=10,
-    )
+    svg.line(612, 68, 612, 476, stroke=palette.border, stroke_width=1.0)
 
     court = Court.fip_standard()
     bcast_cam = Camera.broadcast_near(court=court)
@@ -2379,7 +2312,7 @@ def render_camera_frustum_3d(palette: ThemePalette) -> str:
             fy,
             282,
             fh,
-            fill=palette.bg_canvas,
+            fill=palette.bg_panel,
             stroke=f_col,
             stroke_width=1.5,
             rx=8,
@@ -2441,7 +2374,7 @@ def render_camera_frustum_3d(palette: ThemePalette) -> str:
             0.5 * (y_top + y_bot) - 8,
             56,
             16,
-            fill=palette.bg_panel,
+            fill=palette.bg_canvas,
             stroke=col,
             stroke_width=0.9,
             rx=4,
@@ -2690,16 +2623,8 @@ def render_camera_sensor_projection(palette: ThemePalette) -> str:
         anchor="end",
     )
 
-    # Right callout panel: Calibration matrix K & unprojection
-    svg.rect(
-        700,
-        82,
-        178,
-        351,
-        fill=palette.bg_panel,
-        stroke=palette.border,
-        rx=8,
-    )
+    # Right callout column: Calibration matrix K & unprojection (borderless, separated by hairline rule)
+    svg.line(696, 82, 696, 433, stroke=palette.border, stroke_width=1.0)
     svg.text(
         789,
         108,
@@ -2871,6 +2796,7 @@ def render_camera_distortion_grid(palette: ThemePalette) -> str:
             stroke=palette.border,
             rx=10,
         )
+        svg.line(px + 14, 65, px + 96, 65, stroke=accent, stroke_width=2.6)
         svg.text(
             px + 16,
             88,
@@ -2890,20 +2816,12 @@ def render_camera_distortion_grid(palette: ThemePalette) -> str:
             mono=True,
             anchor="start",
         )
+        svg.line(px + 1, 118, px + 287, 118, stroke=palette.border, stroke_width=1.0)
 
         vp_x, vp_y = px + 14.0, 122.0
-        svg.rect(
-            vp_x,
-            vp_y,
-            260,
-            190,
-            fill=palette.bg_canvas,
-            stroke=accent,
-            stroke_width=1.4,
-            rx=6,
+        clip_vp = svg.clip_group(
+            f"clip-dist-{idx_m}", px + 4.0, 120.0, 280.0, 212.0, rx=8
         )
-
-        clip_vp = svg.clip_group(f"clip-dist-{idx_m}", vp_x, vp_y, 260, 190, rx=6)
         svg.set_target(clip_vp)
 
         # Background sensor distortion grid via CameraDistortion.distort_normalized()
@@ -2976,24 +2894,7 @@ def render_physics_forces_9d(palette: ThemePalette) -> str:
         "9D Ball State & Aerodynamic Forces (padelkit.physics)",
         "State = [x, y, z, vx, vy, vz, wx, wy, wz]  |  F_total = m*g + F_drag(Cd) + F_magnus(Cl_Spindt)",
     )
-    svg.rect(
-        24,
-        64,
-        520,
-        332,
-        fill=palette.bg_panel,
-        stroke=palette.border,
-        rx=10,
-    )
-    svg.rect(
-        560,
-        64,
-        316,
-        332,
-        fill=palette.bg_panel,
-        stroke=palette.border,
-        rx=10,
-    )
+    svg.line(548, 68, 548, 392, stroke=palette.border, stroke_width=1.0)
 
     bx, by = 264.0, 228.0
     r_ball = 46.0
@@ -3153,7 +3054,7 @@ def render_physics_forces_9d(palette: ThemePalette) -> str:
         color=palette.accent_secondary,
         offset=(-56, -12),
     )
-    svg.circle(bx, by, 4.0, fill=palette.court_line_fg, stroke=palette.bg_panel)
+    svg.circle(bx, by, 4.0, fill=palette.court_line_fg, stroke=palette.bg_canvas)
 
     sample = BallState.from_shot(
         position=(0.0, -6.0, 1.2),
@@ -3207,15 +3108,6 @@ def render_physics_trajectories(palette: ThemePalette) -> str:
     svg.header(
         "RK4 Spin Trajectory Comparison (BallPhysicsEngine.simulate)",
         "Side Elevation (Y ∈ [-10m, +10m], Z ∈ [0m, 4.0m])  |  dt = 0.002s  |  Floor & Back-Glass Rebounds",
-    )
-    svg.rect(
-        24,
-        64,
-        912,
-        352,
-        fill=palette.bg_panel,
-        stroke=palette.border,
-        rx=10,
     )
 
     engine = BallPhysicsEngine()
@@ -3380,11 +3272,13 @@ def render_physics_trajectories(palette: ThemePalette) -> str:
             ),
         )
 
-        svg.circle(uv_raw[0, 0], uv_raw[0, 1], 4.5, fill=color, stroke=palette.bg_panel)
+        svg.circle(
+            uv_raw[0, 0], uv_raw[0, 1], 4.5, fill=color, stroke=palette.bg_canvas
+        )
         for b in traj.bounces:
             bu, bv = yz_to_uv(b.position[1], b.position[2])
             svg.circle(
-                bu, bv, 5.0, fill=palette.bg_panel, stroke=color, stroke_width=2.2
+                bu, bv, 5.0, fill=palette.bg_canvas, stroke=color, stroke_width=2.2
             )
 
         if tail_lbl == "Low Skid":
@@ -3498,6 +3392,7 @@ def render_physics_rebound_regimes(palette: ThemePalette) -> str:
             stroke=palette.border,
             rx=10,
         )
+        svg.line(px + 14, 65, px + 96, 65, stroke=col, stroke_width=2.6)
         svg.text(
             px + 16,
             86,
@@ -3762,19 +3657,17 @@ def render_physics_rebound_regimes(palette: ThemePalette) -> str:
                 stroke_width=2.2,
             )
 
-        svg.rect(
-            px + 16,
-            290,
-            256,
-            52,
-            fill=palette.bg_canvas,
-            stroke=col,
-            stroke_width=1.2,
-            rx=6,
+        svg.line(
+            px + 14,
+            284,
+            px + 274,
+            284,
+            stroke=palette.border,
+            stroke_width=1.0,
         )
         svg.text(
             px + 144,
-            308,
+            306,
             formula1,
             fill=col,
             size=9.6,
@@ -3783,7 +3676,7 @@ def render_physics_rebound_regimes(palette: ThemePalette) -> str:
         )
         svg.text(
             px + 144,
-            328,
+            326,
             formula2,
             fill=palette.text_muted,
             size=8.6,
@@ -3806,24 +3699,7 @@ def render_serving_rotations(palette: ThemePalette) -> str:
         "Serving Geometry & 4-Game Rotation State Machine (ServingEngine)",
         "Even points (0, 2, 4...): court_side = 'right' (Deuce)  |  Odd points (1, 3, 5...): court_side = 'left' (Ad)",
     )
-    svg.rect(
-        24,
-        64,
-        540,
-        352,
-        fill=palette.bg_panel,
-        stroke=palette.border,
-        rx=10,
-    )
-    svg.rect(
-        580,
-        64,
-        356,
-        352,
-        fill=palette.bg_panel,
-        stroke=palette.border,
-        rx=10,
-    )
+    svg.line(572, 68, 572, 412, stroke=palette.border, stroke_width=1.0)
 
     cx0, cy0 = 64.0, 134.0
     scale = 22.0  # 20m -> 440px, 10m -> 220px
@@ -4069,7 +3945,7 @@ def render_serving_rotations(palette: ThemePalette) -> str:
             ry,
             290,
             52,
-            fill=palette.bg_canvas,
+            fill=palette.bg_panel,
             stroke=col,
             stroke_width=1.4,
             rx=8,

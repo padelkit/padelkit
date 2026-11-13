@@ -29,8 +29,7 @@
   <rect x="0" y="0" width="900" height="420" fill="#090d16" stroke="#1e293b" stroke-width="1.5" rx="14" />
   <text x="28" y="27" fill="#f4f4f5" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="15" font-weight="700" text-anchor="start" dominant-baseline="middle">9D Ball State &amp; Aerodynamic Forces (padelkit.physics)</text>
   <text x="28" y="47" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11" font-weight="400" text-anchor="start" dominant-baseline="middle">State = [x, y, z, vx, vy, vz, wx, wy, wz]  |  F_total = m*g + F_drag(Cd) + F_magnus(Cl_Spindt)</text>
-  <rect x="24" y="64" width="520" height="332" fill="#0f172a" stroke="#1e293b" stroke-width="1" rx="10" />
-  <rect x="560" y="64" width="316" height="332" fill="#0f172a" stroke="#1e293b" stroke-width="1" rx="10" />
+  <line x1="548" y1="68" x2="548" y2="392" stroke="#1e293b" stroke-width="1" stroke-linecap="round" />
   <path d="M 440 180 C 350 170, 285 140, 72 184" fill="none" stroke="#94a3b8" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="5 4" opacity="0.5" marker-end="url(#arrow-muted)" />
   <path d="M 440 152 C 355 144, 290 118, 72 158" fill="none" stroke="#94a3b8" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="5 4" opacity="0.5" marker-end="url(#arrow-muted)" />
   <path d="M 440 272 C 345 286, 280 302, 72 296" fill="none" stroke="#94a3b8" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="5 4" opacity="0.5" marker-end="url(#arrow-muted)" />
@@ -64,7 +63,7 @@
   <circle cx="238" cy="108" r="3.2" fill="#38bdf8" stroke="#0f172a" stroke-width="1.5" />
   <rect x="125.8" y="87" width="112.4" height="18" fill="#090d16" stroke="#38bdf8" stroke-width="1.4" rx="9" />
   <text x="182" y="96.5" fill="#38bdf8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">F_magnus ∝ ω × v</text>
-  <circle cx="264" cy="228" r="4" fill="#f8fafc" stroke="#0f172a" stroke-width="1.5" />
+  <circle cx="264" cy="228" r="4" fill="#f8fafc" stroke="#090d16" stroke-width="1.5" />
   <text x="578" y="94" fill="#fb7185" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="700" text-anchor="start" dominant-baseline="middle">1. Quadratic Felt Drag</text>
   <text x="578" y="123" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="500" text-anchor="start" dominant-baseline="middle">Cd = 0.50 + 0.15 · fuzz_factor</text>
   <text x="578" y="152" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="500" text-anchor="start" dominant-baseline="middle">F_drag = -½ ρ A Cd |v| v</text>

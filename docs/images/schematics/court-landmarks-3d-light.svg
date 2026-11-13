@@ -27,8 +27,7 @@
   <rect x="0" y="0" width="960" height="540" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" rx="14" />
   <text x="28" y="27" fill="#09090b" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="15" font-weight="700" text-anchor="start" dominant-baseline="middle">17 Standardized 3D Court Landmarks (CourtLandmark)</text>
   <text x="28" y="47" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11" font-weight="400" text-anchor="start" dominant-baseline="middle">Floor landmarks 1–13 (Z = 0.0 m)  |  Back-wall top corners 14–17 (Z = 4.0 m)  |  CoordinateSystem.CENTERED</text>
-  <rect x="24" y="64" width="615" height="452" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" rx="10" />
-  <rect x="652" y="64" width="284" height="452" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" rx="10" />
+  <line x1="646" y1="68" x2="646" y2="512" stroke="#cbd5e1" stroke-width="1" stroke-linecap="round" />
   <g clip-path="url(#clip-court-3d)">
     <polygon points="419.1,428.2 587.5,329.5 242.7,191.8 73.4,252.9" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.8" stroke-linejoin="round" />
     <line x1="115.0" y1="274.0" x2="285.3" y2="208.8" stroke="#0f172a" stroke-width="1.4" stroke-linecap="round" opacity="0.9" />
@@ -174,7 +173,7 @@
     <circle cx="240.7" cy="113.8" r="3.2" fill="#0284c7" stroke="#ffffff" stroke-width="1.5" />
     <rect x="251.3" y="90.8" width="22.8" height="18" fill="#ffffff" stroke="#0284c7" stroke-width="1.4" rx="9" />
     <text x="262.7" y="100.3" fill="#0284c7" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.8" font-weight="700" text-anchor="middle" dominant-baseline="middle">17</text>
-    <rect x="38" y="476" width="360" height="28" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" rx="6" />
+    <rect x="38" y="476" width="360" height="28" fill="#f8fafc" stroke="none" stroke-width="1" rx="6" opacity="0.9" />
     <rect x="48" y="485" width="10" height="10" fill="#bae6fd" stroke="#0284c7" stroke-width="1" rx="2" />
     <text x="64" y="490" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.5" font-weight="500" text-anchor="start" dominant-baseline="middle">Tempered Glass (3m / 2m)</text>
     <rect x="218" y="485" width="10" height="10" fill="#f1f5f9" stroke="#64748b" stroke-width="1" rx="2" stroke-dasharray="2 2" />

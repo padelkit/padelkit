@@ -24,7 +24,7 @@
   <rect x="0" y="0" width="960" height="520" fill="#090d16" stroke="#1e293b" stroke-width="1.5" rx="14" />
   <text x="28" y="27" fill="#f4f4f5" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="15" font-weight="700" text-anchor="start" dominant-baseline="middle">Official FIP CourtDimensions Blueprint (Meters)</text>
   <text x="28" y="47" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11" font-weight="400" text-anchor="start" dominant-baseline="middle">length = 20.0m  |  width = 10.0m  |  service_line_distance_from_back = 3.0m  |  net = 0.88m / 0.92m</text>
-  <rect x="24" y="64" width="550" height="432" fill="#0f172a" stroke="#1e293b" stroke-width="1" rx="10" />
+  <line x1="582" y1="68" x2="582" y2="496" stroke="#1e293b" stroke-width="1" stroke-linecap="round" />
   <text x="42" y="88" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11.5" font-weight="700" text-anchor="start" dominant-baseline="middle">A. TOP-DOWN FLOOR PLAN (20.0m × 10.0m)</text>
   <rect x="48" y="148" width="384" height="192" fill="#111c2d" stroke="#f8fafc" stroke-width="2.2" />
   <line x1="86.4" y1="144" x2="86.4" y2="152" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
@@ -69,7 +69,6 @@
   <rect x="151.6" y="407" width="42.5" height="18" fill="#0f172a" stroke="#94a3b8" stroke-width="1" rx="4" />
   <text x="172.8" y="416.5" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="middle">7.0 m</text>
   <text x="172.8" y="434" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="8.8" font-weight="500" text-anchor="middle" dominant-baseline="middle">service box depth (net to service line)</text>
-  <rect x="590" y="64" width="346" height="214" fill="#0f172a" stroke="#1e293b" stroke-width="1" rx="10" />
   <text x="608" y="86" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11.2" font-weight="700" text-anchor="start" dominant-baseline="middle">B. SIDE WALL ELEVATION (GLASS vs MESH)</text>
   <text x="736" y="122" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.2" font-weight="600" text-anchor="middle" dominant-baseline="middle">side_wall = 3.0m  |  end step = 4.0m</text>
   <line x1="614" y1="232" x2="618" y2="232" stroke="#1e293b" stroke-width="1" stroke-linecap="round" />
@@ -107,7 +106,7 @@
   <text x="634" y="256" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="8.8" font-weight="500" text-anchor="start" dominant-baseline="middle">Tempered Glass (3m / 2m)</text>
   <rect x="774" y="251" width="10" height="10" fill="#1e293b" stroke="#94a3b8" stroke-width="1" rx="2" stroke-dasharray="2 2" />
   <text x="790" y="256" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="8.8" font-weight="500" text-anchor="start" dominant-baseline="middle">Metallic Mesh (4m / 3m)</text>
-  <rect x="590" y="290" width="346" height="206" fill="#0f172a" stroke="#1e293b" stroke-width="1" rx="10" />
+  <line x1="596" y1="284" x2="936" y2="284" stroke="#1e293b" stroke-width="1" stroke-linecap="round" />
   <text x="608" y="312" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11.2" font-weight="700" text-anchor="start" dominant-baseline="middle">C. NET CATENARY PROFILE (WIDTH = 10.0m)</text>
   <path d="M 638 360 Q 760 392 882 360 L 882 444 L 638 444 Z" fill="#0ea5e9" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.3" />
   <line x1="662.4" y1="444" x2="662.4" y2="365.8" stroke="#38bdf8" stroke-width="0.7" stroke-linecap="round" opacity="0.3" />
