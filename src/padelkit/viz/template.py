@@ -1304,41 +1304,50 @@ __PADELKIT_SCRIPT_OPEN__
         const team = rootMesh.userData.team;
         const segKey = team === "A" ? "teamA" : "teamB";
         const jerseyHex = team === "A" ? 0x0284c7 : 0xe11d48;
+        const shortsHex = team === "A" ? 0x0f172a : 0x1e293b;
         const clonedScene = SkeletonUtils.clone(firstTemplateScene);
         // Convert glTF Y-up back to PadelKit Z-up and align forward facing with +Y
-        clonedScene.rotation.x = Math.PI / 2;
-        clonedScene.rotation.z = Math.PI;
+        clonedScene.rotation.set(Math.PI / 2, Math.PI, 0);
 
         const sanitizedSocket = defaultSocketBone.replace(/:/g, "");
+        const forearmBone = defaultSocketBone.replace("Hand", "ForeArm");
+        const sanitizedForearm = forearmBone.replace(/:/g, "");
         let socketNode = null;
+        let forearmNode = null;
 
         clonedScene.traverse((node) => {
           if (node.isMesh) {
             node.castShadow = true;
             node.receiveShadow = true;
             if (node.material) {
-              const clonedMat = node.material.clone();
-              if (clonedMat.name === "JerseyMat") {
-                clonedMat.color.setHex(jerseyHex);
-              }
-              node.material = clonedMat;
+              const mats = Array.isArray(node.material) ? node.material : [node.material];
+              const clonedMats = mats.map((origMat) => {
+                const clonedMat = origMat.clone();
+                if (clonedMat.name === "JerseyMat") {
+                  clonedMat.color.setHex(jerseyHex);
+                } else if (clonedMat.name === "ShortsMat") {
+                  clonedMat.color.setHex(shortsHex);
+                }
+                return clonedMat;
+              });
+              node.material = Array.isArray(node.material) ? clonedMats : clonedMats[0];
               registerMesh(node, segKey);
             }
           }
-          if (
-            node.name === defaultSocketBone ||
-            node.name === sanitizedSocket ||
-            (node.userData && node.userData.name === defaultSocketBone)
-          ) {
+          const nName = node.name || "";
+          const uName = (node.userData && node.userData.name) || "";
+          if (nName === defaultSocketBone || nName === sanitizedSocket || uName === defaultSocketBone) {
             socketNode = node;
+          }
+          if (nName === forearmBone || nName === sanitizedForearm || uName === forearmBone) {
+            forearmNode = node;
           }
         });
 
+        let glbRacket = null;
         if (socketNode) {
-          const glbRacket = createPadelRacketMesh(team);
-          glbRacket.rotation.x = -Math.PI / 2;
-          glbRacket.position.set(0, 0.06, 0);
-          socketNode.add(glbRacket);
+          glbRacket = createPadelRacketMesh(team);
+          rootMesh.userData.glbGroup.add(glbRacket);
         }
 
         const mixer = new THREE.AnimationMixer(clonedScene);
@@ -1353,6 +1362,9 @@ __PADELKIT_SCRIPT_OPEN__
         rootMesh.userData.glbGroup.add(clonedScene);
         rootMesh.userData.glbMixer = mixer;
         rootMesh.userData.glbActions = actions;
+        rootMesh.userData.glbSocketNode = socketNode;
+        rootMesh.userData.glbForearmNode = forearmNode;
+        rootMesh.userData.glbRacket = glbRacket;
       });
 
       const badge = document.getElementById("mode-badge");
@@ -1486,6 +1498,24 @@ __PADELKIT_SCRIPT_OPEN__
     }
     refreshSliderRange();
 
+    function orientRacketFromForearm(racketObj, wristLocal, elbowLocal) {
+      const gripDir = wristLocal.clone().sub(elbowLocal);
+      if (gripDir.lengthSq() > 1e-6) {
+        gripDir.normalize();
+      } else {
+        gripDir.set(0, 1, 0);
+      }
+      gripDir.add(new THREE.Vector3(0, 0, 0.28)).normalize();
+      const refVec = Math.abs(gripDir.z) < 0.85
+        ? new THREE.Vector3(0, 0, 1)
+        : new THREE.Vector3(1, 0, 0);
+      const racketY = new THREE.Vector3().crossVectors(refVec, gripDir).normalize();
+      const racketX = new THREE.Vector3().crossVectors(racketY, gripDir).normalize();
+      const basis = new THREE.Matrix4().makeBasis(racketX, racketY, gripDir);
+      racketObj.position.copy(wristLocal);
+      racketObj.quaternion.setFromRotationMatrix(basis);
+    }
+
     function applyFrameState(frame, frameIdx) {
       if (!frame) return;
       const [bx, by, bz] = frame.ball;
@@ -1590,9 +1620,20 @@ __PADELKIT_SCRIPT_OPEN__
         // Subtle athletic ready bounce and forward torso lean
         const sw = p.swing_phase || 0;
         const animName = p.animation || "idle";
-        const glbRecord = loadedGlbClips[animName];
+        const fallbackClipKey =
+          loadedGlbClips[animName]
+            ? animName
+            : animName.includes("lob") && loadedGlbClips["shot_forehand"]
+              ? "shot_forehand"
+              : (animName.includes("bandeja") || animName.includes("smash")) && loadedGlbClips["shot_forehand"]
+                ? "shot_forehand"
+                : loadedGlbClips["shot_volley"]
+                  ? "shot_volley"
+                  : Object.keys(loadedGlbClips)[0];
+        const glbRecord = loadedGlbClips[animName] || (fallbackClipKey ? loadedGlbClips[fallbackClipKey] : null);
+        const activeClipKey = loadedGlbClips[animName] ? animName : fallbackClipKey;
 
-        if (glbRecord && mesh.userData.glbMixer && mesh.userData.glbActions[animName]) {
+        if (glbRecord && activeClipKey && mesh.userData.glbMixer && mesh.userData.glbActions[activeClipKey]) {
           mesh.userData.glbGroup.visible = true;
           mesh.userData.proceduralGroup.visible = false;
 
@@ -1608,19 +1649,34 @@ __PADELKIT_SCRIPT_OPEN__
             glbRecord.meta && typeof glbRecord.meta.contact_swing_phase === "number"
               ? glbRecord.meta.contact_swing_phase
               : 0.5;
-          const normProgress = isPostImpact
-            ? contactPhase + (1.0 - sw) * (1.0 - contactPhase)
-            : sw * contactPhase;
+          const isExactClip = Boolean(loadedGlbClips[animName]);
+          const normProgress = isExactClip || sw > 0.02
+            ? (isPostImpact
+                ? contactPhase + (1.0 - sw) * (1.0 - contactPhase)
+                : sw * contactPhase)
+            : 0.0;
 
-          const action = mesh.userData.glbActions[animName];
-          if (mesh.userData.activeGlbKey !== animName) {
+          mesh.userData.glbGroup.position.z = isRunning && !isExactClip ? Math.abs(Math.sin(phase)) * 0.045 : 0.0;
+
+          const action = mesh.userData.glbActions[activeClipKey];
+          if (mesh.userData.activeGlbKey !== activeClipKey) {
             Object.values(mesh.userData.glbActions).forEach((a) => a.stop());
             action.reset();
             action.play();
-            mesh.userData.activeGlbKey = animName;
+            mesh.userData.activeGlbKey = activeClipKey;
           }
           const clipDur = Math.max(glbRecord.clip.duration - 1e-4, 0.01);
           mesh.userData.glbMixer.setTime(Math.min(Math.max(normProgress, 0.0), 1.0) * clipDur);
+          if (mesh.userData.glbRacket && mesh.userData.glbSocketNode && mesh.userData.glbForearmNode) {
+            mesh.userData.glbGroup.updateMatrixWorld(true);
+            const wristLocal = new THREE.Vector3();
+            const elbowLocal = new THREE.Vector3();
+            mesh.userData.glbSocketNode.getWorldPosition(wristLocal);
+            mesh.userData.glbForearmNode.getWorldPosition(elbowLocal);
+            mesh.userData.glbGroup.worldToLocal(wristLocal);
+            mesh.userData.glbGroup.worldToLocal(elbowLocal);
+            orientRacketFromForearm(mesh.userData.glbRacket, wristLocal, elbowLocal);
+          }
         } else {
           mesh.userData.glbGroup.visible = false;
           mesh.userData.proceduralGroup.visible = true;
