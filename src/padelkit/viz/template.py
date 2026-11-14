@@ -958,26 +958,27 @@ __PADELKIT_SCRIPT_OPEN__
       handle.position.z = 0.07;
       racketGroup.add(handle);
 
-      // Throat bridge (puente de la pala)
+      // Throat bridge (puente de la pala) in the Y-Z blade plane
       [-0.032, 0.032].forEach((bx) => {
         const strut = registerMesh(
-          new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.012, 0.09, 10), frameMat),
+          new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.011, 0.09, 10), frameMat),
           "racket"
         );
-        strut.rotation.x = Math.PI / 2;
-        strut.rotation.y = bx < 0 ? -0.32 : 0.32;
-        strut.position.set(bx * 0.6, 0, 0.16);
+        strut.rotation.x = Math.PI / 2 + (bx < 0 ? 0.32 : -0.32);
+        strut.position.set(0, bx * 0.6, 0.16);
         racketGroup.add(strut);
       });
 
-      // Teardrop 38mm EVA + Carbon head
+      // Teardrop/round 36mm EVA + Carbon head: thickness along X (racketX), width along Y, length along Z
+      const headGeo = new THREE.CylinderGeometry(1, 1, 0.036, 32);
+      headGeo.rotateZ(Math.PI / 2);
+      headGeo.scale(1, 0.128, 0.145);
       const head = registerMesh(
-        new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.115, 0.038, 28), faceMat),
+        new THREE.Mesh(headGeo, [frameMat, faceMat, faceMat]),
         "racket"
       );
-      head.scale.set(1.0, 1.0, 1.24);
       head.position.z = 0.31;
-      head.castShadow = true;
+      head.castShadow = false;
       racketGroup.add(head);
 
       return racketGroup;
@@ -1509,8 +1510,9 @@ __PADELKIT_SCRIPT_OPEN__
       const refVec = Math.abs(gripDir.z) < 0.85
         ? new THREE.Vector3(0, 0, 1)
         : new THREE.Vector3(1, 0, 0);
-      const racketY = new THREE.Vector3().crossVectors(refVec, gripDir).normalize();
-      const racketX = new THREE.Vector3().crossVectors(racketY, gripDir).normalize();
+      // X = hitting face normal (36mm thickness), Y = blade width (vertical-ish edge), Z = grip length
+      const racketX = new THREE.Vector3().crossVectors(refVec, gripDir).normalize();
+      const racketY = new THREE.Vector3().crossVectors(gripDir, racketX).normalize();
       const basis = new THREE.Matrix4().makeBasis(racketX, racketY, gripDir);
       racketObj.position.copy(wristLocal);
       racketObj.quaternion.setFromRotationMatrix(basis);
