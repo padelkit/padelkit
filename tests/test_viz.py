@@ -425,3 +425,25 @@ def test_visualizer_encodes_wall_and_side_profile_config():
     assert cfg["court"]["enclosure_variant"] == 2
     assert cfg["court"]["side_wall_profile"] == "stepped"
     assert "sideWallProfile" in viz.to_html()
+
+
+def test_visualizer_encodes_side_access_and_door_states():
+    from padelkit import DoorState, SideAccess
+
+    court = Court(
+        access_left=SideAccess.fip_dual_access(),
+        access_right=SideAccess.no_access(),
+        door_left=DoorState.CLOSED,
+    )
+    timeline = MatchTimeline.demo_rally(court=court, fps=30.0)
+    viz = PadelVisualizer(court=court, timeline=timeline)
+    cfg = viz.build_config()
+    assert cfg["court"]["door_left"] == "closed"
+    assert cfg["court"]["door_right"] == "open"
+    assert cfg["court"]["access_left"]["count"] == 2
+    assert cfg["court"]["access_right"]["count"] == 0
+    assert len(cfg["court"]["side_panels_left"]) > 0
+    assert len(cfg["court"]["side_panels_right"]) > 0
+    html = viz.to_html()
+    assert "side_panels_left" in html
+    assert "side_panels_right" in html

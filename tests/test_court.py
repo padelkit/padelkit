@@ -10,6 +10,8 @@ from padelkit.court import (
     DoorState,
     EnclosureType,
     EnclosureVariant,
+    SideAccess,
+    SideEnclosurePanel,
     SideWallProfile,
 )
 from padelkit.court.enums import CourtOrientation
@@ -310,3 +312,97 @@ def test_court_dict_round_trip_with_side_wall_profile_and_legacy_payload():
     legacy.pop("side_wall_profile")
     restored_legacy = Court.from_dict(legacy)
     assert restored_legacy.side_wall_profile is None
+
+
+def test_side_access_presets_and_validation():
+    single = SideAccess.fip_single_access()
+    assert single.count == 1
+    assert single.width == pytest.approx(2.0)
+    assert single.height == pytest.approx(2.2)
+    assert single.opening_y_intervals() == ((-1.0, 1.0),)
+    assert single.is_fip_compliant() is True
+
+    dual = SideAccess.fip_dual_access()
+    assert dual.count == 2
+    assert dual.opening_y_intervals() == (
+        pytest.approx((-1.08, -0.08)),
+        pytest.approx((0.08, 1.08)),
+    )
+    assert dual.is_fip_compliant() is True
+
+    none_acc = SideAccess.no_access()
+    assert none_acc.count == 0
+    assert none_acc.opening_y_intervals() == ()
+    assert none_acc.is_fip_compliant() is True
+
+    # Non-FIP dimensions are permitted for custom clubs, flagged by is_fip_compliant()
+    narrow = SideAccess(count=1, width=0.9, height=2.2)
+    assert narrow.is_fip_compliant() is False
+    oversize_dual = SideAccess(count=2, width=1.2, height=2.2)
+    assert oversize_dual.is_fip_compliant() is False
+
+    with pytest.raises(ValueError):
+        SideAccess(count=3)
+    with pytest.raises(ValueError):
+        SideAccess(count=1, width=0.0)
+    with pytest.raises(ValueError):
+        SideAccess(count=1, height=0.0)
+
+
+def test_court_doorways_panels_and_serialization():
+    std = Court.fip_standard()
+    assert std.effective_access_left == SideAccess.fip_single_access()
+    assert std.is_doorway_opening_at("left", 0.0, 1.5, radius=0.033) is True
+    assert std.is_doorway_opening_at("left", 0.0, 2.5, radius=0.033) is False
+    assert std.is_doorway_opening_at("left", 2.0, 1.0, radius=0.033) is False
+    assert std.has_fip_compliant_access() is True
+    assert std.has_fip_compliant_access(out_of_court_play=True) is False
+
+    # Open default single access produces overhead mesh lintel 2.2..3.0m over [-1, 1]
+    panels_open = std.side_enclosure_panels("left")
+    lintel = [
+        p
+        for p in panels_open
+        if abs(p.y_start + 1.0) < 1e-6 and abs(p.y_end - 1.0) < 1e-6
+    ]
+    assert lintel == [SideEnclosurePanel(-1.0, 1.0, 2.2, 3.0, False)]
+
+    # Closed door adds bottom gate panel (0..2.2m) in addition to lintel
+    closed_court = Court(door_left=DoorState.CLOSED)
+    assert closed_court.is_doorway_opening_at("left", 0.0, 1.5, radius=0.033) is False
+    closed_center = [
+        p
+        for p in closed_court.side_enclosure_panels("left")
+        if abs(p.y_start + 1.0) < 1e-6 and abs(p.y_end - 1.0) < 1e-6
+    ]
+    assert closed_center == [
+        SideEnclosurePanel(-1.0, 1.0, 0.0, 2.2, False),
+        SideEnclosurePanel(-1.0, 1.0, 2.2, 3.0, False),
+    ]
+
+    # Asymmetric court: no left door + dual right door for out-of-court check
+    asym = Court(
+        access_left=SideAccess.no_access(),
+        access_right=SideAccess.fip_dual_access(),
+    )
+    assert asym.is_doorway_opening_at("left", 0.0, 1.2) is False
+    assert asym.is_doorway_opening_at("right", 0.0, 1.2) is False  # center pillar
+    assert asym.is_doorway_opening_at("right", 0.5, 1.2) is True
+    assert asym.has_fip_compliant_access() is True
+    assert asym.has_fip_compliant_access(out_of_court_play=True) is False
+
+    dual_both = Court(
+        access_left=SideAccess.fip_dual_access(),
+        access_right=SideAccess.fip_dual_access(),
+    )
+    assert dual_both.has_fip_compliant_access(out_of_court_play=True) is True
+
+    # Serialization round-trip + legacy backward compatibility
+    payload = asym.to_dict()
+    assert Court.from_dict(payload) == asym
+    legacy = dict(payload)
+    legacy.pop("access_left")
+    legacy.pop("access_right")
+    restored_legacy = Court.from_dict(legacy)
+    assert restored_legacy.access_left is None
+    assert restored_legacy.access_right is None

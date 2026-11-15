@@ -919,68 +919,51 @@ def build_fip_court_3d_scene(
 
     # 4. Side Walls at X = -5.0m and X = +5.0m
     door_half_w = 1.0
-    door_h = 2.0
+    door_h = 2.2
     if court is not None:
-        half_len = court.length / 2.0
-        segs = court.side_enclosure_segments(doorway_half_width=door_half_w)
-        central_total_h = court.side_wall_heights_at(half_len)[1]
-        for x_side in (-5.0, 5.0):
-            for y_sign in (-1.0, 1.0):
-                for seg in segs:
-                    y_a = y_sign * (half_len - seg.y_start_from_back)
-                    y_b = y_sign * (half_len - seg.y_end_from_back)
-                    if seg.solid_height > 0:
-                        scene.add_face(
-                            [
-                                (x_side, y_a, 0.0),
-                                (x_side, y_b, 0.0),
-                                (x_side, y_b, seg.solid_height),
-                                (x_side, y_a, seg.solid_height),
-                            ],
-                            fill=solid_fill,
-                            fill_opacity=solid_side_op,
-                            stroke=solid_stroke,
-                            stroke_width=1.3,
-                        )
-                    if seg.mesh_height > 0:
-                        scene.add_face(
-                            [
-                                (x_side, y_a, seg.solid_height),
-                                (x_side, y_b, seg.solid_height),
-                                (x_side, y_b, seg.total_height),
-                                (x_side, y_a, seg.total_height),
-                            ],
-                            fill=palette.fence_fill,
-                            fill_opacity=0.11,
-                            stroke=palette.fence_stroke,
-                            stroke_width=1.1,
-                            dash="4 3",
-                        )
-                    if include_panel_divisions and seg.y_start_from_back >= 4.0 - 1e-6:
-                        for y_div in (4.0 * y_sign, 2.0 * y_sign):
-                            scene.add_segment(
-                                (x_side, y_div, 0.0),
-                                (x_side, y_div, seg.total_height),
-                                stroke=palette.fence_stroke,
-                                stroke_width=0.85,
-                                opacity=0.55,
-                                dash="3 3",
-                            )
-            # Overhead metallic mesh lintel above central 2.0m doorway (Z = 2.0m..total_h)
-            if central_total_h > door_h:
-                scene.add_face(
-                    [
-                        (x_side, -door_half_w, door_h),
-                        (x_side, door_half_w, door_h),
-                        (x_side, door_half_w, central_total_h),
-                        (x_side, -door_half_w, central_total_h),
-                    ],
-                    fill=palette.fence_fill,
-                    fill_opacity=0.11,
-                    stroke=palette.fence_stroke,
-                    stroke_width=1.1,
-                    dash="4 3",
-                )
+        side_defs = ((-5.0, "left"), (5.0, "right"))
+        for x_side, side_name in side_defs:
+            for panel in court.side_enclosure_panels(side_name):
+                if panel.is_solid:
+                    scene.add_face(
+                        [
+                            (x_side, panel.y_start, panel.z_start),
+                            (x_side, panel.y_end, panel.z_start),
+                            (x_side, panel.y_end, panel.z_end),
+                            (x_side, panel.y_start, panel.z_end),
+                        ],
+                        fill=solid_fill,
+                        fill_opacity=solid_side_op,
+                        stroke=solid_stroke,
+                        stroke_width=1.3,
+                    )
+                else:
+                    scene.add_face(
+                        [
+                            (x_side, panel.y_start, panel.z_start),
+                            (x_side, panel.y_end, panel.z_start),
+                            (x_side, panel.y_end, panel.z_end),
+                            (x_side, panel.y_start, panel.z_end),
+                        ],
+                        fill=palette.fence_fill,
+                        fill_opacity=0.11,
+                        stroke=palette.fence_stroke,
+                        stroke_width=1.1,
+                        dash="4 3",
+                    )
+            if include_panel_divisions:
+                half_len = court.length / 2.0
+                for y_div in (-4.0, -2.0, 2.0, 4.0):
+                    dist = half_len - abs(y_div)
+                    _, total_h = court.side_wall_heights_at(dist)
+                    scene.add_segment(
+                        (x_side, y_div, 0.0),
+                        (x_side, y_div, total_h),
+                        stroke=palette.fence_stroke,
+                        stroke_width=0.85,
+                        opacity=0.55,
+                        dash="3 3",
+                    )
         return scene
 
     # Legacy default (Stepped V1 glass matching `court-landmarks-3d`)
@@ -1768,13 +1751,14 @@ def render_court_dimensions(palette: ThemePalette) -> str:
             stroke_width=0.9,
         )
 
-    # Central 2.0m entry doorway cutout (X in [9m, 11m])
+    # Central 2.0m x 2.2m entry doorway cutout (X in [9m, 11m])
     door_x = ex0 + 9.0 * escale_x
+    h_door = 2.2 * escale_z
     svg.rect(
         door_x,
-        ey_floor - h_2m,
+        ey_floor - h_door,
         step_2m,
-        h_2m,
+        h_door,
         fill=palette.bg_panel,
         stroke=palette.text_muted,
         stroke_width=1.0,
@@ -1782,10 +1766,10 @@ def render_court_dimensions(palette: ThemePalette) -> str:
     )
     svg.text(
         door_x + step_2m / 2,
-        ey_floor - h_2m / 2,
-        "2m",
+        ey_floor - h_door / 2,
+        "2×2.2m",
         fill=palette.text_muted,
-        size=7.5,
+        size=6.8,
         mono=True,
     )
 

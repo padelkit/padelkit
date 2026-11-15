@@ -82,6 +82,12 @@
       <Property name="door_right" type="DoorState | None" optional>
         State of the right lateral door, from the same perspective as `door_left`.
       </Property>
+      <Property name="access_left" type="SideAccess | None" optional>
+        Geometry and count (`0`, `1`, or `2`) of access openings on the left sideline. Defaults to a single FIP opening (`2.0 m × 2.2 m`) when `None`. See [lateral access openings](/court-geometry#lateral-access-openings-doors).
+      </Property>
+      <Property name="access_right" type="SideAccess | None" optional>
+        Geometry and count (`0`, `1`, or `2`) of access openings on the right sideline. Defaults to a single FIP opening (`2.0 m × 2.2 m`) when `None`.
+      </Property>
       <Property name="location" type="CourtLocation | None" optional>
         Structured geographic location of the court. See [`CourtLocation`](#courtlocation).
       </Property>
@@ -185,6 +191,8 @@
       setting=None,
       door_left=None,
       door_right=None,
+      access_left=None,
+      access_right=None,
       location=None
     )
     ```

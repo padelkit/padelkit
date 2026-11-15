@@ -78,7 +78,7 @@ According to the official FIP *Rules of Padel*, every court enclosure combines s
       </Property>
     </Properties>
 
-    Access openings sit symmetrically near the net (`1` opening of `1.05–2.00 m × 2.00–2.20 m`, or `2` openings of `0.72–1.00 m × 2.00–2.20 m` per side). Both [`BallPhysicsEngine`](/ball-physics-engine) and [`PadelVisualizer`](/padel-visualizer) query `court.side_wall_heights_at()` directly so collisions and 3D meshes always match.
+    Access openings sit symmetrically on the net axis (`1` opening of `1.05–2.00 m × 2.00–2.20 m`, or `2` openings of `0.72–1.00 m × 2.00–2.20 m` per side), topped by metallic wire mesh lintels up to the perimeter roof (`3.0 m` in `V1`, `4.0 m` in `V2`). Both [`BallPhysicsEngine`](/ball-physics-engine) and [`PadelVisualizer`](/padel-visualizer) query `court.side_wall_heights_at()`, `court.is_doorway_opening_at()`, and `court.side_enclosure_panels()` directly so collisions and 3D meshes always match.
 
   </Col>
   <Col sticky>
@@ -124,6 +124,71 @@ According to the official FIP *Rules of Padel*, every court enclosure combines s
     ```json {{ title: 'Output (crystal_v2 at 3.0m)' }}
     (3.0, 4.0)
     ```
+
+  </Col>
+</Row>
+
+---
+
+## Lateral Access Openings (Doors) {{ tag: 'dataclass', label: 'SideAccess' }}
+
+| Access Configuration | Preset / `count` | Official Width × Height (each) | Regulatory Notes |
+| :--- | :--- | :--- | :--- |
+| **Single Access** (default) | `SideAccess.fip_single_access()` (`1`) | `1.05–2.00 m × 2.00–2.20 m` | Default `2.00 m × 2.20 m` (FIP max); overhead mesh lintel from `height` to `3.0 / 4.0 m` |
+| **Dual Access** (out-of-court) | `SideAccess.fip_dual_access()` (`2`) | `0.72–1.00 m × 2.00–2.20 m` | Dual openings separated by a central structural post; required on **both** sides for out-of-court play |
+| **No Access** (closed side) | `SideAccess.no_access()` (`0`) | Continuous `12 m` wire mesh | Common on recreational courts with access on one side only |
+
+<Row>
+  <Col>
+
+    By default, `Court` exposes a single `2.00 m × 2.20 m` doorway centered at the net (`Y ∈ [-1.0, +1.0]`) on both sidelines (`access_left` and `access_right`), matching the maximum official FIP single-access dimensions. Above the doorway lintel (`Z > access.height`), metallic mesh continues up to the enclosure top (`3.0 m` or `4.0 m`), rebounding high balls while letting open-doorway shots pass out of court.
+
+    Non-official club layouts — such as courts with access on only one side (`access_right=SideAccess.no_access()`), custom door dimensions, or `DoorState.CLOSED` gates — are configured per side without errors and checked via `court.has_fip_compliant_access(out_of_court_play=...)`.
+
+    <Properties>
+      <Property name="SideAccess.count" type="0 | 1 | 2" default="1">
+        Number of doorway openings centered symmetrically at the net on that sideline.
+      </Property>
+      <Property name="SideAccess.width" type="float" default="2.0">
+        Clear width of each doorway opening in meters.
+      </Property>
+      <Property name="SideAccess.height" type="float" default="2.2">
+        Clear vertical height in meters below the overhead wire mesh lintel.
+      </Property>
+      <Property name="SideAccess.center_pillar_width" type="float" default="0.16">
+        Width in meters of the structural post separating dual openings when `count == 2`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Configure Side Access & Out-of-Court Play" tag="dataclass" label="SideAccess">
+
+    ```python
+    from padelkit import Court, DoorState, SideAccess
+
+    # Official out-of-court layout: dual doorways on both sides
+    pro_court = Court(
+        access_left=SideAccess.fip_dual_access(),
+        access_right=SideAccess.fip_dual_access(),
+    )
+    pro_court.has_fip_compliant_access(out_of_court_play=True)  # True
+
+    # Recreational single-side entry club court
+    club_court = Court(
+        access_left=SideAccess.fip_single_access(width=1.6, height=2.1),
+        access_right=SideAccess.no_access(),
+        door_left=DoorState.OPEN,
+    )
+
+    # Query physics pass-through at the net (y=0.0, z=1.4m)
+    club_court.is_doorway_opening_at("left", y_centered=0.0, z=1.4)   # True
+    club_court.is_doorway_opening_at("left", y_centered=0.0, z=2.5)   # False (lintel)
+    club_court.is_doorway_opening_at("right", y_centered=0.0, z=1.4)  # False (mesh)
+    ```
+
+    </CodeGroup>
 
   </Col>
 </Row>

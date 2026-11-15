@@ -11,9 +11,11 @@ from padelkit import (
     CoordinateSystem,
     Court,
     CourtDimensions,
+    DoorState,
     EnclosureType,
     EnclosureVariant,
     EnvironmentConditions,
+    SideAccess,
     SideWallProfile,
     SurfaceType,
 )
@@ -218,3 +220,52 @@ def test_side_wall_profile_and_variant_collision_surfaces():
     assert [
         b.surface for b in v2_engine.simulate(shot_high_center, duration_s=0.15).bounces
     ] == [SurfaceType.SIDE_FENCE]
+
+
+def test_doorway_passthrough_lintel_and_closed_door():
+    # 1. Open single doorway (2.0 x 2.2m): ball at y=0, z=1.2 exits cleanly outside
+    open_engine = BallPhysicsEngine(court=Court.fip_standard())
+    door_shot = BallState(position=(-4.4, 0.0, 1.2), velocity=(-12.0, 0.0, 1.0))
+    traj_open = open_engine.simulate(door_shot, duration_s=0.35)
+    assert SurfaceType.SIDE_FENCE not in [b.surface for b in traj_open.bounces]
+    assert traj_open.states[-1, 0] < -5.5
+
+    # 2. Above doorway height (z=2.6m > 2.2m): hits overhead metallic mesh lintel
+    lintel_shot = BallState(position=(-4.4, 0.0, 2.6), velocity=(-12.0, 0.0, 0.0))
+    traj_lintel = open_engine.simulate(lintel_shot, duration_s=0.15)
+    assert [b.surface for b in traj_lintel.bounces] == [SurfaceType.SIDE_FENCE]
+    assert traj_lintel.states[-1, 0] > -5.0
+
+    # 3. Closed doorway (DoorState.CLOSED) or no_access() rebounds off fence
+    closed_engine = BallPhysicsEngine(court=Court(door_left=DoorState.CLOSED))
+    traj_closed = closed_engine.simulate(door_shot, duration_s=0.15)
+    assert [b.surface for b in traj_closed.bounces] == [SurfaceType.SIDE_FENCE]
+
+    no_door_engine = BallPhysicsEngine(court=Court(access_left=SideAccess.no_access()))
+    traj_no_door = no_door_engine.simulate(door_shot, duration_s=0.15)
+    assert [b.surface for b in traj_no_door.bounces] == [SurfaceType.SIDE_FENCE]
+
+    # 4. Dual access: center pillar at y=0.0 rebounds, opening at y=0.6 exits
+    dual_engine = BallPhysicsEngine(
+        court=Court(access_left=SideAccess.fip_dual_access(center_pillar_width=0.20))
+    )
+    pillar_shot = BallState(position=(-4.4, 0.0, 1.2), velocity=(-12.0, 0.0, 0.5))
+    side_open_shot = BallState(position=(-4.4, 0.6, 1.2), velocity=(-12.0, 0.0, 0.5))
+    assert [
+        b.surface for b in dual_engine.simulate(pillar_shot, duration_s=0.15).bounces
+    ] == [SurfaceType.SIDE_FENCE]
+    traj_dual_exit = dual_engine.simulate(side_open_shot, duration_s=0.25)
+    assert SurfaceType.SIDE_FENCE not in [b.surface for b in traj_dual_exit.bounces]
+    assert traj_dual_exit.states[-1, 0] < -5.5
+
+    # 5. Vectorized simulate_batch respects doorway openings vs overhead lintel
+    batch = np.array(
+        [
+            [-4.4, 0.0, 1.2, -12.0, 0.0, 0.5, 0.0, 0.0, 0.0],
+            [-4.4, 0.0, 2.6, -12.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        ],
+        dtype=np.float64,
+    )
+    batch_out = open_engine.simulate_batch(batch, num_steps=30, dt=1.0 / 240.0)
+    assert batch_out[0, -1, 0] < -5.5
+    assert batch_out[1, -1, 0] > -5.0

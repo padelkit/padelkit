@@ -191,6 +191,38 @@ class PadelVisualizer:
                 "enclosure_type": self.court.effective_enclosure_type.value,
                 "enclosure_variant": self.court.effective_enclosure_variant.value,
                 "side_wall_profile": self.court.effective_side_wall_profile.value,
+                "door_left": (
+                    door_left.value
+                    if (door_left := self.court.door_state_for("left")) is not None
+                    else "open"
+                ),
+                "door_right": (
+                    door_right.value
+                    if (door_right := self.court.door_state_for("right")) is not None
+                    else "open"
+                ),
+                "access_left": self.court.effective_access_left.to_dict(),
+                "access_right": self.court.effective_access_right.to_dict(),
+                "side_panels_left": [
+                    {
+                        "y_start": p.y_start,
+                        "y_end": p.y_end,
+                        "z_start": p.z_start,
+                        "z_end": p.z_end,
+                        "is_solid": p.is_solid,
+                    }
+                    for p in self.court.side_enclosure_panels("left")
+                ],
+                "side_panels_right": [
+                    {
+                        "y_start": p.y_start,
+                        "y_end": p.y_end,
+                        "z_start": p.z_start,
+                        "z_end": p.z_end,
+                        "is_solid": p.is_solid,
+                    }
+                    for p in self.court.side_enclosure_panels("right")
+                ],
             },
             "landmarks_3d": {k: list(v) for k, v in lm_3d.items()},
             "cameras": [cam.to_dict() for cam in self.cameras],

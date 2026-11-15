@@ -93,8 +93,8 @@
   <line x1="783.2" y1="232" x2="783.2" y2="166" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
   <line x1="806.8" y1="232" x2="806.8" y2="166" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
   <line x1="830.4" y1="232" x2="830.4" y2="144" stroke="#1e293b" stroke-width="0.9" stroke-linecap="round" />
-  <rect x="724.2" y="188" width="23.6" height="44" fill="#0f172a" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2 2" />
-  <text x="736" y="210" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="7.5" font-weight="500" text-anchor="middle" dominant-baseline="middle">2m</text>
+  <rect x="724.2" y="183.6" width="23.6" height="48.4" fill="#0f172a" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2 2" />
+  <text x="736" y="207.8" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="6.8" font-weight="500" text-anchor="middle" dominant-baseline="middle">2×2.2m</text>
   <line x1="612" y1="232" x2="860" y2="232" stroke="#f8fafc" stroke-width="2" stroke-linecap="round" />
   <line x1="854" y1="166" x2="882" y2="166" stroke="#1e293b" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 2" />
   <line x1="854" y1="144" x2="914" y2="144" stroke="#1e293b" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 2" />

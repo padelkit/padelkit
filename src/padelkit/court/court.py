@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Literal
 
 from .dimensions import CourtDimensions
 from .enums import (
@@ -39,6 +39,141 @@ class SideEnclosureSegment:
 
 
 @dataclass(frozen=True)
+class SideEnclosurePanel:
+    """One rectangular wall/mesh panel in CENTERED sideline coordinates.
+
+    Attributes:
+        y_start: Start Y coordinate along the sideline in meters.
+        y_end: End Y coordinate along the sideline in meters.
+        z_start: Bottom elevation above the court floor in meters.
+        z_end: Top elevation above the court floor in meters.
+        is_solid: ``True`` for tempered glass or masonry wall panels, ``False``
+            for metallic mesh panels (including doorway lintels and closed doors).
+    """
+
+    y_start: float
+    y_end: float
+    z_start: float
+    z_end: float
+    is_solid: bool
+
+
+@dataclass(frozen=True)
+class SideAccess:
+    """Access doorway configuration for one lateral side of a padel court.
+
+    Per official FIP regulations (*Accesos*, pages 10-11), lateral openings are
+    symmetric around the net post (`Y = 0`) and topped by metallic mesh up to
+    the full enclosure height:
+
+    - Single access (`count=1`): ``1.05–2.00 m`` wide × ``2.00–2.20 m`` high.
+    - Dual access (`count=2`): two openings each ``0.72–1.00 m`` wide ×
+      ``2.00–2.20 m`` high separated by a central structural post.
+    - No access (`count=0`): continuous metallic mesh along the sideline
+      (legal on one side when out-of-court play is disabled, or common in clubs).
+    """
+
+    count: int = 1
+    width: float = 2.0
+    height: float = 2.2
+    center_pillar_width: float = 0.16
+
+    def __post_init__(self) -> None:
+        if self.count not in (0, 1, 2):
+            raise ValueError(f"SideAccess count must be 0, 1, or 2 (got {self.count}).")
+        if self.count > 0:
+            if self.width <= 0.0:
+                raise ValueError(
+                    f"SideAccess width must be positive (got {self.width})."
+                )
+            if self.height <= 0.0:
+                raise ValueError(
+                    f"SideAccess height must be positive (got {self.height})."
+                )
+        if self.center_pillar_width < 0.0:
+            raise ValueError(
+                "SideAccess center_pillar_width must be non-negative "
+                f"(got {self.center_pillar_width})."
+            )
+
+    @classmethod
+    def fip_single_access(
+        cls,
+        width: float = 2.0,
+        height: float = 2.2,
+    ) -> "SideAccess":
+        """Single central doorway at maximum FIP dimensions (``2.00 m × 2.20 m``)."""
+        return cls(count=1, width=width, height=height, center_pillar_width=0.0)
+
+    @classmethod
+    def fip_dual_access(
+        cls,
+        width: float = 1.0,
+        height: float = 2.2,
+        center_pillar_width: float = 0.16,
+    ) -> "SideAccess":
+        """Dual symmetric FIP doorways (``1.00 m × 2.20 m`` each)."""
+        return cls(
+            count=2,
+            width=width,
+            height=height,
+            center_pillar_width=center_pillar_width,
+        )
+
+    @classmethod
+    def no_access(cls) -> "SideAccess":
+        """Closed sideline with no doorway opening (continuous metallic mesh)."""
+        return cls(count=0, width=0.0, height=0.0, center_pillar_width=0.0)
+
+    def opening_y_intervals(
+        self,
+        half_length: float = 10.0,
+    ) -> tuple[tuple[float, float], ...]:
+        """Returns sorted ``(y_min, y_max)`` intervals in CENTERED coordinates."""
+        if self.count == 0 or self.width <= 0.0 or self.height <= 0.0:
+            return ()
+        limit = max(0.0, float(half_length))
+        if self.count == 1:
+            hw_open = 0.5 * float(self.width)
+            y0, y1 = max(-limit, -hw_open), min(limit, hw_open)
+            return ((y0, y1),) if y1 > y0 else ()
+        gap_half = 0.5 * float(self.center_pillar_width)
+        near = (max(-limit, -gap_half - float(self.width)), min(limit, -gap_half))
+        far = (max(-limit, gap_half), min(limit, gap_half + float(self.width)))
+        intervals = [pair for pair in (near, far) if pair[1] > pair[0]]
+        return tuple(intervals)
+
+    def is_fip_compliant(self) -> bool:
+        """Returns whether dimensions fall inside official FIP *Accesos* bounds."""
+        if self.count == 0:
+            return True
+        if not (2.00 <= self.height <= 2.20):
+            return False
+        if self.count == 1:
+            return 1.05 <= self.width <= 2.00
+        return 0.72 <= self.width <= 1.00
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serializes the access configuration to a dictionary."""
+        return {
+            "count": int(self.count),
+            "width": float(self.width),
+            "height": float(self.height),
+            "center_pillar_width": float(self.center_pillar_width),
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "SideAccess":
+        """Reconstructs a :class:`SideAccess` from a dictionary."""
+        return cls(
+            count=int(data.get("count", 1)),
+            width=float(data.get("width", 2.0)),
+            height=float(data.get("height", 2.2)),
+            center_pillar_width=float(data.get("center_pillar_width", 0.16)),
+        )
+
+
+@dataclass(frozen=True)
 class Court:
     """Represents a padel court with its geometry, physical
     characteristics, and metadata.
@@ -62,11 +197,13 @@ class Court:
     turf_color: str | None = None
     setting: CourtSetting | None = None
 
-    # Access doors (one per lateral side)
+    # Access doors (one or two openings per lateral side)
     # "left" and "right" are from the perspective of a player
     # on the NEAR side facing the net.
     door_left: DoorState | None = None
     door_right: DoorState | None = None
+    access_left: SideAccess | None = None
+    access_right: SideAccess | None = None
 
     # Location
     location: CourtLocation | None = None
@@ -126,6 +263,131 @@ class Court:
         if self.effective_enclosure_type is EnclosureType.WALL:
             return SideWallProfile.STEPPED
         return SideWallProfile.UNIFORM
+
+    @property
+    def effective_access_left(self) -> SideAccess:
+        """Resolved left sideline access configuration (defaults to FIP 2.0m x 2.2m)."""
+        return (
+            self.access_left
+            if self.access_left is not None
+            else SideAccess.fip_single_access()
+        )
+
+    @property
+    def effective_access_right(self) -> SideAccess:
+        """Resolved right sideline access (defaults to FIP 2.0m x 2.2m)."""
+        return (
+            self.access_right
+            if self.access_right is not None
+            else SideAccess.fip_single_access()
+        )
+
+    def effective_access(self, side: Literal["left", "right"]) -> SideAccess:
+        """Returns the resolved :class:`SideAccess` for ``'left'`` or ``'right'``."""
+        if side == "left":
+            return self.effective_access_left
+        if side == "right":
+            return self.effective_access_right
+        raise ValueError(f"side must be 'left' or 'right' (got {side!r}).")
+
+    def door_state_for(self, side: Literal["left", "right"]) -> DoorState | None:
+        """Returns :attr:`door_left` or :attr:`door_right` for ``side``."""
+        if side == "left":
+            return self.door_left
+        if side == "right":
+            return self.door_right
+        raise ValueError(f"side must be 'left' or 'right' (got {side!r}).")
+
+    def has_fip_compliant_access(self, out_of_court_play: bool = False) -> bool:
+        """Returns whether lateral openings satisfy FIP rules.
+
+        Args:
+            out_of_court_play: If ``True``, both sides must have 2 compliant
+                openings (FIP *Zona de seguridad y juego exterior*, p. 11). If
+                ``False``, at least one side must have 1 or 2 compliant openings.
+        """
+        left = self.effective_access_left
+        right = self.effective_access_right
+        if not (left.is_fip_compliant() and right.is_fip_compliant()):
+            return False
+        if out_of_court_play:
+            return left.count == 2 and right.count == 2
+        return (left.count + right.count) >= 1
+
+    def is_doorway_opening_at(
+        self,
+        side: Literal["left", "right"],
+        y_centered: float,
+        z: float,
+        *,
+        radius: float = 0.0,
+    ) -> bool:
+        """Returns ``True`` when ``(y_centered, z)`` lies inside a passable doorway.
+
+        A doorway is passable when ``count > 0``, the door is not
+        ``DoorState.CLOSED``, ``0 <= z <= access.height - radius``, and
+        ``y_centered`` falls cleanly inside one of the opening Y intervals.
+        """
+        if self.door_state_for(side) is DoorState.CLOSED:
+            return False
+        access = self.effective_access(side)
+        if access.count == 0 or z < 0.0:
+            return False
+        r = max(0.0, float(radius))
+        if z > access.height - r:
+            return False
+        for y0, y1 in access.opening_y_intervals(half_length=self.length / 2.0):
+            if (y0 + r) <= y_centered <= (y1 - r):
+                return True
+        return False
+
+    def side_enclosure_panels(
+        self,
+        side: Literal["left", "right"] = "left",
+    ) -> list[SideEnclosurePanel]:
+        """Returns full-length ``[-length/2, +length/2]`` panels including lintels."""
+        half_len = self.length / 2.0
+        access = self.effective_access(side)
+        door_state = self.door_state_for(side)
+        openings = access.opening_y_intervals(half_length=half_len)
+
+        breaks = {
+            -half_len,
+            -half_len + 2.0,
+            -half_len + 4.0,
+            half_len - 4.0,
+            half_len - 2.0,
+            half_len,
+        }
+        for y0, y1 in openings:
+            breaks.add(y0)
+            breaks.add(y1)
+        sorted_breaks = sorted(breaks)
+
+        panels: list[SideEnclosurePanel] = []
+        for y_a, y_b in zip(sorted_breaks, sorted_breaks[1:]):
+            if y_b <= y_a + 1e-9:
+                continue
+            y_mid = 0.5 * (y_a + y_b)
+            dist_from_back = half_len - abs(y_mid)
+            solid_h, total_h = self.side_wall_heights_at(dist_from_back)
+
+            in_opening = any(o0 - 1e-9 <= y_mid <= o1 + 1e-9 for o0, o1 in openings)
+            if in_opening:
+                door_top = min(access.height, total_h)
+                if door_state is DoorState.CLOSED and door_top > 0.0:
+                    panels.append(SideEnclosurePanel(y_a, y_b, 0.0, door_top, False))
+                if total_h > door_top:
+                    panels.append(
+                        SideEnclosurePanel(y_a, y_b, door_top, total_h, False)
+                    )
+                continue
+
+            if solid_h > 0.0:
+                panels.append(SideEnclosurePanel(y_a, y_b, 0.0, solid_h, True))
+            if total_h > solid_h:
+                panels.append(SideEnclosurePanel(y_a, y_b, solid_h, total_h, False))
+        return panels
 
     def side_wall_heights_at(self, dist_from_back: float) -> tuple[float, float]:
         """Returns ``(solid_height_m, total_height_m)`` at distance from back wall.
@@ -362,6 +624,12 @@ class Court:
             "door_right": (
                 self.door_right.value if self.door_right is not None else None
             ),
+            "access_left": (
+                self.access_left.to_dict() if self.access_left is not None else None
+            ),
+            "access_right": (
+                self.access_right.to_dict() if self.access_right is not None else None
+            ),
             "location": self.location.to_dict() if self.location is not None else None,
         }
 
@@ -376,6 +644,8 @@ class Court:
         )
         loc_data = data.get("location")
         loc = CourtLocation.from_dict(loc_data) if isinstance(loc_data, dict) else None
+        acc_left_data = data.get("access_left")
+        acc_right_data = data.get("access_right")
         return cls(
             dimensions=dims,
             enclosure_type=(
@@ -412,6 +682,16 @@ class Court:
             door_right=(
                 DoorState(data["door_right"])
                 if data.get("door_right") is not None
+                else None
+            ),
+            access_left=(
+                SideAccess.from_dict(acc_left_data)
+                if isinstance(acc_left_data, dict)
+                else None
+            ),
+            access_right=(
+                SideAccess.from_dict(acc_right_data)
+                if isinstance(acc_right_data, dict)
                 else None
             ),
             location=loc,

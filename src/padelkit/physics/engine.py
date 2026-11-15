@@ -3,8 +3,8 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from ..court.court import Court
-from ..court.enums import CoordinateSystem, EnclosureType
+from ..court.court import Court, SideAccess
+from ..court.enums import CoordinateSystem, DoorState, EnclosureType, EnclosureVariant
 from .enums import ContactRegime, SurfaceType
 from .models import (
     BallProperties,
@@ -220,6 +220,69 @@ class BallPhysicsEngine:
             return normal
         return perturbed / np.linalg.norm(perturbed)
 
+    def _resolve_wall_bounce(
+        self,
+        s: np.ndarray,
+        normal: np.ndarray,
+        cor: float,
+        friction: float,
+        surface: SurfaceType,
+        is_solid: bool,
+        coord_idx: int,
+        bound_val: float,
+        clamp_min: bool,
+        t_next: float,
+        rng: np.random.Generator | None,
+    ) -> tuple[np.ndarray, BounceEvent]:
+        """Resolves a vertical wall/fence impact and returns the state + event."""
+        vel_before = (float(s[3]), float(s[4]), float(s[5]))
+        ang_before = (float(s[6]), float(s[7]), float(s[8]))
+        eff_normal = normal if is_solid else self._perturb_fence_normal(normal, rng)
+        s_out, regime = self.resolve_collision(s, eff_normal, cor, friction)
+        if clamp_min:
+            s_out[coord_idx] = max(float(s_out[coord_idx]), bound_val)
+        else:
+            s_out[coord_idx] = min(float(s_out[coord_idx]), bound_val)
+        event = BounceEvent(
+            timestamp=t_next,
+            surface=surface,
+            position=(float(s_out[0]), float(s_out[1]), float(s_out[2])),
+            velocity_before=vel_before,
+            velocity_after=(float(s_out[3]), float(s_out[4]), float(s_out[5])),
+            angular_velocity_before=ang_before,
+            angular_velocity_after=(
+                float(s_out[6]),
+                float(s_out[7]),
+                float(s_out[8]),
+            ),
+            regime=regime,
+        )
+        return s_out, event
+
+    def _doorway_open_mask(
+        self,
+        side: str,
+        y_centered: np.ndarray,
+        z: np.ndarray,
+        radius: float,
+    ) -> np.ndarray:
+        """Vectorized mask matching :meth:`Court.is_doorway_opening_at`."""
+        mask = np.zeros(y_centered.shape, dtype=bool)
+        if self.court.door_state_for(side) is DoorState.CLOSED:  # type: ignore[arg-type]
+            return mask
+        access: SideAccess = self.court.effective_access(side)  # type: ignore[arg-type]
+        if access.count == 0:
+            return mask
+        r = max(0.0, float(radius))
+        z_ok = (z >= 0.0) & (z <= access.height - r)
+        if not np.any(z_ok):
+            return mask
+        half_len = self.court.length / 2.0
+        for y0, y1 in access.opening_y_intervals(half_length=half_len):
+            if y1 - y0 > 2.0 * r:
+                mask |= (y_centered >= y0 + r) & (y_centered <= y1 - r)
+        return mask & z_ok
+
     def step(
         self,
         state: BallState | np.ndarray,
@@ -268,9 +331,10 @@ class BallPhysicsEngine:
                 regime=regime,
             )
 
-        # 2. Side walls (Left: x <= x_min + R, Right: x >= x_max - R)
+        # 2. Side walls (Left: x = x_min, Right: x = x_max) respecting doorways
+        y_centered = float(s[1]) - net_y
         solid_side_h, total_side_h = self._side_wall_heights_at_y(float(s[1]))
-        if s[2] <= total_side_h:
+        if y_min <= s[1] <= y_max and s[2] <= total_side_h:
             is_solid = s[2] <= solid_side_h
             cor_s = solid_cor if is_solid else self.surfaces.fence_cor
             fric_s = solid_fric if is_solid else self.surfaces.fence_friction
@@ -280,46 +344,94 @@ class BallPhysicsEngine:
                 else SurfaceType.SIDE_FENCE
             )
 
-            if s[0] <= x_min + r and s[3] < 0.0:
-                vel_before = (float(s[3]), float(s[4]), float(s[5]))
-                ang_before = (float(s[6]), float(s[7]), float(s[8]))
-                normal = np.array([1.0, 0.0, 0.0])
-                if not is_solid:
-                    normal = self._perturb_fence_normal(normal, rng)
-                s, regime = self.resolve_collision(s, normal, cor_s, fric_s)
-                s[0] = max(float(s[0]), x_min + r)
-                bounce_event = BounceEvent(
-                    timestamp=t_next,
-                    surface=surf_type,
-                    position=(float(s[0]), float(s[1]), float(s[2])),
-                    velocity_before=vel_before,
-                    velocity_after=(float(s[3]), float(s[4]), float(s[5])),
-                    angular_velocity_before=ang_before,
-                    angular_velocity_after=(float(s[6]), float(s[7]), float(s[8])),
-                    regime=regime,
+            if (
+                s_in[0] >= x_min
+                and s[0] <= x_min + r
+                and s[3] < 0.0
+                and not self.court.is_doorway_opening_at(
+                    "left", y_centered, float(s[2]), radius=r
                 )
-            elif s[0] >= x_max - r and s[3] > 0.0:
-                vel_before = (float(s[3]), float(s[4]), float(s[5]))
-                ang_before = (float(s[6]), float(s[7]), float(s[8]))
-                normal = np.array([-1.0, 0.0, 0.0])
-                if not is_solid:
-                    normal = self._perturb_fence_normal(normal, rng)
-                s, regime = self.resolve_collision(s, normal, cor_s, fric_s)
-                s[0] = min(float(s[0]), x_max - r)
-                bounce_event = BounceEvent(
-                    timestamp=t_next,
-                    surface=surf_type,
-                    position=(float(s[0]), float(s[1]), float(s[2])),
-                    velocity_before=vel_before,
-                    velocity_after=(float(s[3]), float(s[4]), float(s[5])),
-                    angular_velocity_before=ang_before,
-                    angular_velocity_after=(float(s[6]), float(s[7]), float(s[8])),
-                    regime=regime,
+            ):
+                s, bounce_event = self._resolve_wall_bounce(
+                    s,
+                    np.array([1.0, 0.0, 0.0]),
+                    cor_s,
+                    fric_s,
+                    surf_type,
+                    is_solid,
+                    0,
+                    x_min + r,
+                    True,
+                    t_next,
+                    rng,
+                )
+            elif (
+                s_in[0] <= x_min
+                and s[0] >= x_min - r
+                and s[3] > 0.0
+                and not self.court.is_doorway_opening_at(
+                    "left", y_centered, float(s[2]), radius=r
+                )
+            ):
+                s, bounce_event = self._resolve_wall_bounce(
+                    s,
+                    np.array([-1.0, 0.0, 0.0]),
+                    cor_s,
+                    fric_s,
+                    surf_type,
+                    is_solid,
+                    0,
+                    x_min - r,
+                    False,
+                    t_next,
+                    rng,
+                )
+            elif (
+                s_in[0] <= x_max
+                and s[0] >= x_max - r
+                and s[3] > 0.0
+                and not self.court.is_doorway_opening_at(
+                    "right", y_centered, float(s[2]), radius=r
+                )
+            ):
+                s, bounce_event = self._resolve_wall_bounce(
+                    s,
+                    np.array([-1.0, 0.0, 0.0]),
+                    cor_s,
+                    fric_s,
+                    surf_type,
+                    is_solid,
+                    0,
+                    x_max - r,
+                    False,
+                    t_next,
+                    rng,
+                )
+            elif (
+                s_in[0] >= x_max
+                and s[0] <= x_max + r
+                and s[3] < 0.0
+                and not self.court.is_doorway_opening_at(
+                    "right", y_centered, float(s[2]), radius=r
+                )
+            ):
+                s, bounce_event = self._resolve_wall_bounce(
+                    s,
+                    np.array([1.0, 0.0, 0.0]),
+                    cor_s,
+                    fric_s,
+                    surf_type,
+                    is_solid,
+                    0,
+                    x_max + r,
+                    True,
+                    t_next,
+                    rng,
                 )
 
-        # 3. Back walls (Near: y <= y_min + R, Far: y >= y_max - R)
+        # 3. Back walls (Near: y = y_min, Far: y = y_max)
         back_h = self.court.dimensions.back_wall_height
-        if s[2] <= back_h:
+        if (x_min - r) <= s[0] <= (x_max + r) and s[2] <= back_h:
             is_solid_back = s[2] <= 3.0
             cor_b = solid_cor if is_solid_back else self.surfaces.fence_cor
             fric_b = solid_fric if is_solid_back else self.surfaces.fence_friction
@@ -329,41 +441,33 @@ class BallPhysicsEngine:
                 else SurfaceType.BACK_FENCE
             )
 
-            if s[1] <= y_min + r and s[4] < 0.0:
-                vel_before = (float(s[3]), float(s[4]), float(s[5]))
-                ang_before = (float(s[6]), float(s[7]), float(s[8]))
-                normal = np.array([0.0, 1.0, 0.0])
-                if not is_solid_back:
-                    normal = self._perturb_fence_normal(normal, rng)
-                s, regime = self.resolve_collision(s, normal, cor_b, fric_b)
-                s[1] = max(float(s[1]), y_min + r)
-                bounce_event = BounceEvent(
-                    timestamp=t_next,
-                    surface=surf_back,
-                    position=(float(s[0]), float(s[1]), float(s[2])),
-                    velocity_before=vel_before,
-                    velocity_after=(float(s[3]), float(s[4]), float(s[5])),
-                    angular_velocity_before=ang_before,
-                    angular_velocity_after=(float(s[6]), float(s[7]), float(s[8])),
-                    regime=regime,
+            if s_in[1] >= y_min and s[1] <= y_min + r and s[4] < 0.0:
+                s, bounce_event = self._resolve_wall_bounce(
+                    s,
+                    np.array([0.0, 1.0, 0.0]),
+                    cor_b,
+                    fric_b,
+                    surf_back,
+                    is_solid_back,
+                    1,
+                    y_min + r,
+                    True,
+                    t_next,
+                    rng,
                 )
-            elif s[1] >= y_max - r and s[4] > 0.0:
-                vel_before = (float(s[3]), float(s[4]), float(s[5]))
-                ang_before = (float(s[6]), float(s[7]), float(s[8]))
-                normal = np.array([0.0, -1.0, 0.0])
-                if not is_solid_back:
-                    normal = self._perturb_fence_normal(normal, rng)
-                s, regime = self.resolve_collision(s, normal, cor_b, fric_b)
-                s[1] = min(float(s[1]), y_max - r)
-                bounce_event = BounceEvent(
-                    timestamp=t_next,
-                    surface=surf_back,
-                    position=(float(s[0]), float(s[1]), float(s[2])),
-                    velocity_before=vel_before,
-                    velocity_after=(float(s[3]), float(s[4]), float(s[5])),
-                    angular_velocity_before=ang_before,
-                    angular_velocity_after=(float(s[6]), float(s[7]), float(s[8])),
-                    regime=regime,
+            elif s_in[1] <= y_max and s[1] >= y_max - r and s[4] > 0.0:
+                s, bounce_event = self._resolve_wall_bounce(
+                    s,
+                    np.array([0.0, -1.0, 0.0]),
+                    cor_b,
+                    fric_b,
+                    surf_back,
+                    is_solid_back,
+                    1,
+                    y_max - r,
+                    False,
+                    t_next,
+                    rng,
                 )
 
         # 4. Catenary Net collision
@@ -478,16 +582,23 @@ class BallPhysicsEngine:
         out[:, 0, :] = s
 
         r = self.ball.radius
-        x_min, x_max, y_min, y_max, _ = self._court_bounds()
+        x_min, x_max, y_min, y_max, net_y = self._court_bounds()
         floor_cor = self.surfaces.floor_cor
         floor_fric = self.surfaces.floor_friction
         is_wall = self.court.enclosure_type is EnclosureType.WALL
         wall_cor = self.surfaces.wall_cor if is_wall else self.surfaces.glass_cor
+        back_h = self.court.dimensions.back_wall_height
+        central_side_h = (
+            max(back_h, self.court.dimensions.side_wall_height)
+            if self.court.effective_enclosure_variant is EnclosureVariant.V2
+            else min(back_h, self.court.dimensions.side_wall_height)
+        )
         alpha = self.ball.inertia_ratio
         mass_roll_factor = 1.0 / (1.0 + 1.0 / alpha)
 
         curr = s.copy()
         for step_idx in range(1, num_steps + 1):
+            prev = curr.copy()
             curr = self.rk4_step(curr, dt)
 
             # Vectorized Floor Bounce (z <= R & vz < 0)
@@ -518,20 +629,60 @@ class BallPhysicsEngine:
                 curr[hit_floor, 6:7] += dv_t[:, 1:2] / (alpha * r)
                 curr[hit_floor, 7:8] -= dv_t[:, 0:1] / (alpha * r)
 
-            # Vectorized Back & Side Wall Restitution
-            hit_left = (curr[:, 0] <= x_min + r) & (curr[:, 3] < 0.0)
+            # Vectorized Back & Side Wall Restitution (respecting doorway openings)
+            y_c = curr[:, 1] - net_y
+            dist_from_back = np.minimum(
+                np.abs(curr[:, 1] - y_min), np.abs(y_max - curr[:, 1])
+            )
+            total_side_h = np.where(dist_from_back <= 2.0, back_h, central_side_h)
+            in_y_side = (
+                (curr[:, 1] >= y_min)
+                & (curr[:, 1] <= y_max)
+                & (curr[:, 2] <= total_side_h)
+            )
+            door_left_open = self._doorway_open_mask("left", y_c, curr[:, 2], r)
+            door_right_open = self._doorway_open_mask("right", y_c, curr[:, 2], r)
+
+            hit_left = (
+                in_y_side
+                & ~door_left_open
+                & (prev[:, 0] >= x_min)
+                & (curr[:, 0] <= x_min + r)
+                & (curr[:, 3] < 0.0)
+            )
             curr[hit_left, 3] *= -wall_cor
             curr[hit_left, 0] = x_min + r
 
-            hit_right = (curr[:, 0] >= x_max - r) & (curr[:, 3] > 0.0)
+            hit_right = (
+                in_y_side
+                & ~door_right_open
+                & (prev[:, 0] <= x_max)
+                & (curr[:, 0] >= x_max - r)
+                & (curr[:, 3] > 0.0)
+            )
             curr[hit_right, 3] *= -wall_cor
             curr[hit_right, 0] = x_max - r
 
-            hit_near = (curr[:, 1] <= y_min + r) & (curr[:, 4] < 0.0)
+            in_x_back = (
+                (curr[:, 0] >= x_min - r)
+                & (curr[:, 0] <= x_max + r)
+                & (curr[:, 2] <= back_h)
+            )
+            hit_near = (
+                in_x_back
+                & (prev[:, 1] >= y_min)
+                & (curr[:, 1] <= y_min + r)
+                & (curr[:, 4] < 0.0)
+            )
             curr[hit_near, 4] *= -wall_cor
             curr[hit_near, 1] = y_min + r
 
-            hit_far = (curr[:, 1] >= y_max - r) & (curr[:, 4] > 0.0)
+            hit_far = (
+                in_x_back
+                & (prev[:, 1] <= y_max)
+                & (curr[:, 1] >= y_max - r)
+                & (curr[:, 4] > 0.0)
+            )
             curr[hit_far, 4] *= -wall_cor
             curr[hit_far, 1] = y_max - r
 

@@ -1,4 +1,4 @@
-from .court import Court, SideEnclosureSegment
+from .court import Court, SideAccess, SideEnclosurePanel, SideEnclosureSegment
 from .dimensions import CourtDimensions
 from .enums import (
     CoordinateSystem,
@@ -21,6 +21,8 @@ __all__ = [
     "EnclosureType",
     "EnclosureVariant",
     "SideWallProfile",
+    "SideAccess",
+    "SideEnclosurePanel",
     "SideEnclosureSegment",
     "CourtOrientation",
     "DoorState",

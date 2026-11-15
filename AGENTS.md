@@ -47,7 +47,7 @@ Defines the dimensions, landmarks, and coordinate system of an official padel co
   - `CENTERED` (default): Origin `(0.0, 0.0, 0.0)` at the center of the net on the floor, `X` in `[-5, 5]`, `Y` in `[-10, 10]`, `Z` height in meters.
   - `CORNER_BASED`: Origin `(0.0, 0.0, 0.0)` at the bottom-left (`FLOOR_NEAR_LEFT`) corner.
 - **`CourtLandmark`:** Enumeration for the 17 standardized 2D/3D positions (13 floor points + 4 back-wall top corners).
-- **`Court`:** Main geometry class providing `landmarks_2d()`, `landmarks_3d()`, `point(name)`, `side_wall_heights_at(dist_from_back)`, and `side_enclosure_segments()`, along with `EnclosureType` (`GLASS`, `WALL`), `EnclosureVariant` (`V1`, `V2`), and `SideWallProfile` (`STEPPED`, `UNIFORM`).
+- **`Court`:** Main geometry class providing `landmarks_2d()`, `landmarks_3d()`, `point(name)`, `side_wall_heights_at(dist_from_back)`, `side_enclosure_segments()`, `side_enclosure_panels()`, `is_doorway_opening_at()`, and `has_fip_compliant_access()`, along with `SideAccess` (`0/1/2` configurable sideline openings + overhead mesh lintel), `SideEnclosurePanel`, `EnclosureType` (`GLASS`, `WALL`), `EnclosureVariant` (`V1`, `V2`), `DoorState` (`OPEN`, `CLOSED`), and `SideWallProfile` (`STEPPED`, `UNIFORM`).
 
 ### 2. `camera` Module (`src/padelkit/camera/`)
 Provides projective camera geometry, optical lens distortion, 2D-to-3D calibration, and 3D-to-2D / 2D-to-3D transformations.
@@ -62,7 +62,7 @@ Provides a 9-Dimensional (`9D`) aerodynamic and contact physics engine for padel
 
 - **`BallProperties`, `EnvironmentConditions`, `SurfaceMaterials`:** Immutable physical configuration dataclasses with presets (`BallProperties.fip_standard()`, `worn()`, `wet()`, `EnvironmentConditions.from_atmosphere()` using barometric + Tetens humid air density, `SurfaceMaterials.fip_standard()`, `fast_indoor()`, `slow_sandy()`).
 - **`BallState`, `BallTrajectory`, `BounceEvent`:** `BallState.from_shot()` decomposes `topspin_rpm` and `sidespin_rpm` into 3D angular velocity. `BallTrajectory` stores full 9D history with interpolation (`state_at()`), Pandas/CSV export, and `to_timeline()` conversion for 3D visualization.
-- **`BallPhysicsEngine`:** Integrates gravity, quadratic drag with felt `fuzz_factor`, and non-linear Spindt Magnus lift via 4th-order Runge-Kutta (`RK4`). Resolves collisions with analytical Coulomb `SLIDING` vs `ROLLING` transition across all court surfaces (`FLOOR`, `BACK_GLASS`, `SIDE_GLASS`, `BACK_WALL`, `SIDE_WALL`, `BACK_FENCE`, `SIDE_FENCE`, `NET`). Supports both single-trajectory `simulate()` and vectorized NumPy `simulate_batch()`.
+- **`BallPhysicsEngine`:** Integrates gravity, quadratic drag with felt `fuzz_factor`, and non-linear Spindt Magnus lift via 4th-order Runge-Kutta (`RK4`). Resolves collisions with analytical Coulomb `SLIDING` vs `ROLLING` transition across all court surfaces (`FLOOR`, `BACK_GLASS`, `SIDE_GLASS`, `BACK_WALL`, `SIDE_WALL`, `BACK_FENCE`, `SIDE_FENCE`, `NET`), honoring `SideAccess` passable doorways vs. overhead lintels and `DoorState.CLOSED` gates. Supports both single-trajectory `simulate()` and vectorized NumPy `simulate_batch()`.
 
 ### 4. `viz` Module (`src/padelkit/viz/`)
 Provides the temporal state contract (`FrameState`, `PlayerPose`, `MatchTimeline`) and the interactive Three.js 3D studio (`PadelVisualizer`).

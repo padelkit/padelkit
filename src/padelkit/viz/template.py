@@ -619,7 +619,7 @@ __PADELKIT_SCRIPT_OPEN__
       metalness: 0.05,
     });
 
-    function addWallPanel(x, y, z, width, depth, height, isSolid) {
+    function addWallPanel(x, y, z, width, depth, height, isSolid, forceBottomRail = false) {
       if (height <= 0.001) return;
       const geo = new THREE.BoxGeometry(width, depth, height);
       const mat = isSolid ? (isMasonry ? masonryMat : glassMat) : wireMeshMat;
@@ -640,12 +640,12 @@ __PADELKIT_SCRIPT_OPEN__
       topRail.position.set(x, y, z + height - railH / 2);
       scene.add(topRail);
 
-      if (z === 0) {
+      if (z === 0 || forceBottomRail) {
         const botRail = registerMesh(
           new THREE.Mesh(new THREE.BoxGeometry(width + 0.02, depth + 0.04, railH), pillarMat),
           "structure"
         );
-        botRail.position.set(x, y, railH / 2);
+        botRail.position.set(x, y, z + railH / 2);
         scene.add(botRail);
       }
 
@@ -692,32 +692,71 @@ __PADELKIT_SCRIPT_OPEN__
       addStructuralPillar(px,  hl, backH);
     }
 
-    // Side walls matching regulatory EnclosureVariant (V1/V2) & SideWallProfile (stepped/uniform)
-    const sideSegments = [
-      { y: -hl + 1.0, len: 2.0, solidH: solidCap, meshH: backH - solidCap, totalH: backH },
-      { y: -hl + 3.0, len: 2.0, solidH: step2SolidH, meshH: Math.max(0, sideH - step2SolidH), totalH: sideH },
-      { y: -hl + 5.0, len: 2.0, solidH: 0.0, meshH: sideH, totalH: sideH },
-      { y: -hl + 7.0, len: 2.0, solidH: 0.0, meshH: sideH, totalH: sideH },
-      { y: -hl + 8.5, len: 1.0, solidH: 0.0, meshH: sideH, totalH: sideH },
-      // Central 2m doorway opening at y in [-1.0, 1.0]
-      { y:  hl - 8.5, len: 1.0, solidH: 0.0, meshH: sideH, totalH: sideH },
-      { y:  hl - 7.0, len: 2.0, solidH: 0.0, meshH: sideH, totalH: sideH },
-      { y:  hl - 5.0, len: 2.0, solidH: 0.0, meshH: sideH, totalH: sideH },
-      { y:  hl - 3.0, len: 2.0, solidH: step2SolidH, meshH: Math.max(0, sideH - step2SolidH), totalH: sideH },
-      { y:  hl - 1.0, len: 2.0, solidH: solidCap, meshH: backH - solidCap, totalH: backH },
+    // Side walls matching regulatory EnclosureVariant (V1/V2), SideWallProfile, & SideAccess
+    const sidePanelsBySide = [
+      { sx: -hw, panels: court.side_panels_left },
+      { sx:  hw, panels: court.side_panels_right },
     ];
-    sideSegments.forEach((seg) => {
-      [-hw, hw].forEach((sx) => {
-        if (seg.solidH > 0) {
-          addWallPanel(sx, seg.y, 0, panelThick, seg.len - 0.02, seg.solidH, true);
-        }
-        if (seg.meshH > 0) {
-          addWallPanel(sx, seg.y, seg.solidH, 0.016, seg.len - 0.02, seg.meshH, false);
-        }
-        addStructuralPillar(sx, seg.y - seg.len / 2, seg.totalH);
-        addStructuralPillar(sx, seg.y + seg.len / 2, seg.totalH);
+    if (Array.isArray(court.side_panels_left) && Array.isArray(court.side_panels_right)) {
+      sidePanelsBySide.forEach(({ sx, panels }) => {
+        const pillarHeights = new Map();
+        const recordPillar = (py, ph) => {
+          const key = py.toFixed(3);
+          const prev = pillarHeights.get(key) || { y: py, h: 0 };
+          if (ph > prev.h) prev.h = ph;
+          pillarHeights.set(key, prev);
+        };
+        panels.forEach((p) => {
+          const len = Math.max(0.02, p.y_end - p.y_start);
+          const ym = 0.5 * (p.y_start + p.y_end);
+          const h = Math.max(0.0, p.z_end - p.z_start);
+          if (h <= 0.001) return;
+          const hasSolidBelow = panels.some(
+            (other) =>
+              other.is_solid &&
+              Math.abs(other.y_start - p.y_start) < 0.02 &&
+              Math.abs(other.y_end - p.y_end) < 0.02 &&
+              Math.abs(other.z_end - p.z_start) < 0.02
+          );
+          const forceBottomRail = !p.is_solid && p.z_start > 0.01 && !hasSolidBelow;
+          const thick = p.is_solid ? panelThick : 0.016;
+          addWallPanel(sx, ym, p.z_start, thick, Math.max(0.02, len - 0.02), h, p.is_solid, forceBottomRail);
+          recordPillar(p.y_start, p.z_end);
+          recordPillar(p.y_end, p.z_end);
+        });
+        pillarHeights.forEach(({ y, h }) => {
+          if (h > 0.01) addStructuralPillar(sx, y, h);
+        });
       });
-    });
+    } else {
+      const sideSegments = [
+        { y: -hl + 1.0, len: 2.0, solidH: solidCap, meshH: backH - solidCap, totalH: backH },
+        { y: -hl + 3.0, len: 2.0, solidH: step2SolidH, meshH: Math.max(0, sideH - step2SolidH), totalH: sideH },
+        { y: -hl + 5.0, len: 2.0, solidH: 0.0, meshH: sideH, totalH: sideH },
+        { y: -hl + 7.0, len: 2.0, solidH: 0.0, meshH: sideH, totalH: sideH },
+        { y: -hl + 8.5, len: 1.0, solidH: 0.0, meshH: sideH, totalH: sideH },
+        // Central 2m doorway opening with overhead mesh lintel
+        { y: 0.0, len: 2.0, solidH: 0.0, meshH: Math.max(0, sideH - 2.2), zStart: 2.2, totalH: sideH },
+        { y:  hl - 8.5, len: 1.0, solidH: 0.0, meshH: sideH, totalH: sideH },
+        { y:  hl - 7.0, len: 2.0, solidH: 0.0, meshH: sideH, totalH: sideH },
+        { y:  hl - 5.0, len: 2.0, solidH: 0.0, meshH: sideH, totalH: sideH },
+        { y:  hl - 3.0, len: 2.0, solidH: step2SolidH, meshH: Math.max(0, sideH - step2SolidH), totalH: sideH },
+        { y:  hl - 1.0, len: 2.0, solidH: solidCap, meshH: backH - solidCap, totalH: backH },
+      ];
+      sideSegments.forEach((seg) => {
+        [-hw, hw].forEach((sx) => {
+          if (seg.solidH > 0) {
+            addWallPanel(sx, seg.y, 0, panelThick, seg.len - 0.02, seg.solidH, true);
+          }
+          if (seg.meshH > 0) {
+            const mz = seg.zStart !== undefined ? seg.zStart : seg.solidH;
+            addWallPanel(sx, seg.y, mz, 0.016, seg.len - 0.02, seg.meshH, false, seg.zStart !== undefined);
+          }
+          addStructuralPillar(sx, seg.y - seg.len / 2, seg.totalH);
+          addStructuralPillar(sx, seg.y + seg.len / 2, seg.totalH);
+        });
+      });
+    }
 
     // 4b. Curved FIP LED Floodlight Masts & Luminaires
     const ledEmitMat = new THREE.MeshStandardMaterial({
