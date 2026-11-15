@@ -918,9 +918,12 @@ def build_fip_court_3d_scene(
                 )
 
     # 4. Side Walls at X = -5.0m and X = +5.0m
+    door_half_w = 1.0
+    door_h = 2.0
     if court is not None:
         half_len = court.length / 2.0
-        segs = court.side_enclosure_segments(doorway_half_width=1.0)
+        segs = court.side_enclosure_segments(doorway_half_width=door_half_w)
+        central_total_h = court.side_wall_heights_at(half_len)[1]
         for x_side in (-5.0, 5.0):
             for y_sign in (-1.0, 1.0):
                 for seg in segs:
@@ -963,6 +966,21 @@ def build_fip_court_3d_scene(
                                 opacity=0.55,
                                 dash="3 3",
                             )
+            # Overhead metallic mesh lintel above central 2.0m doorway (Z = 2.0m..total_h)
+            if central_total_h > door_h:
+                scene.add_face(
+                    [
+                        (x_side, -door_half_w, door_h),
+                        (x_side, door_half_w, door_h),
+                        (x_side, door_half_w, central_total_h),
+                        (x_side, -door_half_w, central_total_h),
+                    ],
+                    fill=palette.fence_fill,
+                    fill_opacity=0.11,
+                    stroke=palette.fence_stroke,
+                    stroke_width=1.1,
+                    dash="4 3",
+                )
         return scene
 
     # Legacy default (Stepped V1 glass matching `court-landmarks-3d`)
@@ -1051,6 +1069,20 @@ def build_fip_court_3d_scene(
                         opacity=0.55,
                         dash="3 3",
                     )
+        # Overhead metallic mesh lintel above central 2.0m doorway (Z = 2.0m..3.0m)
+        scene.add_face(
+            [
+                (x_side, -door_half_w, door_h),
+                (x_side, door_half_w, door_h),
+                (x_side, door_half_w, 3.0),
+                (x_side, -door_half_w, 3.0),
+            ],
+            fill=palette.fence_fill,
+            fill_opacity=0.10,
+            stroke=palette.fence_stroke,
+            stroke_width=1.1,
+            dash="4 3",
+        )
 
     return scene
 
