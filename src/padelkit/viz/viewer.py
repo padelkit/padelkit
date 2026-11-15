@@ -155,6 +155,16 @@ class PadelVisualizer:
                 b64 = base64.b64encode(glb_file.read_bytes()).decode("ascii")
                 glb_sources[clip_id] = f"data:model/gltf-binary;base64,{b64}"
 
+        female_file = self.animation_library_dir / "avatar_female.glb"
+        if female_file.exists():
+            if live_stream_url is not None:
+                glb_sources["avatar_female"] = "/animations/avatar_female.glb"
+            else:
+                b64_fem = base64.b64encode(female_file.read_bytes()).decode("ascii")
+                glb_sources["avatar_female"] = (
+                    f"data:model/gltf-binary;base64,{b64_fem}"
+                )
+
         return {
             "manifest": manifest_data,
             "glb_sources": glb_sources,

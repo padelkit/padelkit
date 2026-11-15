@@ -1272,6 +1272,7 @@ __PADELKIT_SCRIPT_OPEN__
       const entries = libCfg.manifest.animations;
       const sources = libCfg.glb_sources || {};
       let firstTemplateScene = null;
+      let femaleTemplateScene = null;
       let defaultSocketBone = "mixamorig:RightHand";
 
       for (const entry of entries) {
@@ -1298,7 +1299,46 @@ __PADELKIT_SCRIPT_OPEN__
         }
       }
 
+      if (sources["avatar_female"]) {
+        try {
+          const femGltf = await gltfLoader.loadAsync(sources["avatar_female"]);
+          femaleTemplateScene = femGltf.scene;
+        } catch (err) {
+          console.warn("Failed to load female avatar GLB:", err);
+        }
+      }
+
       if (!firstTemplateScene) return;
+
+      const FEMALE_HIP_SCALE = 0.89 / 0.94;
+      const retargetClipForFemale = (clip) => {
+        const tracks = clip.tracks
+          .filter((t) => !t.name.endsWith(".position") || t.name.includes("Hips"))
+          .map((t) => {
+            if (t.name.endsWith(".position") && t.name.includes("Hips")) {
+              const c = t.clone();
+              for (let i = 1; i < c.values.length; i += 3) {
+                c.values[i] *= FEMALE_HIP_SCALE;
+              }
+              return c;
+            }
+            return t;
+          });
+        return new THREE.AnimationClip(clip.name + "_female", clip.duration, tracks);
+      };
+
+      const PLAYER_SKIN_TINTS = {
+        player_1: 0xffffff,
+        player_2: 0xf4dec9,
+        player_3: 0xd9ab87,
+        player_4: 0xfae7d6,
+      };
+      const PLAYER_HAIR_TINTS = {
+        player_1: 0x362419,
+        player_2: 0x6b3e24,
+        player_3: 0x1e1c1e,
+        player_4: 0x9b7a44,
+      };
 
       // Instantiate cloned Mixamo skeletal rig + 3D carbon racket for P1..P4
       Object.entries(playerMeshes).forEach(([pid, rootMesh]) => {
@@ -1306,7 +1346,9 @@ __PADELKIT_SCRIPT_OPEN__
         const segKey = team === "A" ? "teamA" : "teamB";
         const jerseyHex = team === "A" ? 0x0284c7 : 0xe11d48;
         const shortsHex = team === "A" ? 0x0f172a : 0x1e293b;
-        const clonedScene = SkeletonUtils.clone(firstTemplateScene);
+        const isFemalePlayer = Boolean(femaleTemplateScene) && (pid === "player_2" || pid === "player_4");
+        const baseRigScene = isFemalePlayer ? femaleTemplateScene : firstTemplateScene;
+        const clonedScene = SkeletonUtils.clone(baseRigScene);
         // Convert glTF Y-up back to PadelKit Z-up and align forward facing with +Y
         clonedScene.rotation.set(Math.PI / 2, Math.PI, 0);
 
@@ -1315,6 +1357,8 @@ __PADELKIT_SCRIPT_OPEN__
         const sanitizedForearm = forearmBone.replace(/:/g, "");
         let socketNode = null;
         let forearmNode = null;
+        const skinTint = PLAYER_SKIN_TINTS[pid] ?? 0xffffff;
+        const hairTint = PLAYER_HAIR_TINTS[pid] ?? 0x362419;
 
         clonedScene.traverse((node) => {
           if (node.isMesh) {
@@ -1328,6 +1372,10 @@ __PADELKIT_SCRIPT_OPEN__
                   clonedMat.color.setHex(jerseyHex);
                 } else if (clonedMat.name === "ShortsMat") {
                   clonedMat.color.setHex(shortsHex);
+                } else if (clonedMat.name === "LimbMat") {
+                  clonedMat.color.setHex(skinTint);
+                } else if (clonedMat.name === "HairMat") {
+                  clonedMat.color.setHex(hairTint);
                 }
                 return clonedMat;
               });
@@ -1354,9 +1402,11 @@ __PADELKIT_SCRIPT_OPEN__
         const mixer = new THREE.AnimationMixer(clonedScene);
         const actions = {};
         Object.entries(loadedGlbClips).forEach(([key, rec]) => {
-          const act = mixer.clipAction(rec.clip);
-          act.clampWhenFinished = true;
-          act.loop = THREE.LoopOnce;
+          const clipToBind = isFemalePlayer ? retargetClipForFemale(rec.clip) : rec.clip;
+          const act = mixer.clipAction(clipToBind);
+          const isLoopMove = key === "walk" || key === "run" || key === "movement";
+          act.loop = isLoopMove ? THREE.LoopRepeat : THREE.LoopOnce;
+          act.clampWhenFinished = !isLoopMove;
           actions[key] = act;
         });
 
@@ -1652,11 +1702,15 @@ __PADELKIT_SCRIPT_OPEN__
               ? glbRecord.meta.contact_swing_phase
               : 0.5;
           const isExactClip = Boolean(loadedGlbClips[animName]);
-          const normProgress = isExactClip || sw > 0.02
-            ? (isPostImpact
-                ? contactPhase + (1.0 - sw) * (1.0 - contactPhase)
-                : sw * contactPhase)
-            : 0.0;
+          const isLoopLocomotion = isExactClip && (activeClipKey === "walk" || activeClipKey === "run");
+          const clipDur = Math.max(glbRecord.clip.duration - 1e-4, 0.01);
+          const normProgress = isLoopLocomotion
+            ? (((frame.t / clipDur) % 1.0) + 1.0) % 1.0
+            : isExactClip || sw > 0.02
+              ? (isPostImpact
+                  ? contactPhase + (1.0 - sw) * (1.0 - contactPhase)
+                  : sw * contactPhase)
+              : 0.0;
 
           mesh.userData.glbGroup.position.z = isRunning && !isExactClip ? Math.abs(Math.sin(phase)) * 0.045 : 0.0;
 
@@ -1667,7 +1721,6 @@ __PADELKIT_SCRIPT_OPEN__
             action.play();
             mesh.userData.activeGlbKey = activeClipKey;
           }
-          const clipDur = Math.max(glbRecord.clip.duration - 1e-4, 0.01);
           mesh.userData.glbMixer.setTime(Math.min(Math.max(normProgress, 0.0), 1.0) * clipDur);
           if (mesh.userData.glbRacket && mesh.userData.glbSocketNode && mesh.userData.glbForearmNode) {
             mesh.userData.glbGroup.updateMatrixWorld(true);
