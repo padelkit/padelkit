@@ -32,6 +32,7 @@ from padelkit.camera import (
 from padelkit.court import (
     CoordinateSystem,
     Court,
+    CourtDimensions,
     CourtLandmark,
     EnclosureType,
     EnclosureVariant,
@@ -775,6 +776,7 @@ class ViewportProjector3D:
 def build_fip_court_3d_scene(
     palette: ThemePalette,
     *,
+    court: Court | None = None,
     include_walls: bool = True,
     include_panel_divisions: bool = True,
 ) -> Scene3D:
@@ -860,9 +862,17 @@ def build_fip_court_3d_scene(
     if not include_walls:
         return scene
 
-    # 3. Back Walls at Y = -10.0m and Y = +10.0m (5 panels of 2.0m width: 3.0m glass + 1.0m metallic mesh)
+    is_masonry = (
+        court is not None and court.effective_enclosure_type is EnclosureType.WALL
+    )
+    solid_fill = palette.accent_tertiary if is_masonry else palette.glass_fill
+    solid_stroke = palette.accent_tertiary if is_masonry else palette.glass_stroke
+    solid_back_op = 0.28 if is_masonry else 0.14
+    solid_side_op = 0.30 if is_masonry else 0.13
+
+    # 3. Back Walls at Y = -10.0m and Y = +10.0m (5 panels of 2.0m width: 3.0m solid + 1.0m metallic mesh)
     for y_back in (-10.0, 10.0):
-        # Tempered Glass Band (Z = 0..3m)
+        # Solid Wall / Tempered Glass Band (Z = 0..3m)
         scene.add_face(
             [
                 (-5.0, y_back, 0.0),
@@ -870,9 +880,9 @@ def build_fip_court_3d_scene(
                 (5.0, y_back, 3.0),
                 (-5.0, y_back, 3.0),
             ],
-            fill=palette.glass_fill,
-            fill_opacity=0.14,
-            stroke=palette.glass_stroke,
+            fill=solid_fill,
+            fill_opacity=solid_back_op,
+            stroke=solid_stroke,
             stroke_width=1.4,
         )
         # Upper Metallic Mesh Band (Z = 3..4m)
@@ -894,7 +904,7 @@ def build_fip_court_3d_scene(
                 scene.add_segment(
                     (x_div, y_back, 0.0),
                     (x_div, y_back, 3.0),
-                    stroke=palette.glass_stroke,
+                    stroke=solid_stroke,
                     stroke_width=0.9,
                     opacity=0.65,
                 )
@@ -907,7 +917,55 @@ def build_fip_court_3d_scene(
                     dash="3 3",
                 )
 
-    # 4. Stepped Side Walls at X = -5.0m and X = +5.0m (matching `template.py` sideSegments)
+    # 4. Side Walls at X = -5.0m and X = +5.0m
+    if court is not None:
+        half_len = court.length / 2.0
+        segs = court.side_enclosure_segments(doorway_half_width=1.0)
+        for x_side in (-5.0, 5.0):
+            for y_sign in (-1.0, 1.0):
+                for seg in segs:
+                    y_a = y_sign * (half_len - seg.y_start_from_back)
+                    y_b = y_sign * (half_len - seg.y_end_from_back)
+                    if seg.solid_height > 0:
+                        scene.add_face(
+                            [
+                                (x_side, y_a, 0.0),
+                                (x_side, y_b, 0.0),
+                                (x_side, y_b, seg.solid_height),
+                                (x_side, y_a, seg.solid_height),
+                            ],
+                            fill=solid_fill,
+                            fill_opacity=solid_side_op,
+                            stroke=solid_stroke,
+                            stroke_width=1.3,
+                        )
+                    if seg.mesh_height > 0:
+                        scene.add_face(
+                            [
+                                (x_side, y_a, seg.solid_height),
+                                (x_side, y_b, seg.solid_height),
+                                (x_side, y_b, seg.total_height),
+                                (x_side, y_a, seg.total_height),
+                            ],
+                            fill=palette.fence_fill,
+                            fill_opacity=0.11,
+                            stroke=palette.fence_stroke,
+                            stroke_width=1.1,
+                            dash="4 3",
+                        )
+                    if include_panel_divisions and seg.y_start_from_back >= 4.0 - 1e-6:
+                        for y_div in (4.0 * y_sign, 2.0 * y_sign):
+                            scene.add_segment(
+                                (x_side, y_div, 0.0),
+                                (x_side, y_div, seg.total_height),
+                                stroke=palette.fence_stroke,
+                                stroke_width=0.85,
+                                opacity=0.55,
+                                dash="3 3",
+                            )
+        return scene
+
+    # Legacy default (Stepped V1 glass matching `court-landmarks-3d`)
     for x_side in (-5.0, 5.0):
         for y_sign in (-1.0, 1.0):
             y10 = 10.0 * y_sign
@@ -2565,6 +2623,259 @@ def render_court_enclosure_variants(palette: ThemePalette) -> str:
             fill=palette.text_muted,
             size=7.6,
             mono=True,
+        )
+
+    return svg.to_xml_string()
+
+
+def render_court_enclosure_variants_3d(palette: ThemePalette) -> str:
+    """3c. 2x2 3D CAD comparison of all four official FIP enclosure variants."""
+    svg = SvgCanvas(
+        960,
+        620,
+        "PadelKit 3D FIP Enclosure Variants",
+        "2x2 3D CAD perspective views of Variant 1 Stepped, Variant 2 Stepped, Variant 1 Crystal Non-Stepped, and Variant 2 Crystal Non-Stepped.",
+        palette,
+    )
+    svg.header(
+        "3D FIP Enclosure Variants (CAD Perspective)",
+        "V1 (3.0m center mesh) vs V2 (4.0m uniform mesh)  ×  STEPPED (3m→2m) vs UNIFORM (3m×4m flat)",
+    )
+
+    cam = Camera(
+        intrinsics=CameraIntrinsics.from_fov(
+            width_px=1200, height_px=900, horizontal_fov_deg=18.0
+        ),
+        extrinsics=CameraExtrinsics.from_look_at(
+            position=(-34.0, -34.0, 22.0),
+            target=(0.0, 0.0, 1.5),
+        ),
+    )
+
+    cards = [
+        (
+            24.0,
+            72.0,
+            "1. VARIANT 1 — STEPPED",
+            "V1 + STEPPED · WALL default (also valid for stepped GLASS)",
+            Court(
+                dimensions=CourtDimensions.fip_standard(),
+                enclosure_type=EnclosureType.WALL,
+                enclosure_variant=EnclosureVariant.V1,
+                side_wall_profile=SideWallProfile.STEPPED,
+            ),
+            "clip-v1-stepped",
+            "3m→2m step",
+            "3.0m center mesh",
+            palette.accent_secondary,
+        ),
+        (
+            488.0,
+            72.0,
+            "2. VARIANT 2 — STEPPED",
+            "V2 + STEPPED · Uniform 4.0m mesh around full perimeter",
+            Court(
+                dimensions=CourtDimensions.fip_variant_2(),
+                enclosure_type=EnclosureType.WALL,
+                enclosure_variant=EnclosureVariant.V2,
+                side_wall_profile=SideWallProfile.STEPPED,
+            ),
+            "clip-v2-stepped",
+            "3m→2m step",
+            "4.0m uniform mesh",
+            palette.accent_primary,
+        ),
+        (
+            24.0,
+            326.0,
+            "3. VARIANT 1 CRYSTAL — NON-STEPPED",
+            "V1 + UNIFORM · GLASS default (continuous 3.0m × 4.0m ends)",
+            Court(
+                dimensions=CourtDimensions.fip_standard(),
+                enclosure_type=EnclosureType.GLASS,
+                enclosure_variant=EnclosureVariant.V1,
+                side_wall_profile=SideWallProfile.UNIFORM,
+            ),
+            "clip-v1-uniform",
+            "3m×4m flat",
+            "3.0m center mesh",
+            palette.accent_secondary,
+        ),
+        (
+            488.0,
+            326.0,
+            "4. VARIANT 2 CRYSTAL — NON-STEPPED",
+            "V2 + UNIFORM · 3.0m × 4.0m glass + uniform 4.0m mesh",
+            Court(
+                dimensions=CourtDimensions.fip_variant_2(),
+                enclosure_type=EnclosureType.GLASS,
+                enclosure_variant=EnclosureVariant.V2,
+                side_wall_profile=SideWallProfile.UNIFORM,
+            ),
+            "clip-v2-uniform",
+            "3m×4m flat",
+            "4.0m uniform mesh",
+            palette.accent_primary,
+        ),
+    ]
+
+    card_w, card_h = 448.0, 242.0
+    for (
+        cx,
+        cy,
+        title,
+        subtitle,
+        vcourt,
+        clip_id,
+        step_label,
+        mesh_label,
+        mesh_col,
+    ) in cards:
+        svg.rect(
+            cx,
+            cy,
+            card_w,
+            card_h,
+            fill=palette.bg_panel,
+            stroke=palette.border,
+            stroke_width=1.2,
+            rx=8,
+        )
+        svg.text(
+            cx + 14,
+            cy + 19,
+            title,
+            fill=palette.text_primary,
+            size=10.2,
+            weight="700",
+            mono=True,
+            anchor="start",
+        )
+        svg.text(
+            cx + 14,
+            cy + 34,
+            subtitle,
+            fill=palette.text_muted,
+            size=8.2,
+            mono=True,
+            anchor="start",
+        )
+
+        scene = build_fip_court_3d_scene(
+            palette,
+            court=vcourt,
+            include_walls=True,
+            include_panel_divisions=False,
+        )
+        projector = ViewportProjector3D(
+            cam,
+            scene.all_vertices(),
+            rect_x=cx + 8.0,
+            rect_y=cy + 40.0,
+            rect_w=card_w - 16.0,
+            rect_h=card_h - 48.0,
+            padding_px=18.0,
+            shift_uv=(10.0, 4.0),
+        )
+
+        clip_g = svg.clip_group(clip_id, cx + 4, cy + 38, card_w - 8, card_h - 42, rx=6)
+        svg.set_target(clip_g)
+        projector.render_scene(svg, scene)
+
+        # Callout 1: Solid wing profile on visible near-left side (x=-5, y=-7, z=2.5)
+        solid_col = (
+            palette.accent_tertiary
+            if vcourt.effective_enclosure_type is EnclosureType.WALL
+            else palette.glass_stroke
+        )
+        sx_u, sx_v = projector.project_point((-5.0, -7.0, 2.5))
+        svg.callout_badge(
+            sx_u,
+            sx_v,
+            step_label,
+            color=solid_col,
+            offset=(-82, 22),
+        )
+
+        # Callout 2: Central mesh top edge on visible far-right side (x=5, y=3.5, z=3/4)
+        central_h = (
+            4.0 if vcourt.effective_enclosure_variant is EnclosureVariant.V2 else 3.0
+        )
+        mx_u, mx_v = projector.project_point((5.0, 3.5, central_h))
+        svg.callout_badge(
+            mx_u,
+            mx_v,
+            mesh_label,
+            color=mesh_col,
+            offset=(54, -18),
+        )
+        svg.set_target(None)
+
+    # Compact bottom legend bar
+    svg.rect(
+        24,
+        580,
+        912,
+        28,
+        fill=palette.bg_panel,
+        stroke=palette.border,
+        stroke_width=1.0,
+        rx=6,
+    )
+    for lx, lfill, lstroke, ldash, lop, ltext in [
+        (
+            44,
+            palette.glass_fill,
+            palette.glass_stroke,
+            None,
+            0.55,
+            "Tempered Glass (GLASS)",
+        ),
+        (
+            238,
+            palette.accent_tertiary,
+            palette.accent_tertiary,
+            None,
+            0.35,
+            "Brick / Concrete (WALL)",
+        ),
+        (
+            438,
+            palette.fence_fill,
+            palette.fence_stroke,
+            "3 2",
+            0.85,
+            "Metallic Mesh (3m V1 / 4m V2)",
+        ),
+        (
+            676,
+            palette.accent_secondary,
+            palette.accent_secondary,
+            None,
+            0.25,
+            "2.0m Central Doorways & Net",
+        ),
+    ]:
+        svg.rect(
+            lx,
+            588,
+            12,
+            12,
+            fill=lfill,
+            stroke=lstroke,
+            stroke_width=1.3,
+            dash=ldash,
+            opacity=lop,
+            rx=2,
+        )
+        svg.text(
+            lx + 18,
+            594,
+            ltext,
+            fill=palette.text_muted,
+            size=8.4,
+            mono=True,
+            anchor="start",
         )
 
     return svg.to_xml_string()
@@ -4529,6 +4840,7 @@ SCHEMATIC_GENERATORS: dict[str, Callable[[ThemePalette], str]] = {
     "court-dimensions": render_court_dimensions,
     "court-coordinate-systems": render_court_coordinate_systems,
     "court-enclosure-variants": render_court_enclosure_variants,
+    "court-enclosure-variants-3d": render_court_enclosure_variants_3d,
     "camera-frustum-3d": render_camera_frustum_3d,
     "camera-sensor-projection": render_camera_sensor_projection,
     "camera-distortion-grid": render_camera_distortion_grid,
