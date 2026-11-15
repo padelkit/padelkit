@@ -46,31 +46,37 @@ According to the official FIP *Rules of Padel*, every court enclosure combines s
 
 - **Back walls (`10.0 m` width × `4.0 m` total height):** Always composed of **`3.0 m`** of solid wall (`EnclosureType.GLASS` or `EnclosureType.WALL`) topped by **`1.0 m`** of metallic mesh.
 - **Side enclosures (`20.0 m` length):** Defined along three orthogonal axes in [`Court`](/court):
-  1. **Material (`EnclosureType`):** `GLASS` (tempered safety glass, low friction) vs. `WALL` (brick/concrete wall, higher spin grip). Per FIP rules, either transparent or opaque solid materials may be used on stepped enclosures.
+  1. **Material (`EnclosureType`):** `GLASS` (tempered safety glass EN 12150-1, low friction) vs. `WALL` (brick/concrete wall, higher spin grip). Per FIP rules, walls may be built from any smooth, uniform transparent or opaque material (`GLASS` or `WALL`)—both `STEPPED` glass and `STEPPED` masonry walls are valid, whereas floor surfaces (`SurfaceType`: turf, porous concrete, acrylic, wood) are independent of enclosure choice.
   2. **Upper mesh height (`EnclosureVariant`):** `V1` drops the central `16.0 m` metallic mesh to **`3.0 m`** (rising to `4.0 m` only in the `2.0 m` corners), whereas `V2` keeps a uniform **`4.0 m`** mesh height across the full `20.0 m`.
   3. **Solid end-zone profile (`SideWallProfile`):** `STEPPED` places two stepped solid panels (`3.0 m × 2.0 m` + `2.0 m × 2.0 m`) at each end, while `UNIFORM` (*Variant 1/2 Crystal*, "sin escalón") uses a continuous **`3.0 m × 4.0 m`** panel with no step down. When `side_wall_profile` is left as `None`, `WALL` courts default to `STEPPED` and `GLASS` courts default to `UNIFORM` (or pass `SideWallProfile.STEPPED` explicitly for stepped glass courts).
 
 <Schematic
-  name="court-enclosure-variants"
-  alt="Official FIP Regulatory Enclosure Variants & Side-Wall Profiles"
-  caption="All four official FIP side-enclosure configurations (Variant 1/2 × Stepped/Non-Stepped Crystal), common 4.0m back-wall composition, and material/access rules."
-/>
-
-<Schematic
   name="court-enclosure-variants-3d"
   alt="3D FIP Enclosure Variants (CAD Perspective)"
-  caption="3D CAD comparison of all four official FIP enclosure configurations (V1/V2 × STEPPED/UNIFORM)."
+  caption="3D CAD comparison of all four official FIP enclosure configurations: Variant 1/2 (V1/V2 central 3m vs uniform 4m mesh) × STEPPED (3m→2m) vs UNIFORM (flat 3m×4m crystal)."
 />
+
+| FIP Variant | `enclosure_type` | `enclosure_variant` | `side_wall_profile` | End solid (`0..4 m`) | Center mesh (`4..16 m`) |
+|---|---|---|---|---|---|
+| **Variant 1 (Stepped)** | `WALL` or `GLASS` | `V1` | `STEPPED` | `3m×2m` + `2m×2m` | `3.0 m` |
+| **Variant 2 (Stepped)** | `WALL` or `GLASS` | `V2` | `STEPPED` | `3m×2m` + `2m×2m` | `4.0 m` |
+| **Variant 1 Crystal** | `GLASS` | `V1` | `UNIFORM` | `3m×4m` flat | `3.0 m` |
+| **Variant 2 Crystal** | `GLASS` | `V2` | `UNIFORM` | `3m×4m` flat | `4.0 m` |
 
 <Row>
   <Col>
 
-    | FIP Variant | `enclosure_type` | `enclosure_variant` | `side_wall_profile` | End solid (`0..4 m`) | Center mesh (`4..16 m`) |
-    |---|---|---|---|---|---|
-    | **Variant 1 (Stepped)** | `WALL` or `GLASS` | `V1` | `STEPPED` | `3m×2m` + `2m×2m` | `3.0 m` |
-    | **Variant 2 (Stepped)** | `WALL` or `GLASS` | `V2` | `STEPPED` | `3m×2m` + `2m×2m` | `4.0 m` |
-    | **Variant 1 Crystal** | `GLASS` | `V1` | `UNIFORM` | `3m×4m` flat | `3.0 m` |
-    | **Variant 2 Crystal** | `GLASS` | `V2` | `UNIFORM` | `3m×4m` flat | `4.0 m` |
+    <Properties>
+      <Property name="enclosure_type" type="EnclosureType" optional default="None">
+        Solid rebound wall material (`GLASS` or `WALL`). Determines whether stepped vs flat profile defaults to `UNIFORM` (`GLASS`) or `STEPPED` (`WALL`) when `side_wall_profile` is omitted.
+      </Property>
+      <Property name="enclosure_variant" type="EnclosureVariant" optional default="None">
+        Upper metallic mesh profile along the central `16.0 m` (`V1` at `3.0 m` vs `V2` at `4.0 m`). Defaults from `dimensions.side_wall_height`.
+      </Property>
+      <Property name="side_wall_profile" type="SideWallProfile" optional default="None">
+        Solid end-zone silhouette over `0..4 m` from each back corner: `STEPPED` (`3m×2m + 2m×2m`) or `UNIFORM` (continuous `3m×4m` without step).
+      </Property>
+    </Properties>
 
     Access openings sit symmetrically near the net (`1` opening of `1.05–2.00 m × 2.00–2.20 m`, or `2` openings of `0.72–1.00 m × 2.00–2.20 m` per side). Both [`BallPhysicsEngine`](/ball-physics-engine) and [`PadelVisualizer`](/padel-visualizer) query `court.side_wall_heights_at()` directly so collisions and 3D meshes always match.
 

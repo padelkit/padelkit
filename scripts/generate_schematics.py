@@ -2136,503 +2136,11 @@ def render_court_coordinate_systems(palette: ThemePalette) -> str:
     return svg.to_xml_string()
 
 
-def render_court_enclosure_variants(palette: ThemePalette) -> str:
-    """3b. Regulatory FIP enclosure variants: V1/V2 x STEPPED/UNIFORM x GLASS/WALL."""
-    svg = SvgCanvas(
-        960,
-        620,
-        "PadelKit Official FIP Regulatory Enclosure Variants",
-        "Comparison of all four official FIP side-enclosure configurations (Variant 1/2 x Stepped/Non-Stepped Crystal), back wall composition, and GLASS vs WALL properties.",
-        palette,
-    )
-    svg.header(
-        "Official FIP Regulatory Enclosure Variants & Side-Wall Profiles",
-        "EnclosureType (GLASS / WALL)  ×  EnclosureVariant (V1 3m / V2 4m)  ×  SideWallProfile (STEPPED / UNIFORM)",
-    )
-
-    # Top strip: Back wall baseline + Material & Rebound Legend
-    svg.rect(
-        24,
-        72,
-        912,
-        122,
-        fill=palette.bg_panel,
-        stroke=palette.border,
-        stroke_width=1.2,
-        rx=8,
-    )
-    svg.line(476, 84, 476, 182, stroke=palette.border, stroke_width=1.0)
-
-    # A. Back Wall Elevation (10.0m x 4.0m)
-    svg.text(
-        40,
-        90,
-        "A. BACK WALLS (10.0m × 4.0m — COMMON TO ALL VARIANTS)",
-        fill=palette.text_primary,
-        size=10.2,
-        weight="700",
-        mono=True,
-        anchor="start",
-    )
-    bx0, by_floor = 78.0, 174.0
-    b_sx = 23.0  # 10m -> 230px
-    b_sz = 15.5  # 4m -> 62px
-    bw_px = 10.0 * b_sx
-    bh_3 = 3.0 * b_sz
-    bh_4 = 4.0 * b_sz
-
-    for h_m in (0, 3, 4):
-        ty = by_floor - h_m * b_sz
-        svg.line(bx0 - 4, ty, bx0, ty, stroke=palette.border, stroke_width=1.0)
-        svg.text(
-            bx0 - 7,
-            ty + 0.5,
-            f"{h_m}m",
-            fill=palette.text_muted,
-            size=7.8,
-            mono=True,
-            anchor="end",
-        )
-
-    # Left 3 panels rendered as GLASS, right 2 panels as WALL to show interchangeability
-    for idx in range(5):
-        px = bx0 + idx * 2.0 * b_sx
-        pw = 2.0 * b_sx
-        is_wall_preview = idx >= 3
-        solid_fill = palette.accent_tertiary if is_wall_preview else palette.glass_fill
-        solid_stroke = (
-            palette.accent_tertiary if is_wall_preview else palette.glass_stroke
-        )
-        svg.rect(
-            px,
-            by_floor - bh_3,
-            pw,
-            bh_3,
-            fill=solid_fill,
-            stroke=solid_stroke,
-            stroke_width=1.4,
-            opacity=0.35 if is_wall_preview else 0.55,
-        )
-        svg.rect(
-            px,
-            by_floor - bh_4,
-            pw,
-            bh_4 - bh_3,
-            fill=palette.fence_fill,
-            stroke=palette.fence_stroke,
-            stroke_width=1.1,
-            dash="3 2",
-            opacity=0.80,
-        )
-    svg.line(
-        bx0 - 6,
-        by_floor,
-        bx0 + bw_px + 6,
-        by_floor,
-        stroke=palette.court_line_fg,
-        stroke_width=1.8,
-    )
-    svg.text(
-        bx0 + 1.5 * 2.0 * b_sx,
-        by_floor - bh_3 / 2,
-        "GLASS (3.0m)",
-        fill=palette.glass_stroke,
-        size=8.2,
-        weight="700",
-        mono=True,
-    )
-    svg.text(
-        bx0 + 4.0 * 2.0 * b_sx,
-        by_floor - bh_3 / 2,
-        "WALL (3.0m)",
-        fill=palette.accent_tertiary,
-        size=8.2,
-        weight="700",
-        mono=True,
-    )
-    svg.text(
-        bx0 + bw_px / 2,
-        by_floor - 3.5 * b_sz,
-        "1.0m Metallic Mesh",
-        fill=palette.text_muted,
-        size=7.6,
-        mono=True,
-    )
-    svg.text(
-        bx0 + bw_px / 2,
-        by_floor + 11,
-        "10.0m interior width (5 × 2.0m panels)",
-        fill=palette.text_muted,
-        size=7.6,
-        mono=True,
-    )
-    svg.dimension_arrow(
-        bx0 + bw_px + 20,
-        by_floor - bh_4,
-        bx0 + bw_px + 20,
-        by_floor,
-        "4.0m",
-        marker_key="primary",
-        color=palette.accent_primary,
-        label_offset=(22, 0),
-    )
-
-    # B. Material & Rebound Legend
-    svg.text(
-        494,
-        90,
-        "B. ENCLOSURE MATERIALS, ACCESSES & PHYSICS",
-        fill=palette.text_primary,
-        size=10.2,
-        weight="700",
-        mono=True,
-        anchor="start",
-    )
-    legend_rows = [
-        (
-            111,
-            palette.glass_fill,
-            palette.glass_stroke,
-            None,
-            0.55,
-            "EnclosureType.GLASS",
-            "Tempered glass (EN 12150-1) · COR 0.82 · μ 0.20 (low-friction slide)",
-        ),
-        (
-            132,
-            palette.accent_tertiary,
-            palette.accent_tertiary,
-            None,
-            0.35,
-            "EnclosureType.WALL",
-            "Brick / concrete wall · COR 0.80 · μ 0.55 (higher spin grip)",
-        ),
-        (
-            153,
-            palette.fence_fill,
-            palette.fence_stroke,
-            "3 2",
-            0.85,
-            "Metallic Mesh (FENCE)",
-            "5–7.08cm diamond/square wire · COR 0.45 · μ 0.50 (irregular bounce)",
-        ),
-        (
-            174,
-            palette.bg_canvas,
-            palette.text_muted,
-            "2 2",
-            1.0,
-            "Access Openings (door)",
-            "1 opening (1.05–2.0m) or 2 openings (0.72–1.0m) × 2.0–2.2m per side",
-        ),
-    ]
-    for ly, lfill, lstroke, ldash, lop, ltitle, ldesc in legend_rows:
-        svg.rect(
-            496,
-            ly - 6,
-            13,
-            13,
-            fill=lfill,
-            stroke=lstroke,
-            stroke_width=1.4,
-            dash=ldash,
-            opacity=lop,
-            rx=2,
-        )
-        svg.text(
-            516,
-            ly,
-            ltitle,
-            fill=palette.text_primary,
-            size=8.6,
-            weight="700",
-            mono=True,
-            anchor="start",
-        )
-        svg.text(
-            644,
-            ly,
-            ldesc,
-            fill=palette.text_muted,
-            size=8.0,
-            anchor="start",
-        )
-
-    # 2x2 Grid of Official Side-Wall Configurations
-    variants = [
-        (
-            24.0,
-            206.0,
-            "1. VARIANT 1 — STEPPED",
-            "V1 + STEPPED · WALL default (also valid for stepped GLASS)",
-            Court(
-                dimensions=Court.fip_standard().dimensions,
-                enclosure_type=EnclosureType.WALL,
-                enclosure_variant=EnclosureVariant.V1,
-                side_wall_profile=SideWallProfile.STEPPED,
-            ),
-            True,
-        ),
-        (
-            488.0,
-            206.0,
-            "2. VARIANT 2 — STEPPED",
-            "V2 + STEPPED · Uniform 4.0m mesh across all 20.0m",
-            Court(
-                dimensions=Court.fip_standard().dimensions,
-                enclosure_type=EnclosureType.WALL,
-                enclosure_variant=EnclosureVariant.V2,
-                side_wall_profile=SideWallProfile.STEPPED,
-            ),
-            True,
-        ),
-        (
-            24.0,
-            408.0,
-            "3. VARIANT 1 CRYSTAL — NON-STEPPED",
-            "V1 + UNIFORM · GLASS default (continuous 3.0m × 4.0m ends)",
-            Court(
-                dimensions=Court.fip_standard().dimensions,
-                enclosure_type=EnclosureType.GLASS,
-                enclosure_variant=EnclosureVariant.V1,
-                side_wall_profile=SideWallProfile.UNIFORM,
-            ),
-            False,
-        ),
-        (
-            488.0,
-            408.0,
-            "4. VARIANT 2 CRYSTAL — NON-STEPPED",
-            "V2 + UNIFORM · 3.0m × 4.0m glass + uniform 4.0m mesh",
-            Court(
-                dimensions=Court.fip_standard().dimensions,
-                enclosure_type=EnclosureType.GLASS,
-                enclosure_variant=EnclosureVariant.V2,
-                side_wall_profile=SideWallProfile.UNIFORM,
-            ),
-            False,
-        ),
-    ]
-
-    card_w, card_h = 448.0, 190.0
-    ex_off, ey_off = 44.0, 154.0
-    esx = 18.4  # 20m -> 368px
-    esz = 20.5  # 4m -> 82px
-
-    for cx, cy, title, subtitle, vcourt, show_wall_style in variants:
-        svg.rect(
-            cx,
-            cy,
-            card_w,
-            card_h,
-            fill=palette.bg_panel,
-            stroke=palette.border,
-            stroke_width=1.2,
-            rx=8,
-        )
-        svg.text(
-            cx + 16,
-            cy + 20,
-            title,
-            fill=palette.text_primary,
-            size=10.4,
-            weight="700",
-            mono=True,
-            anchor="start",
-        )
-        svg.text(
-            cx + 16,
-            cy + 36,
-            subtitle,
-            fill=palette.text_muted,
-            size=8.4,
-            mono=True,
-            anchor="start",
-        )
-
-        ex0 = cx + ex_off
-        ey_floor = cy + ey_off
-        w_total = 20.0 * esx
-
-        # Subtle horizontal 3m / 4m reference lines
-        for h_m in (0, 2, 3, 4):
-            ty = ey_floor - h_m * esz
-            svg.line(
-                ex0 - 3,
-                ty,
-                ex0,
-                ty,
-                stroke=palette.border,
-                stroke_width=0.9,
-            )
-            svg.text(
-                ex0 - 6,
-                ty + 0.5,
-                f"{h_m}m",
-                fill=palette.text_muted,
-                size=7.4,
-                mono=True,
-                anchor="end",
-            )
-            if h_m in (3, 4):
-                svg.line(
-                    ex0,
-                    ty,
-                    ex0 + w_total,
-                    ty,
-                    stroke=palette.grid_line,
-                    stroke_width=0.8,
-                    dash="2 3",
-                )
-
-        segs = vcourt.side_enclosure_segments(doorway_half_width=1.0)
-        solid_fill = palette.accent_tertiary if show_wall_style else palette.glass_fill
-        solid_stroke = (
-            palette.accent_tertiary if show_wall_style else palette.glass_stroke
-        )
-        solid_op = 0.35 if show_wall_style else 0.52
-
-        # Draw mirrored left (0..9m) and right (11..20m) halves from Court model
-        for seg in segs:
-            for y_a, y_b in (
-                (seg.y_start_from_back, seg.y_end_from_back),
-                (20.0 - seg.y_end_from_back, 20.0 - seg.y_start_from_back),
-            ):
-                rx0 = ex0 + y_a * esx
-                rw = (y_b - y_a) * esx
-                if seg.solid_height > 0:
-                    sh = seg.solid_height * esz
-                    svg.rect(
-                        rx0,
-                        ey_floor - sh,
-                        rw,
-                        sh,
-                        fill=solid_fill,
-                        stroke=solid_stroke,
-                        stroke_width=1.4,
-                        opacity=solid_op,
-                    )
-                if seg.mesh_height > 0:
-                    mh = seg.mesh_height * esz
-                    sb = seg.solid_height * esz
-                    svg.rect(
-                        rx0,
-                        ey_floor - sb - mh,
-                        rw,
-                        mh,
-                        fill=palette.fence_fill,
-                        stroke=palette.fence_stroke,
-                        stroke_width=1.2,
-                        dash="3 2",
-                        opacity=0.82,
-                    )
-
-        # Central 2m doorway opening (9m..11m)
-        door_x = ex0 + 9.0 * esx
-        door_w = 2.0 * esx
-        door_h = 2.0 * esz
-        svg.rect(
-            door_x,
-            ey_floor - door_h,
-            door_w,
-            door_h,
-            fill=palette.bg_canvas,
-            stroke=palette.text_muted,
-            stroke_width=1.0,
-            dash="2 2",
-        )
-        svg.text(
-            door_x + door_w / 2,
-            ey_floor - door_h / 2,
-            "door",
-            fill=palette.text_muted,
-            size=7.4,
-            mono=True,
-        )
-
-        # Top height callout in center 12m
-        central_h = (
-            4.0 if vcourt.effective_enclosure_variant is EnclosureVariant.V2 else 3.0
-        )
-        center_badge_col = (
-            palette.accent_primary
-            if vcourt.effective_enclosure_variant is EnclosureVariant.V2
-            else palette.accent_secondary
-        )
-        svg.text(
-            ex0 + w_total / 2,
-            ey_floor - central_h * esz - 8,
-            f"center = {central_h:.1f}m",
-            fill=center_badge_col,
-            size=7.8,
-            weight="700",
-            mono=True,
-        )
-
-        # Floor baseline + 2m / 4m / 12m / 16m / 18m ticks
-        svg.line(
-            ex0 - 4,
-            ey_floor,
-            ex0 + w_total + 4,
-            ey_floor,
-            stroke=palette.court_line_fg,
-            stroke_width=1.6,
-        )
-        for m_tick, label in [
-            (0, "0"),
-            (2, "2"),
-            (4, "4"),
-            (9, "9"),
-            (11, "11"),
-            (16, "16"),
-            (18, "18"),
-            (20, "20m"),
-        ]:
-            tx = ex0 + m_tick * esx
-            svg.line(
-                tx, ey_floor, tx, ey_floor + 4, stroke=palette.border, stroke_width=0.9
-            )
-            svg.text(
-                tx,
-                ey_floor + 13,
-                label,
-                fill=palette.text_muted,
-                size=7.4,
-                mono=True,
-            )
-
-        # Solid step callout label on left wing
-        step_note = (
-            "3m×2m + 2m×2m step"
-            if vcourt.effective_side_wall_profile is SideWallProfile.STEPPED
-            else "3m×4m flat (no step)"
-        )
-        svg.text(
-            ex0 + 2.0 * esx,
-            ey_floor + 25,
-            step_note,
-            fill=solid_stroke,
-            size=7.8,
-            weight="600",
-            mono=True,
-        )
-        svg.text(
-            ex0 + w_total / 2,
-            ey_floor + 25,
-            "12m mesh (2m door)",
-            fill=palette.text_muted,
-            size=7.6,
-            mono=True,
-        )
-
-    return svg.to_xml_string()
-
-
 def render_court_enclosure_variants_3d(palette: ThemePalette) -> str:
-    """3c. 2x2 3D CAD comparison of all four official FIP enclosure variants."""
+    """3b. 2x2 3D CAD comparison of all four official FIP enclosure variants (open layout)."""
     svg = SvgCanvas(
         960,
-        620,
+        610,
         "PadelKit 3D FIP Enclosure Variants",
         "2x2 3D CAD perspective views of Variant 1 Stepped, Variant 2 Stepped, Variant 1 Crystal Non-Stepped, and Variant 2 Crystal Non-Stepped.",
         palette,
@@ -2641,6 +2149,11 @@ def render_court_enclosure_variants_3d(palette: ThemePalette) -> str:
         "3D FIP Enclosure Variants (CAD Perspective)",
         "V1 (3.0m center mesh) vs V2 (4.0m uniform mesh)  ×  STEPPED (3m→2m) vs UNIFORM (3m×4m flat)",
     )
+
+    # Clean hairline quadrant dividers (matching court-landmarks-3d-light.svg, no boxed cards)
+    svg.line(480, 68, 480, 560, stroke=palette.border, stroke_width=1.0)
+    svg.line(24, 316, 936, 316, stroke=palette.border, stroke_width=1.0)
+    svg.line(24, 566, 936, 566, stroke=palette.border, stroke_width=1.0)
 
     cam = Camera(
         intrinsics=CameraIntrinsics.from_fov(
@@ -2670,7 +2183,7 @@ def render_court_enclosure_variants_3d(palette: ThemePalette) -> str:
             palette.accent_secondary,
         ),
         (
-            488.0,
+            492.0,
             72.0,
             "2. VARIANT 2 — STEPPED",
             "V2 + STEPPED · Uniform 4.0m mesh around full perimeter",
@@ -2687,7 +2200,7 @@ def render_court_enclosure_variants_3d(palette: ThemePalette) -> str:
         ),
         (
             24.0,
-            326.0,
+            324.0,
             "3. VARIANT 1 CRYSTAL — NON-STEPPED",
             "V1 + UNIFORM · GLASS default (continuous 3.0m × 4.0m ends)",
             Court(
@@ -2702,8 +2215,8 @@ def render_court_enclosure_variants_3d(palette: ThemePalette) -> str:
             palette.accent_secondary,
         ),
         (
-            488.0,
-            326.0,
+            492.0,
+            324.0,
             "4. VARIANT 2 CRYSTAL — NON-STEPPED",
             "V2 + UNIFORM · 3.0m × 4.0m glass + uniform 4.0m mesh",
             Court(
@@ -2719,7 +2232,7 @@ def render_court_enclosure_variants_3d(palette: ThemePalette) -> str:
         ),
     ]
 
-    card_w, card_h = 448.0, 242.0
+    card_w, card_h = 444.0, 236.0
     for (
         cx,
         cy,
@@ -2731,19 +2244,9 @@ def render_court_enclosure_variants_3d(palette: ThemePalette) -> str:
         mesh_label,
         mesh_col,
     ) in cards:
-        svg.rect(
-            cx,
-            cy,
-            card_w,
-            card_h,
-            fill=palette.bg_panel,
-            stroke=palette.border,
-            stroke_width=1.2,
-            rx=8,
-        )
         svg.text(
-            cx + 14,
-            cy + 19,
+            cx + 8,
+            cy + 14,
             title,
             fill=palette.text_primary,
             size=10.2,
@@ -2752,8 +2255,8 @@ def render_court_enclosure_variants_3d(palette: ThemePalette) -> str:
             anchor="start",
         )
         svg.text(
-            cx + 14,
-            cy + 34,
+            cx + 8,
+            cy + 29,
             subtitle,
             fill=palette.text_muted,
             size=8.2,
@@ -2770,15 +2273,15 @@ def render_court_enclosure_variants_3d(palette: ThemePalette) -> str:
         projector = ViewportProjector3D(
             cam,
             scene.all_vertices(),
-            rect_x=cx + 8.0,
-            rect_y=cy + 40.0,
-            rect_w=card_w - 16.0,
-            rect_h=card_h - 48.0,
-            padding_px=18.0,
+            rect_x=cx + 4.0,
+            rect_y=cy + 34.0,
+            rect_w=card_w - 8.0,
+            rect_h=card_h - 38.0,
+            padding_px=16.0,
             shift_uv=(10.0, 4.0),
         )
 
-        clip_g = svg.clip_group(clip_id, cx + 4, cy + 38, card_w - 8, card_h - 42, rx=6)
+        clip_g = svg.clip_group(clip_id, cx, cy + 32, card_w, card_h - 34)
         svg.set_target(clip_g)
         projector.render_scene(svg, scene)
 
@@ -2811,20 +2314,10 @@ def render_court_enclosure_variants_3d(palette: ThemePalette) -> str:
         )
         svg.set_target(None)
 
-    # Compact bottom legend bar
-    svg.rect(
-        24,
-        580,
-        912,
-        28,
-        fill=palette.bg_panel,
-        stroke=palette.border,
-        stroke_width=1.0,
-        rx=6,
-    )
+    # Open footer legend directly on bg_canvas (matching court-landmarks-3d-light.svg)
     for lx, lfill, lstroke, ldash, lop, ltext in [
         (
-            44,
+            32,
             palette.glass_fill,
             palette.glass_stroke,
             None,
@@ -2832,7 +2325,7 @@ def render_court_enclosure_variants_3d(palette: ThemePalette) -> str:
             "Tempered Glass (GLASS)",
         ),
         (
-            238,
+            236,
             palette.accent_tertiary,
             palette.accent_tertiary,
             None,
@@ -2840,7 +2333,7 @@ def render_court_enclosure_variants_3d(palette: ThemePalette) -> str:
             "Brick / Concrete (WALL)",
         ),
         (
-            438,
+            442,
             palette.fence_fill,
             palette.fence_stroke,
             "3 2",
@@ -2848,7 +2341,7 @@ def render_court_enclosure_variants_3d(palette: ThemePalette) -> str:
             "Metallic Mesh (3m V1 / 4m V2)",
         ),
         (
-            676,
+            688,
             palette.accent_secondary,
             palette.accent_secondary,
             None,
@@ -2858,7 +2351,7 @@ def render_court_enclosure_variants_3d(palette: ThemePalette) -> str:
     ]:
         svg.rect(
             lx,
-            588,
+            580,
             12,
             12,
             fill=lfill,
@@ -2870,10 +2363,10 @@ def render_court_enclosure_variants_3d(palette: ThemePalette) -> str:
         )
         svg.text(
             lx + 18,
-            594,
+            586,
             ltext,
             fill=palette.text_muted,
-            size=8.4,
+            size=8.6,
             mono=True,
             anchor="start",
         )
@@ -3545,6 +3038,9 @@ def render_camera_distortion_grid(palette: ThemePalette) -> str:
         "Optical Lens Distortion Models (CameraDistortion)",
         "Full 3D court enclosure & grid lines (N = 48 samples/segment) warped via Camera.project_points()",
     )
+    # Clean hairline column dividers (open layout matching court-landmarks-3d-light.svg)
+    svg.line(324, 68, 324, 336, stroke=palette.border, stroke_width=1.0)
+    svg.line(636, 68, 636, 336, stroke=palette.border, stroke_width=1.0)
 
     models = [
         (
@@ -3617,19 +3113,10 @@ def render_camera_distortion_grid(palette: ThemePalette) -> str:
     ]
 
     for idx_m, (title, subtitle, dist_model, accent, px) in enumerate(models):
-        svg.rect(
-            px,
-            64,
-            288,
-            274,
-            fill=palette.bg_panel,
-            stroke=palette.border,
-            rx=10,
-        )
-        svg.line(px + 14, 65, px + 96, 65, stroke=accent, stroke_width=2.6)
+        svg.line(px + 8, 70, px + 90, 70, stroke=accent, stroke_width=2.6)
         svg.text(
-            px + 16,
-            88,
+            px + 8,
+            90,
             title,
             fill=accent,
             size=11.5,
@@ -3638,20 +3125,17 @@ def render_camera_distortion_grid(palette: ThemePalette) -> str:
             anchor="start",
         )
         svg.text(
-            px + 16,
-            106,
+            px + 8,
+            108,
             subtitle,
             fill=palette.text_muted,
             size=10.0,
             mono=True,
             anchor="start",
         )
-        svg.line(px + 1, 118, px + 287, 118, stroke=palette.border, stroke_width=1.0)
 
-        vp_x, vp_y = px + 14.0, 122.0
-        clip_vp = svg.clip_group(
-            f"clip-dist-{idx_m}", px + 4.0, 120.0, 280.0, 212.0, rx=8
-        )
+        vp_x, vp_y = px + 14.0, 124.0
+        clip_vp = svg.clip_group(f"clip-dist-{idx_m}", px + 4.0, 120.0, 280.0, 212.0)
         svg.set_target(clip_vp)
 
         # Background sensor distortion grid via CameraDistortion.distort_normalized()
@@ -4175,6 +3659,9 @@ def render_physics_rebound_regimes(palette: ThemePalette) -> str:
         "Impulse Contact Dynamics: Sliding vs. Rolling vs. Damped (ContactRegime)",
         "Analytical Coulomb friction threshold μ_crit determines tangential slip vs. surface grip during impact",
     )
+    # Clean hairline column dividers (open layout matching court-landmarks-3d-light.svg)
+    svg.line(324, 68, 324, 356, stroke=palette.border, stroke_width=1.0)
+    svg.line(636, 68, 636, 356, stroke=palette.border, stroke_width=1.0)
 
     surf = SurfaceMaterials.fip_standard()
     alpha = BallProperties.fip_standard().inertia_ratio
@@ -4213,19 +3700,10 @@ def render_physics_rebound_regimes(palette: ThemePalette) -> str:
     ]
 
     for title, sub, desc, formula1, formula2, col, px, mode in panels:
-        svg.rect(
-            px,
-            64,
-            288,
-            292,
-            fill=palette.bg_panel,
-            stroke=palette.border,
-            rx=10,
-        )
-        svg.line(px + 14, 65, px + 96, 65, stroke=col, stroke_width=2.6)
+        svg.line(px + 8, 70, px + 90, 70, stroke=col, stroke_width=2.6)
         svg.text(
-            px + 16,
-            86,
+            px + 8,
+            90,
             title,
             fill=col,
             size=11.5,
@@ -4234,8 +3712,8 @@ def render_physics_rebound_regimes(palette: ThemePalette) -> str:
             anchor="start",
         )
         svg.text(
-            px + 16,
-            105,
+            px + 8,
+            109,
             sub,
             fill=palette.text_primary,
             size=9.5,
@@ -4244,8 +3722,8 @@ def render_physics_rebound_regimes(palette: ThemePalette) -> str:
             anchor="start",
         )
         svg.text(
-            px + 16,
-            122,
+            px + 8,
+            126,
             desc,
             fill=palette.text_muted,
             size=9.2,
@@ -4839,7 +4317,6 @@ SCHEMATIC_GENERATORS: dict[str, Callable[[ThemePalette], str]] = {
     "court-landmarks-3d": render_court_landmarks_3d,
     "court-dimensions": render_court_dimensions,
     "court-coordinate-systems": render_court_coordinate_systems,
-    "court-enclosure-variants": render_court_enclosure_variants,
     "court-enclosure-variants-3d": render_court_enclosure_variants_3d,
     "camera-frustum-3d": render_camera_frustum_3d,
     "camera-sensor-projection": render_camera_sensor_projection,
