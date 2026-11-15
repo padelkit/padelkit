@@ -70,7 +70,7 @@
   <text x="172.8" y="416.5" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle" dominant-baseline="middle">7.0 m</text>
   <text x="172.8" y="434" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="8.8" font-weight="500" text-anchor="middle" dominant-baseline="middle">service box depth (net to service line)</text>
   <text x="608" y="86" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11.2" font-weight="700" text-anchor="start" dominant-baseline="middle">B. SIDE WALL ELEVATION (GLASS vs MESH)</text>
-  <text x="736" y="122" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9.2" font-weight="600" text-anchor="middle" dominant-baseline="middle">side_wall = 3.0m  |  end step = 4.0m</text>
+  <text x="736" y="122" fill="#f4f4f5" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="9" font-weight="600" text-anchor="middle" dominant-baseline="middle">V1 center = 3.0m  |  V2 uniform = 4.0m (dashed)</text>
   <line x1="614" y1="232" x2="618" y2="232" stroke="#1e293b" stroke-width="1" stroke-linecap="round" />
   <text x="612" y="232.5" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="7.8" font-weight="500" text-anchor="end" dominant-baseline="middle">0m</text>
   <line x1="614" y1="188" x2="618" y2="188" stroke="#1e293b" stroke-width="1" stroke-linecap="round" />
@@ -79,6 +79,8 @@
   <text x="612" y="166.5" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="7.8" font-weight="500" text-anchor="end" dominant-baseline="middle">3m</text>
   <line x1="614" y1="144" x2="618" y2="144" stroke="#1e293b" stroke-width="1" stroke-linecap="round" />
   <text x="612" y="144.5" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="7.8" font-weight="500" text-anchor="end" dominant-baseline="middle">4m</text>
+  <line x1="641.6" y1="144" x2="830.4" y2="144" stroke="#34d399" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="5 3" />
+  <text x="736" y="135" fill="#34d399" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="7.6" font-weight="600" text-anchor="middle" dominant-baseline="middle">V2 (4.0m mesh)</text>
   <polygon points="618,232 618,144 641.6,144 641.6,166 830.4,166 830.4,144 854,144 854,232" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5" stroke-linejoin="round" fill-opacity="0.7" stroke-dasharray="4 3" />
   <polygon points="618,232 618,166 641.6,166 641.6,188 665.2,188 665.2,232" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.8" stroke-linejoin="round" fill-opacity="0.5" />
   <polygon points="854,232 854,166 830.4,166 830.4,188 806.8,188 806.8,232" fill="#0ea5e9" stroke="#38bdf8" stroke-width="1.8" stroke-linejoin="round" fill-opacity="0.5" />

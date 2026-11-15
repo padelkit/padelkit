@@ -402,3 +402,26 @@ def test_padel_visualizer_offline_and_cdn_modes(tmp_path: Path):
         assert "globalThis.__PADELKIT_THREE_BUNDLE__" not in served_cdn
     finally:
         viz_offline.stop_server()
+
+
+def test_visualizer_encodes_wall_and_side_profile_config():
+    from padelkit import (
+        CourtDimensions,
+        EnclosureType,
+        EnclosureVariant,
+        SideWallProfile,
+    )
+
+    wall_court = Court(
+        dimensions=CourtDimensions.fip_variant_2(),
+        enclosure_type=EnclosureType.WALL,
+        enclosure_variant=EnclosureVariant.V2,
+        side_wall_profile=SideWallProfile.STEPPED,
+    )
+    timeline = MatchTimeline.demo_rally(court=wall_court, fps=30.0)
+    viz = PadelVisualizer(court=wall_court, timeline=timeline)
+    cfg = viz.build_config()
+    assert cfg["court"]["enclosure_type"] == "wall"
+    assert cfg["court"]["enclosure_variant"] == 2
+    assert cfg["court"]["side_wall_profile"] == "stepped"
+    assert "sideWallProfile" in viz.to_html()

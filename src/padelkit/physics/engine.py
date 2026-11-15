@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from ..court.court import Court
-from ..court.enums import CoordinateSystem, EnclosureType, EnclosureVariant
+from ..court.enums import CoordinateSystem, EnclosureType
 from .enums import ContactRegime, SurfaceType
 from .models import (
     BallProperties,
@@ -202,28 +202,7 @@ class BallPhysicsEngine:
         """Returns ``(solid_height_m, total_mesh_height_m)`` at length ``y_pos``."""
         _, _, y_min, y_max, _ = self._court_bounds()
         dist_from_back = min(abs(y_pos - y_min), abs(y_max - y_pos))
-
-        is_wall = self.court.enclosure_type is EnclosureType.WALL
-        if is_wall:
-            if dist_from_back <= 2.0:
-                solid_h = 3.0
-            elif dist_from_back <= 4.0:
-                solid_h = 2.0
-            else:
-                solid_h = 0.0
-        else:
-            solid_h = 3.0 if dist_from_back <= 4.0 else 0.0
-
-        is_v2 = (
-            self.court.enclosure_variant is EnclosureVariant.V2
-            or self.court.dimensions.side_wall_height >= 4.0
-        )
-        if is_v2:
-            total_h = 4.0
-        else:
-            total_h = 4.0 if dist_from_back <= 2.0 else 3.0
-
-        return solid_h, total_h
+        return self.court.side_wall_heights_at(dist_from_back)
 
     def _perturb_fence_normal(
         self,

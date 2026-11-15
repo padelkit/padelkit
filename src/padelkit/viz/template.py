@@ -609,11 +609,26 @@ __PADELKIT_SCRIPT_OPEN__
     }
     const wireMeshMat = createMetallicMeshMaterial();
 
-    function addWallPanel(x, y, z, width, depth, height, isGlass) {
+    const enclosureType = CONFIG.court.enclosure_type || "glass";
+    const enclosureVariant = CONFIG.court.enclosure_variant || 1;
+    const sideWallProfile = CONFIG.court.side_wall_profile || (enclosureType === "wall" ? "stepped" : "uniform");
+    const isMasonry = enclosureType === "wall";
+    const masonryMat = new THREE.MeshStandardMaterial({
+      color: turfPalette.hex === 0x15803d ? 0x1e3a5f : 0x1e4d3b,
+      roughness: 0.78,
+      metalness: 0.05,
+    });
+
+    function addWallPanel(x, y, z, width, depth, height, isSolid) {
+      if (height <= 0.001) return;
       const geo = new THREE.BoxGeometry(width, depth, height);
-      const mat = isGlass ? glassMat : wireMeshMat;
-      const mesh = registerMesh(new THREE.Mesh(geo, mat), isGlass ? "glass" : "mesh");
+      const mat = isSolid ? (isMasonry ? masonryMat : glassMat) : wireMeshMat;
+      const mesh = registerMesh(new THREE.Mesh(geo, mat), isSolid ? "glass" : "mesh");
       mesh.position.set(x, y, z + height / 2);
+      if (isSolid && isMasonry) {
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+      }
       scene.add(mesh);
 
       // Top & bottom horizontal metallic rails for each panel
@@ -635,7 +650,7 @@ __PADELKIT_SCRIPT_OPEN__
       }
 
       // Brushed aluminum glass clamps on tempered glass panels
-      if (isGlass) {
+      if (isSolid && !isMasonry) {
         [0.6, height - 0.6].forEach((cz) => {
           const clamp = registerMesh(
             new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.05), clampMat),
@@ -658,16 +673,18 @@ __PADELKIT_SCRIPT_OPEN__
     }
 
     const backH = dims.back_wall_height;
-    const sideH = dims.side_wall_height;
-    const glassThick = 0.016;
+    const sideH = enclosureVariant === 2 ? Math.max(backH, dims.side_wall_height) : Math.min(backH, dims.side_wall_height);
+    const solidCap = Math.min(3.0, backH);
+    const step2SolidH = sideWallProfile === "stepped" ? Math.min(2.0, solidCap) : solidCap;
+    const panelThick = isMasonry ? 0.12 : 0.016;
 
-    // Back walls (5 panels of 2m width x 3m glass + 1m top mesh)
+    // Back walls (5 panels of 2m width x 3m solid wall/glass + 1m top mesh)
     for (let i = 0; i < 5; i++) {
       const px = -hw + 1.0 + i * 2.0;
-      addWallPanel(px, -hl, 0, 1.98, glassThick, 3.0, true);
-      addWallPanel(px, -hl, 3.0, 1.98, glassThick, backH - 3.0, false);
-      addWallPanel(px,  hl, 0, 1.98, glassThick, 3.0, true);
-      addWallPanel(px,  hl, 3.0, 1.98, glassThick, backH - 3.0, false);
+      addWallPanel(px, -hl, 0, 1.98, panelThick, solidCap, true);
+      addWallPanel(px, -hl, solidCap, 1.98, 0.016, backH - solidCap, false);
+      addWallPanel(px,  hl, 0, 1.98, panelThick, solidCap, true);
+      addWallPanel(px,  hl, solidCap, 1.98, 0.016, backH - solidCap, false);
     }
     for (let i = 0; i <= 5; i++) {
       const px = -hw + i * 2.0;
@@ -675,27 +692,27 @@ __PADELKIT_SCRIPT_OPEN__
       addStructuralPillar(px,  hl, backH);
     }
 
-    // Side walls with central entry doorway gap near the net
+    // Side walls matching regulatory EnclosureVariant (V1/V2) & SideWallProfile (stepped/uniform)
     const sideSegments = [
-      { y: -hl + 1.0, len: 2.0, glassH: 3.0, meshH: 1.0, totalH: 4.0 },
-      { y: -hl + 3.0, len: 2.0, glassH: 2.0, meshH: 1.0, totalH: 3.0 },
-      { y: -hl + 5.0, len: 2.0, glassH: 0.0, meshH: sideH, totalH: sideH },
-      { y: -hl + 7.0, len: 2.0, glassH: 0.0, meshH: sideH, totalH: sideH },
-      { y: -hl + 8.5, len: 1.0, glassH: 0.0, meshH: sideH, totalH: sideH },
+      { y: -hl + 1.0, len: 2.0, solidH: solidCap, meshH: backH - solidCap, totalH: backH },
+      { y: -hl + 3.0, len: 2.0, solidH: step2SolidH, meshH: Math.max(0, sideH - step2SolidH), totalH: sideH },
+      { y: -hl + 5.0, len: 2.0, solidH: 0.0, meshH: sideH, totalH: sideH },
+      { y: -hl + 7.0, len: 2.0, solidH: 0.0, meshH: sideH, totalH: sideH },
+      { y: -hl + 8.5, len: 1.0, solidH: 0.0, meshH: sideH, totalH: sideH },
       // Central 2m doorway opening at y in [-1.0, 1.0]
-      { y:  hl - 8.5, len: 1.0, glassH: 0.0, meshH: sideH, totalH: sideH },
-      { y:  hl - 7.0, len: 2.0, glassH: 0.0, meshH: sideH, totalH: sideH },
-      { y:  hl - 5.0, len: 2.0, glassH: 0.0, meshH: sideH, totalH: sideH },
-      { y:  hl - 3.0, len: 2.0, glassH: 2.0, meshH: 1.0, totalH: 3.0 },
-      { y:  hl - 1.0, len: 2.0, glassH: 3.0, meshH: 1.0, totalH: 4.0 },
+      { y:  hl - 8.5, len: 1.0, solidH: 0.0, meshH: sideH, totalH: sideH },
+      { y:  hl - 7.0, len: 2.0, solidH: 0.0, meshH: sideH, totalH: sideH },
+      { y:  hl - 5.0, len: 2.0, solidH: 0.0, meshH: sideH, totalH: sideH },
+      { y:  hl - 3.0, len: 2.0, solidH: step2SolidH, meshH: Math.max(0, sideH - step2SolidH), totalH: sideH },
+      { y:  hl - 1.0, len: 2.0, solidH: solidCap, meshH: backH - solidCap, totalH: backH },
     ];
     sideSegments.forEach((seg) => {
       [-hw, hw].forEach((sx) => {
-        if (seg.glassH > 0) {
-          addWallPanel(sx, seg.y, 0, glassThick, seg.len - 0.02, seg.glassH, true);
+        if (seg.solidH > 0) {
+          addWallPanel(sx, seg.y, 0, panelThick, seg.len - 0.02, seg.solidH, true);
         }
         if (seg.meshH > 0) {
-          addWallPanel(sx, seg.y, seg.glassH, glassThick, seg.len - 0.02, seg.meshH, false);
+          addWallPanel(sx, seg.y, seg.solidH, 0.016, seg.len - 0.02, seg.meshH, false);
         }
         addStructuralPillar(sx, seg.y - seg.len / 2, seg.totalH);
         addStructuralPillar(sx, seg.y + seg.len / 2, seg.totalH);

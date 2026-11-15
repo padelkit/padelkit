@@ -14,7 +14,7 @@ from padelkit.camera import (
     CameraPreset,
     DistortionModel,
 )
-from padelkit.court.court import Court
+from padelkit.court.court import Court, SideEnclosureSegment
 from padelkit.court.dimensions import CourtDimensions
 from padelkit.court.enums import (
     CoordinateSystem,
@@ -23,6 +23,7 @@ from padelkit.court.enums import (
     DoorState,
     EnclosureType,
     EnclosureVariant,
+    SideWallProfile,
 )
 from padelkit.court.landmarks import CourtLandmark
 from padelkit.court.location import CourtLocation
@@ -65,6 +66,8 @@ __all__ = [
     "CoordinateSystem",
     "EnclosureType",
     "EnclosureVariant",
+    "SideWallProfile",
+    "SideEnclosureSegment",
     "CourtOrientation",
     "DoorState",
     "CourtSetting",

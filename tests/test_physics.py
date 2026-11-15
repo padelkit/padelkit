@@ -12,7 +12,9 @@ from padelkit import (
     Court,
     CourtDimensions,
     EnclosureType,
+    EnclosureVariant,
     EnvironmentConditions,
+    SideWallProfile,
     SurfaceType,
 )
 
@@ -171,3 +173,48 @@ def test_vectorized_batch_simulation():
     trajs = engine.simulate_batch(batch_init, num_steps=120, dt=1.0 / 120.0)
     assert trajs.shape == (32, 121, 9)
     assert np.all(trajs[:, :, 2] >= engine.ball.radius - 1e-6)
+
+
+def test_side_wall_profile_and_variant_collision_surfaces():
+    # Impact right wall (x = 5.0) at dist_from_back = 3.0m (y = 7.0) and z ≈ 2.5m
+    shot_2_to_4m = BallState(position=(4.2, 7.0, 2.5), velocity=(12.0, 0.0, 0.5))
+
+    stepped_glass_engine = BallPhysicsEngine(
+        court=Court(
+            enclosure_type=EnclosureType.GLASS,
+            enclosure_variant=EnclosureVariant.V1,
+            side_wall_profile=SideWallProfile.STEPPED,
+        )
+    )
+    traj_stepped = stepped_glass_engine.simulate(shot_2_to_4m, duration_s=0.15)
+    assert [b.surface for b in traj_stepped.bounces] == [SurfaceType.SIDE_FENCE]
+
+    uniform_glass_engine = BallPhysicsEngine(
+        court=Court(
+            enclosure_type=EnclosureType.GLASS,
+            enclosure_variant=EnclosureVariant.V1,
+            side_wall_profile=SideWallProfile.UNIFORM,
+        )
+    )
+    traj_uniform = uniform_glass_engine.simulate(shot_2_to_4m, duration_s=0.15)
+    assert [b.surface for b in traj_uniform.bounces] == [SurfaceType.SIDE_GLASS]
+
+    # Impact central side zone (y = 4.0, dist_from_back = 6.0m) at z ≈ 3.5m:
+    # V1 exits above 3.0m mesh, V2 hits 4.0m fence
+    shot_high_center = BallState(position=(4.2, 4.0, 3.5), velocity=(12.0, 0.0, 0.4))
+    v1_engine = BallPhysicsEngine(
+        court=Court(
+            enclosure_type=EnclosureType.GLASS,
+            enclosure_variant=EnclosureVariant.V1,
+        )
+    )
+    v2_engine = BallPhysicsEngine(
+        court=Court(
+            enclosure_type=EnclosureType.GLASS,
+            enclosure_variant=EnclosureVariant.V2,
+        )
+    )
+    assert v1_engine.simulate(shot_high_center, duration_s=0.15).bounces == []
+    assert [
+        b.surface for b in v2_engine.simulate(shot_high_center, duration_s=0.15).bounces
+    ] == [SurfaceType.SIDE_FENCE]

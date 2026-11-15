@@ -30,7 +30,7 @@ The `CourtDimensions` dataclass holds the official physical measurements of a pa
     Height of the back walls in meters. Always 4.0 m per FIP regulations.
   </Property>
   <Property name="side_wall_height" type="float">
-    Height of the side walls in meters. 3.0 m for Enclosure Variant 1, 4.0 m for Variant 2.
+    Central height of the side enclosures in meters: 3.0 m for `EnclosureVariant.V1`, 4.0 m for `EnclosureVariant.V2`. See [Enclosure Variants](/court-geometry#enclosure-types--regulatory-variants).
   </Property>
 </Properties>
 
@@ -113,7 +113,7 @@ The `CourtDimensions` dataclass holds the official physical measurements of a pa
 <Row>
   <Col>
 
-    Returns a `CourtDimensions` instance pre-populated with the standard measurements defined by the International Padel Federation (FIP). These correspond to an **Enclosure Variant 1** court.
+    Returns a `CourtDimensions` instance pre-populated with the standard measurements defined by the International Padel Federation (FIP). Defaults to **`EnclosureVariant.V1`** (`side_wall_height=3.0` m in the central 16 m); pass `variant=EnclosureVariant.V2` or call `CourtDimensions.fip_variant_2()` for a uniform `4.0` m lateral enclosure.
 
   </Col>
   <Col sticky>
@@ -121,14 +121,17 @@ The `CourtDimensions` dataclass holds the official physical measurements of a pa
     <CodeGroup title="Usage" tag="classmethod" label="fip_standard">
 
     ```python
-    from padelkit import CourtDimensions
+    from padelkit import CourtDimensions, EnclosureVariant
 
-    dims = CourtDimensions.fip_standard()
+    dims_v1 = CourtDimensions.fip_standard()
+    dims_v2 = CourtDimensions.fip_standard(variant=EnclosureVariant.V2)
+    # Or shorthand:
+    dims_v2 = CourtDimensions.fip_variant_2()
     ```
 
     </CodeGroup>
 
-    ```json {{ title: 'Output' }}
+    ```json {{ title: 'Output (V1)' }}
     CourtDimensions(
       length=20.0,
       width=10.0,

@@ -15,10 +15,13 @@
     Total width of the court in meters. Shorthand for `dimensions.width`.
   </Property>
   <Property name="enclosure_type" type="EnclosureType | None">
-    The material used for the enclosure walls, if set.
+    The material used for the enclosure walls (`GLASS` or `WALL`), if set.
   </Property>
   <Property name="enclosure_variant" type="EnclosureVariant | None">
-    The regulatory enclosure variant, if set.
+    The regulatory perimeter mesh height variant (`V1` 3.0 m center or `V2` 4.0 m uniform), if set.
+  </Property>
+  <Property name="side_wall_profile" type="SideWallProfile | None">
+    The solid side-wall end profile (`STEPPED` `3m×2m + 2m×2m` or `UNIFORM` `3m×4m` non-stepped), if set.
   </Property>
   <Property name="orientation" type="CourtOrientation | None">
     The cardinal orientation of the court's length axis, if set.
@@ -59,7 +62,10 @@
         The material used for the enclosure walls (`EnclosureType.GLASS` or `EnclosureType.WALL`).
       </Property>
       <Property name="enclosure_variant" type="EnclosureVariant | None" optional>
-        The regulatory variant as defined by the FIP (`EnclosureVariant.V1` or `EnclosureVariant.V2`).
+        The regulatory perimeter height variant (`EnclosureVariant.V1` for 3.0 m central mesh, `EnclosureVariant.V2` for 4.0 m uniform mesh). See the [enclosure variants guide](/court-geometry#enclosure-types--regulatory-variants).
+      </Property>
+      <Property name="side_wall_profile" type="SideWallProfile | None" optional>
+        Solid side-wall end-zone profile (`SideWallProfile.STEPPED` for `3m×2m + 2m×2m`, or `SideWallProfile.UNIFORM` for flat `3m×4m` crystal). When `None`, resolves to `STEPPED` for `WALL` and `UNIFORM` for `GLASS`.
       </Property>
       <Property name="orientation" type="CourtOrientation | None" optional>
         The cardinal orientation of the court's length axis (`CourtOrientation.NORTH_SOUTH` or `CourtOrientation.EAST_WEST`).
@@ -93,6 +99,7 @@
         CourtLocation,
         EnclosureType,
         EnclosureVariant,
+        SideWallProfile,
         DoorState,
         CourtSetting,
     )
@@ -101,6 +108,7 @@
         dimensions=CourtDimensions.fip_standard(),
         enclosure_type=EnclosureType.GLASS,
         enclosure_variant=EnclosureVariant.V1,
+        side_wall_profile=SideWallProfile.UNIFORM,
         turf_color="blue",
         setting=CourtSetting.OUTDOOR,
         door_left=DoorState.OPEN,
@@ -122,6 +130,7 @@
       dimensions=CourtDimensions(length=20.0, width=10.0, ...),
       enclosure_type=<EnclosureType.GLASS: 'glass'>,
       enclosure_variant=<EnclosureVariant.V1: 1>,
+      side_wall_profile=<SideWallProfile.UNIFORM: 'uniform'>,
       orientation=None,
       turf_color='blue',
       setting=<CourtSetting.OUTDOOR: 'outdoor'>,
@@ -170,6 +179,7 @@
       ),
       enclosure_type=None,
       enclosure_variant=None,
+      side_wall_profile=None,
       orientation=None,
       turf_color=None,
       setting=None,
@@ -387,6 +397,49 @@
     # court.point("center", CoordinateSystem.CORNER_BASED)
     (5.0, 10.0)
     ```
+
+  </Col>
+</Row>
+
+---
+
+## Query Side Enclosure Geometry {{ tag: 'methods', label: 'side_wall_heights_at / side_enclosure_segments' }}
+
+<Row>
+  <Col>
+
+    Resolves the exact regulatory side-enclosure heights from `enclosure_type`, `enclosure_variant`, and `side_wall_profile` (falling back to FIP defaults when optional fields are `None`). See [Enclosure Types & Regulatory Variants](/court-geometry#enclosure-types--regulatory-variants).
+
+    <Properties>
+      <Property name="court.side_wall_heights_at(dist_from_back)" type="tuple[float, float]">
+        Returns `(solid_height_m, total_height_m)` at `dist_from_back` meters inward from the nearest back wall.
+      </Property>
+      <Property name="court.side_enclosure_segments(doorway_half_width=1.0)" type="list[SideEnclosureSegment]">
+        Returns the longitudinal half-side segments (`y_start_from_back`, `y_end_from_back`, `solid_height`, `mesh_height`, `total_height`) from back corner toward the net.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Enclosure Profile" tag="method" label="side_wall_heights_at">
+
+    ```python
+    from padelkit import Court, EnclosureType, EnclosureVariant, SideWallProfile
+
+    court = Court(
+        enclosure_type=EnclosureType.GLASS,
+        enclosure_variant=EnclosureVariant.V1,
+        side_wall_profile=SideWallProfile.STEPPED,
+    )
+
+    # At 1.0m from back wall vs 3.0m vs 6.0m
+    print(court.side_wall_heights_at(1.0))  # (3.0, 4.0)
+    print(court.side_wall_heights_at(3.0))  # (2.0, 3.0)
+    print(court.side_wall_heights_at(6.0))  # (0.0, 3.0)
+    ```
+
+    </CodeGroup>
 
   </Col>
 </Row>

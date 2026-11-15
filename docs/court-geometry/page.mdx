@@ -40,6 +40,84 @@ PadelKit supports two spatial reference frames via `CoordinateSystem`:
 
 ---
 
+## Enclosure Types & Regulatory Variants
+
+According to the official FIP *Rules of Padel*, every court enclosure combines solid rebound panels (tempered glass or masonry wall) with electro-welded or woven metallic mesh fencing:
+
+- **Back walls (`10.0 m` width × `4.0 m` total height):** Always composed of **`3.0 m`** of solid wall (`EnclosureType.GLASS` or `EnclosureType.WALL`) topped by **`1.0 m`** of metallic mesh.
+- **Side enclosures (`20.0 m` length):** Defined along three orthogonal axes in [`Court`](/court):
+  1. **Material (`EnclosureType`):** `GLASS` (tempered safety glass, low friction) vs. `WALL` (brick/concrete wall, higher spin grip). Per FIP rules, either transparent or opaque solid materials may be used on stepped enclosures.
+  2. **Upper mesh height (`EnclosureVariant`):** `V1` drops the central `16.0 m` metallic mesh to **`3.0 m`** (rising to `4.0 m` only in the `2.0 m` corners), whereas `V2` keeps a uniform **`4.0 m`** mesh height across the full `20.0 m`.
+  3. **Solid end-zone profile (`SideWallProfile`):** `STEPPED` places two stepped solid panels (`3.0 m × 2.0 m` + `2.0 m × 2.0 m`) at each end, while `UNIFORM` (*Variant 1/2 Crystal*, "sin escalón") uses a continuous **`3.0 m × 4.0 m`** panel with no step down. When `side_wall_profile` is left as `None`, `WALL` courts default to `STEPPED` and `GLASS` courts default to `UNIFORM` (or pass `SideWallProfile.STEPPED` explicitly for stepped glass courts).
+
+<Schematic
+  name="court-enclosure-variants"
+  alt="Official FIP Regulatory Enclosure Variants & Side-Wall Profiles"
+  caption="All four official FIP side-enclosure configurations (Variant 1/2 × Stepped/Non-Stepped Crystal), common 4.0m back-wall composition, and material/access rules."
+/>
+
+<Row>
+  <Col>
+
+    | FIP Variant | `enclosure_type` | `enclosure_variant` | `side_wall_profile` | End solid (`0..4 m`) | Center mesh (`4..16 m`) |
+    |---|---|---|---|---|---|
+    | **Variant 1 (Stepped)** | `WALL` or `GLASS` | `V1` | `STEPPED` | `3m×2m` + `2m×2m` | `3.0 m` |
+    | **Variant 2 (Stepped)** | `WALL` or `GLASS` | `V2` | `STEPPED` | `3m×2m` + `2m×2m` | `4.0 m` |
+    | **Variant 1 Crystal** | `GLASS` | `V1` | `UNIFORM` | `3m×4m` flat | `3.0 m` |
+    | **Variant 2 Crystal** | `GLASS` | `V2` | `UNIFORM` | `3m×4m` flat | `4.0 m` |
+
+    Access openings sit symmetrically near the net (`1` opening of `1.05–2.00 m × 2.00–2.20 m`, or `2` openings of `0.72–1.00 m × 2.00–2.20 m` per side). Both [`BallPhysicsEngine`](/ball-physics-engine) and [`PadelVisualizer`](/padel-visualizer) query `court.side_wall_heights_at()` directly so collisions and 3D meshes always match.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Configure Enclosure Variants" tag="enum" label="SideWallProfile">
+
+    ```python
+    from padelkit import (
+        Court,
+        CourtDimensions,
+        EnclosureType,
+        EnclosureVariant,
+        SideWallProfile,
+    )
+
+    # 1. FIP Variant 1 — Stepped masonry wall (default STEPPED)
+    wall_v1 = Court(
+        enclosure_type=EnclosureType.WALL,
+        enclosure_variant=EnclosureVariant.V1,
+    )
+
+    # 2. FIP Variant 1 — Stepped tempered glass (explicit STEPPED)
+    glass_stepped = Court(
+        enclosure_type=EnclosureType.GLASS,
+        enclosure_variant=EnclosureVariant.V1,
+        side_wall_profile=SideWallProfile.STEPPED,
+    )
+
+    # 3. FIP Variant 2 Crystal — Non-stepped 3m x 4m glass + 4m mesh
+    crystal_v2 = Court(
+        dimensions=CourtDimensions.fip_variant_2(),
+        enclosure_type=EnclosureType.GLASS,
+        enclosure_variant=EnclosureVariant.V2,
+        side_wall_profile=SideWallProfile.UNIFORM,
+    )
+
+    # Query exact (solid_h, total_h) 3.0m inward from back wall
+    solid_h, total_h = crystal_v2.side_wall_heights_at(3.0)
+    ```
+
+    </CodeGroup>
+
+    ```json {{ title: 'Output (crystal_v2 at 3.0m)' }}
+    (3.0, 4.0)
+    ```
+
+  </Col>
+</Row>
+
+---
+
 ## The Court model
 
 The `Court` class is the main geometry model. By default, it uses `CoordinateSystem.CENTERED` where `(0.0, 0.0)` is at the midpoint of the net. The **X** axis represents the width, and the **Y** axis represents the length.

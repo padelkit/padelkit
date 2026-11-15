@@ -47,7 +47,7 @@ Defines the dimensions, landmarks, and coordinate system of an official padel co
   - `CENTERED` (default): Origin `(0.0, 0.0, 0.0)` at the center of the net on the floor, `X` in `[-5, 5]`, `Y` in `[-10, 10]`, `Z` height in meters.
   - `CORNER_BASED`: Origin `(0.0, 0.0, 0.0)` at the bottom-left (`FLOOR_NEAR_LEFT`) corner.
 - **`CourtLandmark`:** Enumeration for the 17 standardized 2D/3D positions (13 floor points + 4 back-wall top corners).
-- **`Court`:** Main geometry class providing `landmarks_2d()`, `landmarks_3d()`, and `point(name)`.
+- **`Court`:** Main geometry class providing `landmarks_2d()`, `landmarks_3d()`, `point(name)`, `side_wall_heights_at(dist_from_back)`, and `side_enclosure_segments()`, along with `EnclosureType` (`GLASS`, `WALL`), `EnclosureVariant` (`V1`, `V2`), and `SideWallProfile` (`STEPPED`, `UNIFORM`).
 
 ### 2. `camera` Module (`src/padelkit/camera/`)
 Provides projective camera geometry, optical lens distortion, 2D-to-3D calibration, and 3D-to-2D / 2D-to-3D transformations.

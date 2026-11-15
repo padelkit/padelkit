@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Any
 
+from .enums import EnclosureVariant
+
 
 @dataclass(frozen=True)
 class CourtDimensions:
@@ -8,7 +10,7 @@ class CourtDimensions:
 
     All height measurements follow FIP regulations:
     - back_wall_height: always 4.0 m for both enclosure variants.
-    - side_wall_height: 3.0 m for Variant 1, 4.0 m for Variant 2.
+    - side_wall_height: 3.0 m for Variant 1 (central 16 m), 4.0 m for Variant 2.
     """
 
     length: float
@@ -20,8 +22,19 @@ class CourtDimensions:
     side_wall_height: float
 
     @classmethod
-    def fip_standard(cls) -> "CourtDimensions":
-        """Standard dimensions as defined by the FIP (Variant 1 defaults)."""
+    def fip_standard(
+        cls,
+        variant: EnclosureVariant = EnclosureVariant.V1,
+    ) -> "CourtDimensions":
+        """Standard dimensions as defined by the FIP.
+
+        Args:
+            variant: Regulatory enclosure height variant. Defaults to
+                ``EnclosureVariant.V1`` (``side_wall_height=3.0`` m in the
+                central 16 m). Pass ``EnclosureVariant.V2`` for a uniform
+                ``4.0`` m lateral enclosure.
+        """
+        side_h = 4.0 if variant is EnclosureVariant.V2 else 3.0
         return cls(
             length=20.0,
             width=10.0,
@@ -29,8 +42,13 @@ class CourtDimensions:
             net_height_posts=0.92,
             service_line_distance_from_back=3.0,
             back_wall_height=4.0,
-            side_wall_height=3.0,
+            side_wall_height=side_h,
         )
+
+    @classmethod
+    def fip_variant_2(cls) -> "CourtDimensions":
+        """Standard FIP dimensions configured for Enclosure Variant 2 (4.0 m sides)."""
+        return cls.fip_standard(variant=EnclosureVariant.V2)
 
     def to_dict(self) -> dict[str, Any]:
         """Serializes the court dimensions to a dictionary."""

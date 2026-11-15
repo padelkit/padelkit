@@ -9,9 +9,33 @@ from .enums import (
     DoorState,
     EnclosureType,
     EnclosureVariant,
+    SideWallProfile,
 )
 from .landmarks import CourtLandmark
 from .location import CourtLocation
+
+
+@dataclass(frozen=True)
+class SideEnclosureSegment:
+    """One longitudinal segment along a half-side enclosure (from back wall toward net).
+
+    All distances and heights are expressed in meters.
+    """
+
+    y_start_from_back: float
+    y_end_from_back: float
+    solid_height: float
+    total_height: float
+
+    @property
+    def length(self) -> float:
+        """Segment length along the court sideline in meters."""
+        return max(0.0, self.y_end_from_back - self.y_start_from_back)
+
+    @property
+    def mesh_height(self) -> float:
+        """Vertical span of metallic mesh above the solid wall/glass in meters."""
+        return max(0.0, self.total_height - self.solid_height)
 
 
 @dataclass(frozen=True)
@@ -33,6 +57,7 @@ class Court:
     # Physical characteristics
     enclosure_type: EnclosureType | None = None
     enclosure_variant: EnclosureVariant | None = None
+    side_wall_profile: SideWallProfile | None = None
     orientation: CourtOrientation | None = None
     turf_color: str | None = None
     setting: CourtSetting | None = None
@@ -68,6 +93,105 @@ class Court:
     def width(self) -> float:
         """Total width of the court in meters."""
         return self.dimensions.width
+
+    @property
+    def effective_enclosure_type(self) -> EnclosureType:
+        """Resolved enclosure material (defaults to ``EnclosureType.GLASS``)."""
+        return (
+            self.enclosure_type
+            if self.enclosure_type is not None
+            else EnclosureType.GLASS
+        )
+
+    @property
+    def effective_enclosure_variant(self) -> EnclosureVariant:
+        """Resolved regulatory enclosure variant (``V1`` or ``V2``)."""
+        if self.enclosure_variant is not None:
+            return self.enclosure_variant
+        if self.dimensions.side_wall_height >= 4.0:
+            return EnclosureVariant.V2
+        return EnclosureVariant.V1
+
+    @property
+    def effective_side_wall_profile(self) -> SideWallProfile:
+        """Resolved side-wall solid profile (``STEPPED`` or ``UNIFORM``).
+
+        When ``side_wall_profile`` is unset (``None``), masonry/brick courts
+        (``EnclosureType.WALL``) default to ``SideWallProfile.STEPPED`` and
+        glass courts (``EnclosureType.GLASS``) default to
+        ``SideWallProfile.UNIFORM``.
+        """
+        if self.side_wall_profile is not None:
+            return self.side_wall_profile
+        if self.effective_enclosure_type is EnclosureType.WALL:
+            return SideWallProfile.STEPPED
+        return SideWallProfile.UNIFORM
+
+    def side_wall_heights_at(self, dist_from_back: float) -> tuple[float, float]:
+        """Returns ``(solid_height_m, total_height_m)`` at distance from back wall.
+
+        Args:
+            dist_from_back: Distance in meters measured inward from the nearest
+                back wall (``0.0`` at the corner to ``length / 2`` at the net).
+
+        Returns:
+            Tuple ``(solid_height_m, total_height_m)`` where ``solid_height_m``
+            is the top of the solid wall/glass panel (``0.0`` in pure mesh
+            zones) and ``total_height_m`` is the overall enclosure height.
+        """
+        d = max(0.0, float(dist_from_back))
+        back_h = self.dimensions.back_wall_height
+        is_v2 = self.effective_enclosure_variant is EnclosureVariant.V2
+        central_total_h = (
+            max(back_h, self.dimensions.side_wall_height)
+            if is_v2
+            else min(back_h, self.dimensions.side_wall_height)
+        )
+        total_h = back_h if d <= 2.0 else central_total_h
+
+        solid_cap = min(3.0, back_h)
+        if self.effective_side_wall_profile is SideWallProfile.STEPPED:
+            if d <= 2.0:
+                solid_h = solid_cap
+            elif d <= 4.0:
+                solid_h = min(2.0, solid_cap)
+            else:
+                solid_h = 0.0
+        else:
+            solid_h = solid_cap if d <= 4.0 else 0.0
+
+        solid_h = min(solid_h, total_h)
+        return solid_h, total_h
+
+    def side_enclosure_segments(
+        self,
+        doorway_half_width: float = 1.0,
+    ) -> list[SideEnclosureSegment]:
+        """Returns the half-side enclosure segments from back wall toward the net.
+
+        Args:
+            doorway_half_width: Half-width of the central net-side access
+                opening in meters (defaults to ``1.0`` m, i.e., a ``2.0`` m
+                central doorway). Pass ``0.0`` for a continuous side mesh.
+        """
+        half_len = self.length / 2.0
+        mesh_end = max(0.0, half_len - max(0.0, float(doorway_half_width)))
+        breaks = sorted({0.0, min(2.0, mesh_end), min(4.0, mesh_end), mesh_end})
+        segments: list[SideEnclosureSegment] = []
+        for start, end in zip(breaks, breaks[1:]):
+            if end <= start + 1e-9:
+                continue
+            mid = 0.5 * (start + end)
+            solid_h, total_h = self.side_wall_heights_at(mid)
+            segments.append(
+                SideEnclosureSegment(
+                    y_start_from_back=start,
+                    y_end_from_back=end,
+                    solid_height=solid_h,
+                    total_height=total_h,
+                )
+            )
+        return segments
 
     # ------------------------------------------------------------------ #
     # Internal helpers
@@ -224,6 +348,11 @@ class Court:
                 if self.enclosure_variant is not None
                 else None
             ),
+            "side_wall_profile": (
+                self.side_wall_profile.value
+                if self.side_wall_profile is not None
+                else None
+            ),
             "orientation": (
                 self.orientation.value if self.orientation is not None else None
             ),
@@ -257,6 +386,11 @@ class Court:
             enclosure_variant=(
                 EnclosureVariant(int(data["enclosure_variant"]))
                 if data.get("enclosure_variant") is not None
+                else None
+            ),
+            side_wall_profile=(
+                SideWallProfile(data["side_wall_profile"])
+                if data.get("side_wall_profile") is not None
                 else None
             ),
             orientation=(

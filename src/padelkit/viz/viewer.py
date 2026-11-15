@@ -188,16 +188,9 @@ class PadelVisualizer:
                     "side_wall_height": dims.side_wall_height,
                 },
                 "turf_color": self.court.turf_color or "blue",
-                "enclosure_type": (
-                    self.court.enclosure_type.value
-                    if self.court.enclosure_type
-                    else "glass"
-                ),
-                "enclosure_variant": (
-                    self.court.enclosure_variant.value
-                    if self.court.enclosure_variant
-                    else 1
-                ),
+                "enclosure_type": self.court.effective_enclosure_type.value,
+                "enclosure_variant": self.court.effective_enclosure_variant.value,
+                "side_wall_profile": self.court.effective_side_wall_profile.value,
             },
             "landmarks_3d": {k: list(v) for k, v in lm_3d.items()},
             "cameras": [cam.to_dict() for cam in self.cameras],

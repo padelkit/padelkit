@@ -33,14 +33,33 @@ class EnclosureVariant(int, Enum):
     """Regulatory enclosure variant as defined by the FIP.
 
     V1:
-        Side walls closed up to 3 m with metal fencing above.
-        Back walls always at 4 m.
+        Side enclosure reaches 4.0 m at the two 2.0 m end zones adjacent to
+        the back walls, and 3.0 m across the central 16.0 m.
     V2:
-        All walls (sides and back) fully closed at 4 m.
+        Side enclosure reaches a uniform 4.0 m height along the entire
+        20.0 m court length.
     """
 
     V1 = 1
     V2 = 2
+
+
+class SideWallProfile(str, Enum):
+    """Geometry profile of the solid side-wall panels near the back corners.
+
+    According to the official FIP Rules of Padel (Enclosures / Side walls):
+
+    STEPPED:
+        Two stepped solid panels at each end (for masonry/brick walls or
+        stepped glass): 3.0 m high x 2.0 m long adjacent to the back wall,
+        stepping down to 2.0 m high x 2.0 m long toward the center.
+    UNIFORM:
+        Continuous non-stepped solid panel ("sin escalón" / Variant Crystal):
+        3.0 m high x 4.0 m long at each end with a flat 3.0 m top edge.
+    """
+
+    STEPPED = "stepped"
+    UNIFORM = "uniform"
 
 
 class CourtOrientation(str, Enum):

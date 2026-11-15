@@ -29,7 +29,14 @@ from padelkit.camera import (
     CameraExtrinsics,
     CameraIntrinsics,
 )
-from padelkit.court import CoordinateSystem, Court, CourtLandmark
+from padelkit.court import (
+    CoordinateSystem,
+    Court,
+    CourtLandmark,
+    EnclosureType,
+    EnclosureVariant,
+    SideWallProfile,
+)
 from padelkit.physics import (
     BallPhysicsEngine,
     BallProperties,
@@ -1579,9 +1586,9 @@ def render_court_dimensions(palette: ThemePalette) -> str:
     svg.text(
         ex0 + w_len / 2,
         ey_floor - h_4m - 22,
-        "side_wall = 3.0m  |  end step = 4.0m",
+        "V1 center = 3.0m  |  V2 uniform = 4.0m (dashed)",
         fill=palette.text_primary,
-        size=9.2,
+        size=9.0,
         weight="600",
         mono=True,
     )
@@ -1599,6 +1606,26 @@ def render_court_dimensions(palette: ThemePalette) -> str:
             mono=True,
             anchor="end",
         )
+
+    # Variant 2 uniform 4.0m roofline across central 16m
+    svg.line(
+        ex0 + step_2m,
+        ey_floor - h_4m,
+        ex0 + w_len - step_2m,
+        ey_floor - h_4m,
+        stroke=palette.accent_primary,
+        stroke_width=1.4,
+        dash="5 3",
+    )
+    svg.text(
+        ex0 + w_len / 2,
+        ey_floor - h_4m - 9,
+        "V2 (4.0m mesh)",
+        fill=palette.accent_primary,
+        size=7.6,
+        weight="600",
+        mono=True,
+    )
 
     # Full 3m / 4m metallic mesh background envelope
     v1_poly = [
@@ -2045,6 +2072,498 @@ def render_court_coordinate_systems(palette: ThemePalette) -> str:
             fill=palette.text_muted,
             size=9.5,
             weight="600",
+            mono=True,
+        )
+
+    return svg.to_xml_string()
+
+
+def render_court_enclosure_variants(palette: ThemePalette) -> str:
+    """3b. Regulatory FIP enclosure variants: V1/V2 x STEPPED/UNIFORM x GLASS/WALL."""
+    svg = SvgCanvas(
+        960,
+        620,
+        "PadelKit Official FIP Regulatory Enclosure Variants",
+        "Comparison of all four official FIP side-enclosure configurations (Variant 1/2 x Stepped/Non-Stepped Crystal), back wall composition, and GLASS vs WALL properties.",
+        palette,
+    )
+    svg.header(
+        "Official FIP Regulatory Enclosure Variants & Side-Wall Profiles",
+        "EnclosureType (GLASS / WALL)  ×  EnclosureVariant (V1 3m / V2 4m)  ×  SideWallProfile (STEPPED / UNIFORM)",
+    )
+
+    # Top strip: Back wall baseline + Material & Rebound Legend
+    svg.rect(
+        24,
+        72,
+        912,
+        122,
+        fill=palette.bg_panel,
+        stroke=palette.border,
+        stroke_width=1.2,
+        rx=8,
+    )
+    svg.line(476, 84, 476, 182, stroke=palette.border, stroke_width=1.0)
+
+    # A. Back Wall Elevation (10.0m x 4.0m)
+    svg.text(
+        40,
+        90,
+        "A. BACK WALLS (10.0m × 4.0m — COMMON TO ALL VARIANTS)",
+        fill=palette.text_primary,
+        size=10.2,
+        weight="700",
+        mono=True,
+        anchor="start",
+    )
+    bx0, by_floor = 78.0, 174.0
+    b_sx = 23.0  # 10m -> 230px
+    b_sz = 15.5  # 4m -> 62px
+    bw_px = 10.0 * b_sx
+    bh_3 = 3.0 * b_sz
+    bh_4 = 4.0 * b_sz
+
+    for h_m in (0, 3, 4):
+        ty = by_floor - h_m * b_sz
+        svg.line(bx0 - 4, ty, bx0, ty, stroke=palette.border, stroke_width=1.0)
+        svg.text(
+            bx0 - 7,
+            ty + 0.5,
+            f"{h_m}m",
+            fill=palette.text_muted,
+            size=7.8,
+            mono=True,
+            anchor="end",
+        )
+
+    # Left 3 panels rendered as GLASS, right 2 panels as WALL to show interchangeability
+    for idx in range(5):
+        px = bx0 + idx * 2.0 * b_sx
+        pw = 2.0 * b_sx
+        is_wall_preview = idx >= 3
+        solid_fill = palette.accent_tertiary if is_wall_preview else palette.glass_fill
+        solid_stroke = (
+            palette.accent_tertiary if is_wall_preview else palette.glass_stroke
+        )
+        svg.rect(
+            px,
+            by_floor - bh_3,
+            pw,
+            bh_3,
+            fill=solid_fill,
+            stroke=solid_stroke,
+            stroke_width=1.4,
+            opacity=0.35 if is_wall_preview else 0.55,
+        )
+        svg.rect(
+            px,
+            by_floor - bh_4,
+            pw,
+            bh_4 - bh_3,
+            fill=palette.fence_fill,
+            stroke=palette.fence_stroke,
+            stroke_width=1.1,
+            dash="3 2",
+            opacity=0.80,
+        )
+    svg.line(
+        bx0 - 6,
+        by_floor,
+        bx0 + bw_px + 6,
+        by_floor,
+        stroke=palette.court_line_fg,
+        stroke_width=1.8,
+    )
+    svg.text(
+        bx0 + 1.5 * 2.0 * b_sx,
+        by_floor - bh_3 / 2,
+        "GLASS (3.0m)",
+        fill=palette.glass_stroke,
+        size=8.2,
+        weight="700",
+        mono=True,
+    )
+    svg.text(
+        bx0 + 4.0 * 2.0 * b_sx,
+        by_floor - bh_3 / 2,
+        "WALL (3.0m)",
+        fill=palette.accent_tertiary,
+        size=8.2,
+        weight="700",
+        mono=True,
+    )
+    svg.text(
+        bx0 + bw_px / 2,
+        by_floor - 3.5 * b_sz,
+        "1.0m Metallic Mesh",
+        fill=palette.text_muted,
+        size=7.6,
+        mono=True,
+    )
+    svg.text(
+        bx0 + bw_px / 2,
+        by_floor + 11,
+        "10.0m interior width (5 × 2.0m panels)",
+        fill=palette.text_muted,
+        size=7.6,
+        mono=True,
+    )
+    svg.dimension_arrow(
+        bx0 + bw_px + 20,
+        by_floor - bh_4,
+        bx0 + bw_px + 20,
+        by_floor,
+        "4.0m",
+        marker_key="primary",
+        color=palette.accent_primary,
+        label_offset=(22, 0),
+    )
+
+    # B. Material & Rebound Legend
+    svg.text(
+        494,
+        90,
+        "B. ENCLOSURE MATERIALS, ACCESSES & PHYSICS",
+        fill=palette.text_primary,
+        size=10.2,
+        weight="700",
+        mono=True,
+        anchor="start",
+    )
+    legend_rows = [
+        (
+            111,
+            palette.glass_fill,
+            palette.glass_stroke,
+            None,
+            0.55,
+            "EnclosureType.GLASS",
+            "Tempered glass (EN 12150-1) · COR 0.82 · μ 0.20 (low-friction slide)",
+        ),
+        (
+            132,
+            palette.accent_tertiary,
+            palette.accent_tertiary,
+            None,
+            0.35,
+            "EnclosureType.WALL",
+            "Brick / concrete wall · COR 0.80 · μ 0.55 (higher spin grip)",
+        ),
+        (
+            153,
+            palette.fence_fill,
+            palette.fence_stroke,
+            "3 2",
+            0.85,
+            "Metallic Mesh (FENCE)",
+            "5–7.08cm diamond/square wire · COR 0.45 · μ 0.50 (irregular bounce)",
+        ),
+        (
+            174,
+            palette.bg_canvas,
+            palette.text_muted,
+            "2 2",
+            1.0,
+            "Access Openings (door)",
+            "1 opening (1.05–2.0m) or 2 openings (0.72–1.0m) × 2.0–2.2m per side",
+        ),
+    ]
+    for ly, lfill, lstroke, ldash, lop, ltitle, ldesc in legend_rows:
+        svg.rect(
+            496,
+            ly - 6,
+            13,
+            13,
+            fill=lfill,
+            stroke=lstroke,
+            stroke_width=1.4,
+            dash=ldash,
+            opacity=lop,
+            rx=2,
+        )
+        svg.text(
+            516,
+            ly,
+            ltitle,
+            fill=palette.text_primary,
+            size=8.6,
+            weight="700",
+            mono=True,
+            anchor="start",
+        )
+        svg.text(
+            644,
+            ly,
+            ldesc,
+            fill=palette.text_muted,
+            size=8.0,
+            anchor="start",
+        )
+
+    # 2x2 Grid of Official Side-Wall Configurations
+    variants = [
+        (
+            24.0,
+            206.0,
+            "1. VARIANT 1 — STEPPED",
+            "V1 + STEPPED · WALL default (also valid for stepped GLASS)",
+            Court(
+                dimensions=Court.fip_standard().dimensions,
+                enclosure_type=EnclosureType.WALL,
+                enclosure_variant=EnclosureVariant.V1,
+                side_wall_profile=SideWallProfile.STEPPED,
+            ),
+            True,
+        ),
+        (
+            488.0,
+            206.0,
+            "2. VARIANT 2 — STEPPED",
+            "V2 + STEPPED · Uniform 4.0m mesh across all 20.0m",
+            Court(
+                dimensions=Court.fip_standard().dimensions,
+                enclosure_type=EnclosureType.WALL,
+                enclosure_variant=EnclosureVariant.V2,
+                side_wall_profile=SideWallProfile.STEPPED,
+            ),
+            True,
+        ),
+        (
+            24.0,
+            408.0,
+            "3. VARIANT 1 CRYSTAL — NON-STEPPED",
+            "V1 + UNIFORM · GLASS default (continuous 3.0m × 4.0m ends)",
+            Court(
+                dimensions=Court.fip_standard().dimensions,
+                enclosure_type=EnclosureType.GLASS,
+                enclosure_variant=EnclosureVariant.V1,
+                side_wall_profile=SideWallProfile.UNIFORM,
+            ),
+            False,
+        ),
+        (
+            488.0,
+            408.0,
+            "4. VARIANT 2 CRYSTAL — NON-STEPPED",
+            "V2 + UNIFORM · 3.0m × 4.0m glass + uniform 4.0m mesh",
+            Court(
+                dimensions=Court.fip_standard().dimensions,
+                enclosure_type=EnclosureType.GLASS,
+                enclosure_variant=EnclosureVariant.V2,
+                side_wall_profile=SideWallProfile.UNIFORM,
+            ),
+            False,
+        ),
+    ]
+
+    card_w, card_h = 448.0, 190.0
+    ex_off, ey_off = 44.0, 154.0
+    esx = 18.4  # 20m -> 368px
+    esz = 20.5  # 4m -> 82px
+
+    for cx, cy, title, subtitle, vcourt, show_wall_style in variants:
+        svg.rect(
+            cx,
+            cy,
+            card_w,
+            card_h,
+            fill=palette.bg_panel,
+            stroke=palette.border,
+            stroke_width=1.2,
+            rx=8,
+        )
+        svg.text(
+            cx + 16,
+            cy + 20,
+            title,
+            fill=palette.text_primary,
+            size=10.4,
+            weight="700",
+            mono=True,
+            anchor="start",
+        )
+        svg.text(
+            cx + 16,
+            cy + 36,
+            subtitle,
+            fill=palette.text_muted,
+            size=8.4,
+            mono=True,
+            anchor="start",
+        )
+
+        ex0 = cx + ex_off
+        ey_floor = cy + ey_off
+        w_total = 20.0 * esx
+
+        # Subtle horizontal 3m / 4m reference lines
+        for h_m in (0, 2, 3, 4):
+            ty = ey_floor - h_m * esz
+            svg.line(
+                ex0 - 3,
+                ty,
+                ex0,
+                ty,
+                stroke=palette.border,
+                stroke_width=0.9,
+            )
+            svg.text(
+                ex0 - 6,
+                ty + 0.5,
+                f"{h_m}m",
+                fill=palette.text_muted,
+                size=7.4,
+                mono=True,
+                anchor="end",
+            )
+            if h_m in (3, 4):
+                svg.line(
+                    ex0,
+                    ty,
+                    ex0 + w_total,
+                    ty,
+                    stroke=palette.grid_line,
+                    stroke_width=0.8,
+                    dash="2 3",
+                )
+
+        segs = vcourt.side_enclosure_segments(doorway_half_width=1.0)
+        solid_fill = palette.accent_tertiary if show_wall_style else palette.glass_fill
+        solid_stroke = (
+            palette.accent_tertiary if show_wall_style else palette.glass_stroke
+        )
+        solid_op = 0.35 if show_wall_style else 0.52
+
+        # Draw mirrored left (0..9m) and right (11..20m) halves from Court model
+        for seg in segs:
+            for y_a, y_b in (
+                (seg.y_start_from_back, seg.y_end_from_back),
+                (20.0 - seg.y_end_from_back, 20.0 - seg.y_start_from_back),
+            ):
+                rx0 = ex0 + y_a * esx
+                rw = (y_b - y_a) * esx
+                if seg.solid_height > 0:
+                    sh = seg.solid_height * esz
+                    svg.rect(
+                        rx0,
+                        ey_floor - sh,
+                        rw,
+                        sh,
+                        fill=solid_fill,
+                        stroke=solid_stroke,
+                        stroke_width=1.4,
+                        opacity=solid_op,
+                    )
+                if seg.mesh_height > 0:
+                    mh = seg.mesh_height * esz
+                    sb = seg.solid_height * esz
+                    svg.rect(
+                        rx0,
+                        ey_floor - sb - mh,
+                        rw,
+                        mh,
+                        fill=palette.fence_fill,
+                        stroke=palette.fence_stroke,
+                        stroke_width=1.2,
+                        dash="3 2",
+                        opacity=0.82,
+                    )
+
+        # Central 2m doorway opening (9m..11m)
+        door_x = ex0 + 9.0 * esx
+        door_w = 2.0 * esx
+        door_h = 2.0 * esz
+        svg.rect(
+            door_x,
+            ey_floor - door_h,
+            door_w,
+            door_h,
+            fill=palette.bg_canvas,
+            stroke=palette.text_muted,
+            stroke_width=1.0,
+            dash="2 2",
+        )
+        svg.text(
+            door_x + door_w / 2,
+            ey_floor - door_h / 2,
+            "door",
+            fill=palette.text_muted,
+            size=7.4,
+            mono=True,
+        )
+
+        # Top height callout in center 12m
+        central_h = (
+            4.0 if vcourt.effective_enclosure_variant is EnclosureVariant.V2 else 3.0
+        )
+        center_badge_col = (
+            palette.accent_primary
+            if vcourt.effective_enclosure_variant is EnclosureVariant.V2
+            else palette.accent_secondary
+        )
+        svg.text(
+            ex0 + w_total / 2,
+            ey_floor - central_h * esz - 8,
+            f"center = {central_h:.1f}m",
+            fill=center_badge_col,
+            size=7.8,
+            weight="700",
+            mono=True,
+        )
+
+        # Floor baseline + 2m / 4m / 12m / 16m / 18m ticks
+        svg.line(
+            ex0 - 4,
+            ey_floor,
+            ex0 + w_total + 4,
+            ey_floor,
+            stroke=palette.court_line_fg,
+            stroke_width=1.6,
+        )
+        for m_tick, label in [
+            (0, "0"),
+            (2, "2"),
+            (4, "4"),
+            (9, "9"),
+            (11, "11"),
+            (16, "16"),
+            (18, "18"),
+            (20, "20m"),
+        ]:
+            tx = ex0 + m_tick * esx
+            svg.line(
+                tx, ey_floor, tx, ey_floor + 4, stroke=palette.border, stroke_width=0.9
+            )
+            svg.text(
+                tx,
+                ey_floor + 13,
+                label,
+                fill=palette.text_muted,
+                size=7.4,
+                mono=True,
+            )
+
+        # Solid step callout label on left wing
+        step_note = (
+            "3m×2m + 2m×2m step"
+            if vcourt.effective_side_wall_profile is SideWallProfile.STEPPED
+            else "3m×4m flat (no step)"
+        )
+        svg.text(
+            ex0 + 2.0 * esx,
+            ey_floor + 25,
+            step_note,
+            fill=solid_stroke,
+            size=7.8,
+            weight="600",
+            mono=True,
+        )
+        svg.text(
+            ex0 + w_total / 2,
+            ey_floor + 25,
+            "12m mesh (2m door)",
+            fill=palette.text_muted,
+            size=7.6,
             mono=True,
         )
 
@@ -4009,6 +4528,7 @@ SCHEMATIC_GENERATORS: dict[str, Callable[[ThemePalette], str]] = {
     "court-landmarks-3d": render_court_landmarks_3d,
     "court-dimensions": render_court_dimensions,
     "court-coordinate-systems": render_court_coordinate_systems,
+    "court-enclosure-variants": render_court_enclosure_variants,
     "camera-frustum-3d": render_camera_frustum_3d,
     "camera-sensor-projection": render_camera_sensor_projection,
     "camera-distortion-grid": render_camera_distortion_grid,

@@ -10,6 +10,7 @@ from padelkit.court import (
     DoorState,
     EnclosureType,
     EnclosureVariant,
+    SideWallProfile,
 )
 from padelkit.court.enums import CourtOrientation
 
@@ -203,3 +204,109 @@ def test_invalid_point():
     court = Court.fip_standard()
     with pytest.raises(ValueError):
         court.point("invalid_landmark")
+
+
+# ---------------------------------------------------------------------------
+# Enclosure Variants & SideWallProfile
+# ---------------------------------------------------------------------------
+
+
+def test_court_dimensions_variant_2_helpers():
+    dims_v2 = CourtDimensions.fip_standard(variant=EnclosureVariant.V2)
+    assert dims_v2.back_wall_height == 4.0
+    assert dims_v2.side_wall_height == 4.0
+    assert CourtDimensions.fip_variant_2() == dims_v2
+
+
+def test_side_wall_profile_defaults_and_overrides():
+    assert Court.fip_standard().side_wall_profile is None
+    assert Court.fip_standard().effective_side_wall_profile is SideWallProfile.UNIFORM
+
+    wall_court = Court(enclosure_type=EnclosureType.WALL)
+    assert wall_court.effective_side_wall_profile is SideWallProfile.STEPPED
+
+    stepped_glass = Court(
+        enclosure_type=EnclosureType.GLASS,
+        enclosure_variant=EnclosureVariant.V1,
+        side_wall_profile=SideWallProfile.STEPPED,
+    )
+    assert stepped_glass.effective_side_wall_profile is SideWallProfile.STEPPED
+
+
+@pytest.mark.parametrize(
+    ("variant", "profile", "expected_at_1m", "expected_at_3m", "expected_at_6m"),
+    [
+        (
+            EnclosureVariant.V1,
+            SideWallProfile.STEPPED,
+            (3.0, 4.0),
+            (2.0, 3.0),
+            (0.0, 3.0),
+        ),
+        (
+            EnclosureVariant.V2,
+            SideWallProfile.STEPPED,
+            (3.0, 4.0),
+            (2.0, 4.0),
+            (0.0, 4.0),
+        ),
+        (
+            EnclosureVariant.V1,
+            SideWallProfile.UNIFORM,
+            (3.0, 4.0),
+            (3.0, 3.0),
+            (0.0, 3.0),
+        ),
+        (
+            EnclosureVariant.V2,
+            SideWallProfile.UNIFORM,
+            (3.0, 4.0),
+            (3.0, 4.0),
+            (0.0, 4.0),
+        ),
+    ],
+)
+def test_side_wall_heights_across_all_four_fip_variants(
+    variant,
+    profile,
+    expected_at_1m,
+    expected_at_3m,
+    expected_at_6m,
+):
+    court = Court(
+        dimensions=CourtDimensions.fip_standard(variant=variant),
+        enclosure_type=EnclosureType.GLASS,
+        enclosure_variant=variant,
+        side_wall_profile=profile,
+    )
+    assert court.side_wall_heights_at(1.0) == expected_at_1m
+    assert court.side_wall_heights_at(3.0) == expected_at_3m
+    assert court.side_wall_heights_at(6.0) == expected_at_6m
+
+    segs = court.side_enclosure_segments(doorway_half_width=1.0)
+    assert [(s.y_start_from_back, s.y_end_from_back) for s in segs] == [
+        (0.0, 2.0),
+        (2.0, 4.0),
+        (4.0, 9.0),
+    ]
+    assert segs[0].mesh_height == pytest.approx(1.0)
+    assert segs[1].solid_height == pytest.approx(expected_at_3m[0])
+    assert segs[1].total_height == pytest.approx(expected_at_3m[1])
+
+
+def test_court_dict_round_trip_with_side_wall_profile_and_legacy_payload():
+    court = Court(
+        dimensions=CourtDimensions.fip_variant_2(),
+        enclosure_type=EnclosureType.GLASS,
+        enclosure_variant=EnclosureVariant.V2,
+        side_wall_profile=SideWallProfile.STEPPED,
+    )
+    payload = court.to_dict()
+    assert payload["side_wall_profile"] == "stepped"
+    assert Court.from_dict(payload) == court
+
+    # Legacy payloads omitting side_wall_profile deserialize with None
+    legacy = dict(payload)
+    legacy.pop("side_wall_profile")
+    restored_legacy = Court.from_dict(legacy)
+    assert restored_legacy.side_wall_profile is None
