@@ -13,6 +13,7 @@ from ..camera.camera import Camera
 from ..camera.enums import CameraPreset
 from ..court.court import Court
 from ..court.enums import CoordinateSystem
+from ..physics.models import BallProperties
 from .template import render_viewer_html
 from .timeline import FrameState, MatchTimeline
 
@@ -39,6 +40,7 @@ class PadelVisualizer:
         timeline: MatchTimeline | None = None,
         animation_library_dir: str | Path | None = None,
         offline: bool = True,
+        ball_properties: BallProperties | None = None,
     ) -> None:
         self.timeline: MatchTimeline = (
             timeline
@@ -46,6 +48,9 @@ class PadelVisualizer:
             else MatchTimeline.demo_rally(court=court or Court.fip_standard())
         )
         self.court: Court = court or self.timeline.court
+        self.ball_properties: BallProperties = (
+            ball_properties or self.timeline.ball_properties
+        )
         if cameras is not None:
             self.cameras: list[Camera] = list(cameras)
         else:
@@ -186,8 +191,26 @@ class PadelVisualizer:
                     ),
                     "back_wall_height": dims.back_wall_height,
                     "side_wall_height": dims.side_wall_height,
+                    "line_width": dims.line_width,
+                    "service_line_extension": dims.service_line_extension,
+                    "net_post_height": dims.net_post_height,
+                    "free_height": dims.free_height,
                 },
-                "turf_color": self.court.turf_color or "blue",
+                "turf_color": self.court.effective_turf_color,
+                "setting": (
+                    self.court.setting.value if self.court.setting is not None else None
+                ),
+                "ceiling_height": self.court.ceiling_height,
+                "safety_zone_left": (
+                    self.court.safety_zone_left.to_dict()
+                    if self.court.safety_zone_left is not None
+                    else None
+                ),
+                "safety_zone_right": (
+                    self.court.safety_zone_right.to_dict()
+                    if self.court.safety_zone_right is not None
+                    else None
+                ),
                 "enclosure_type": self.court.effective_enclosure_type.value,
                 "enclosure_variant": self.court.effective_enclosure_variant.value,
                 "side_wall_profile": self.court.effective_side_wall_profile.value,
@@ -225,6 +248,12 @@ class PadelVisualizer:
                 ],
             },
             "landmarks_3d": {k: list(v) for k, v in lm_3d.items()},
+            "ball": {
+                "color": self.ball_properties.effective_color,
+                "radius": self.ball_properties.radius,
+                "mass": self.ball_properties.mass,
+                "pressure_psi": self.ball_properties.pressure_psi,
+            },
             "cameras": [cam.to_dict() for cam in self.cameras],
             "timeline": self.timeline.to_dict(),
             "animation_library": self._build_animation_library_config(

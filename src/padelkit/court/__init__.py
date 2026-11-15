@@ -1,9 +1,16 @@
-from .court import Court, SideAccess, SideEnclosurePanel, SideEnclosureSegment
+from .court import (
+    Court,
+    SafetyZone,
+    SideAccess,
+    SideEnclosurePanel,
+    SideEnclosureSegment,
+)
 from .dimensions import CourtDimensions
 from .enums import (
     CoordinateSystem,
     CourtOrientation,
     CourtSetting,
+    CourtSurfaceColor,
     DoorState,
     EnclosureType,
     EnclosureVariant,
@@ -17,9 +24,11 @@ __all__ = [
     "CourtDimensions",
     "CourtLocation",
     "CourtLandmark",
+    "CourtSurfaceColor",
     "CoordinateSystem",
     "EnclosureType",
     "EnclosureVariant",
+    "SafetyZone",
     "SideWallProfile",
     "SideAccess",
     "SideEnclosurePanel",

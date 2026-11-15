@@ -447,3 +447,40 @@ def test_visualizer_encodes_side_access_and_door_states():
     html = viz.to_html()
     assert "side_panels_left" in html
     assert "side_panels_right" in html
+
+
+def test_visualizer_encodes_turf_color_ball_color_and_net_dimensions():
+    from padelkit import (
+        BallColor,
+        BallProperties,
+        CourtDimensions,
+        CourtSurfaceColor,
+        SafetyZone,
+        SideAccess,
+    )
+
+    court = Court(
+        dimensions=CourtDimensions.fip_standard(new_construction=True),
+        turf_color=CourtSurfaceColor.PURPLE,
+        ceiling_height=8.5,
+        access_left=SideAccess.fip_dual_access(),
+        access_right=SideAccess.fip_dual_access(),
+        safety_zone_left=SafetyZone.fip_standard(),
+        safety_zone_right=SafetyZone.fip_standard(),
+    )
+    ball = BallProperties(color=BallColor.MAGENTA)
+    timeline = MatchTimeline.demo_rally(court=court, ball_properties=ball, fps=30.0)
+    viz = PadelVisualizer(court=court, timeline=timeline, ball_properties=ball)
+    cfg = viz.build_config()
+
+    assert cfg["court"]["turf_color"] == "purple"
+    assert abs(cfg["court"]["ceiling_height"] - 8.5) < 1e-9
+    assert cfg["court"]["safety_zone_left"]["width"] == 2.0
+    assert abs(cfg["court"]["dimensions"]["service_line_extension"] - 0.20) < 1e-9
+    assert abs(cfg["court"]["dimensions"]["net_post_height"] - 1.05) < 1e-9
+    assert abs(cfg["court"]["dimensions"]["free_height"] - 8.0) < 1e-9
+    assert cfg["ball"]["color"] == "magenta"
+
+    html = viz.to_html()
+    assert "resolveBallPalette" in html
+    assert "createTurfTexture" in html

@@ -26,8 +26,8 @@
   <Property name="orientation" type="CourtOrientation | None">
     The cardinal orientation of the court's length axis, if set.
   </Property>
-  <Property name="turf_color" type="str | None">
-    The color of the artificial turf, if set.
+  <Property name="turf_color" type="CourtSurfaceColor | str | None">
+    Surface turf color (`BLUE`, `GREEN`, `TERRACOTTA`, indoor-only `BLACK` official FIP; plus tournament/custom CSS colors like `PURPLE`, `ORANGE`, `GRAY`, or hex `#...`). Rendered directly in [`PadelVisualizer`](/visualization-3d). Use `court.effective_turf_color` to resolve `None` to `"blue"`.
   </Property>
   <Property name="setting" type="CourtSetting | None">
     The environment setting of the court (indoor, outdoor, or semi-covered), if set.
@@ -37,6 +37,15 @@
   </Property>
   <Property name="door_right" type="DoorState | None">
     State of the right lateral access door, if set.
+  </Property>
+  <Property name="access_left / access_right" type="SideAccess | None">
+    Number and dimensions of lateral doorway openings on each sideline (`1`, `2`, or `0` doors). Defaults to 1 FIP opening (`2.0 m × 2.2 m`) when `None`.
+  </Property>
+  <Property name="safety_zone_left / safety_zone_right" type="SafetyZone | None">
+    Exterior Rule 16 obstacle-free safety clearance zones (`2.0 m × 8.0 m × 3.0 m`) outside each lateral access.
+  </Property>
+  <Property name="ceiling_height" type="float | None">
+    Physical roof clearance in meters for covered/indoor courts (`>= 6.0 m` FIP minimum). Enables ceiling rebounds in [`BallPhysicsEngine`](/ball-physics-engine).
   </Property>
   <Property name="location" type="CourtLocation | None">
     Structured geographic location of the court, if set.

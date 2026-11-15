@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Literal
 
 from .entities import MatchConfiguration, Player, ServingState, Team, TeamId
 from .serving import ServingEngine
@@ -20,6 +21,9 @@ class MatchScore:
     in_tiebreak: bool = False
     in_super_tiebreak: bool = False
     is_gold_point: bool = False
+    side_changes: int = 0
+    team_a_side: Literal["near", "far"] = "near"
+    is_side_change: bool = False
 
     def __str__(self) -> str:
         # Determine team labels
@@ -228,6 +232,8 @@ class MatchScoreHistory:
         in_super_tiebreak = False
         tiebreak_starter: TeamId | None = None
         tiebreak_points_played = 0
+        side_changes = 0
+        last_point_side_change = False
 
         sets_to_win = (self.config.best_of_sets // 2) + 1
 
@@ -235,6 +241,7 @@ class MatchScoreHistory:
             # If match is already won, ignore further points
             if sets_a >= sets_to_win or sets_b >= sets_to_win:
                 break
+            prev_side_changes = side_changes
 
             # Before processing the point, if we are at the start of a set,
             # check if this is the deciding set and we need a tie-break.
@@ -308,6 +315,10 @@ class MatchScoreHistory:
                             games_b += 1  # becomes 7 (standard) or 5 (mini)
                             completed_sets.append((games_a, games_b))
                             sets_b += 1
+                        if (games_a + games_b) % 2 == 1 and (
+                            sets_a < sets_to_win and sets_b < sets_to_win
+                        ):
+                            side_changes += 1
                         total_games += 1
                         # Reset for next set
                         games_a = 0
@@ -317,6 +328,8 @@ class MatchScoreHistory:
                         in_tiebreak = False
                         tiebreak_starter = None
                         tiebreak_points_played = 0
+                elif tiebreak_points_played % 6 == 0:
+                    side_changes += 1
 
             # 2. Processing a regular game
             else:
@@ -396,6 +409,7 @@ class MatchScoreHistory:
 
                 # Check if a game finishing wins the set or triggers a tie-break
                 if points_a == 0 and points_b == 0:
+                    game_ended_odd = (games_a + games_b) % 2 == 1
                     limit = 4 if self.config.set_format == "mini" else 6
                     if games_a == limit and games_b == limit:
                         in_tiebreak = True
@@ -427,6 +441,11 @@ class MatchScoreHistory:
                             sets_b += 1
                             games_a = 0
                             games_b = 0
+
+                    if game_ended_odd and sets_a < sets_to_win and sets_b < sets_to_win:
+                        side_changes += 1
+
+            last_point_side_change = side_changes > prev_side_changes
 
         # Check if we should be in a deciding set tie-break after the loop as well
         if (
@@ -503,4 +522,7 @@ class MatchScoreHistory:
             in_tiebreak=in_tiebreak,
             in_super_tiebreak=in_super_tiebreak,
             is_gold_point=is_gold_point,
+            side_changes=side_changes,
+            team_a_side="far" if side_changes % 2 == 1 else "near",
+            is_side_change=last_point_side_change,
         )

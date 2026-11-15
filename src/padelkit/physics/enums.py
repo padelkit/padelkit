@@ -12,6 +12,25 @@ class SurfaceType(str, Enum):
     BACK_FENCE = "back_fence"
     SIDE_FENCE = "side_fence"
     NET = "net"
+    CEILING = "ceiling"
+
+
+class BallColor(str, Enum):
+    """Official FIP and tournament padel ball felt colors.
+
+    Per FIP regulations (*La Pelota*, p. 12), classic official colors are
+    optic yellow and white, while official tours and high-contrast venues also
+    authorize orange, magenta, and other high-visibility colors.
+    """
+
+    YELLOW = "yellow"
+    WHITE = "white"
+    ORANGE = "orange"
+    MAGENTA = "magenta"
+    GREEN = "green"
+    PINK = "pink"
+    BLUE = "blue"
+    BLACK = "black"
 
 
 class ContactRegime(str, Enum):

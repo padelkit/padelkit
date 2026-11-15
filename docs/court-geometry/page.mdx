@@ -132,6 +132,12 @@ According to the official FIP *Rules of Padel*, every court enclosure combines s
 
 ## Lateral Access Openings (Doors) {{ tag: 'dataclass', label: 'SideAccess' }}
 
+<Schematic
+  name="court-side-access"
+  alt="Lateral Access Openings (1 vs 2 vs 0 Doors per Side)"
+  caption="Central sideline elevation (Y ∈ [-4, +4] m) and plan view showing 1-door default, 2-door Rule 16 out-of-court play + SafetyZone, and 0-door single-side entry club courts."
+/>
+
 | Access Configuration | Preset / `count` | Official Width × Height (each) | Regulatory Notes |
 | :--- | :--- | :--- | :--- |
 | **Single Access** (default) | `SideAccess.fip_single_access()` (`1`) | `1.05–2.00 m × 2.00–2.20 m` | Default `2.00 m × 2.20 m` (FIP max); overhead mesh lintel from `height` to `3.0 / 4.0 m` |
@@ -158,28 +164,51 @@ According to the official FIP *Rules of Padel*, every court enclosure combines s
       <Property name="SideAccess.center_pillar_width" type="float" default="0.16">
         Width in meters of the structural post separating dual openings when `count == 2`.
       </Property>
+      <Property name="SafetyZone(width=2.0, half_length=4.0, height=3.0)" type="dataclass">
+        Exterior obstacle-free clearance zone (`safety_zone_left` / `safety_zone_right`) required for official Rule 16 out-of-court play (`>= 2.0 m` wide × `8.0 m` total length centered on the net × `>= 3.0 m` vertical clearance + `>= 2 cm` post/frame padding).
+      </Property>
+      <Property name="ceiling_height" type="float | None">
+        Optional physical roof height in meters (`>= 6.0 m` FIP minimum, `8.0 m` suggested for new indoor construction). Triggers `SurfaceType.CEILING` collisions when set.
+      </Property>
+      <Property name="court.is_fip_compliant(out_of_court_play=False)" type="bool">
+        Validates official FIP compliance across court dimensions, lateral access, `SafetyZone`, `ceiling_height`, and surface color (black turf indoor-only). Inspect `court.fip_compliance_issues()` for human-readable violations.
+      </Property>
     </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Configure Side Access & Out-of-Court Play" tag="dataclass" label="SideAccess">
+    <CodeGroup title="Side Access, SafetyZone & Compliance" tag="dataclass" label="SideAccess / SafetyZone">
 
     ```python
-    from padelkit import Court, DoorState, SideAccess
+    from padelkit import (
+        Court,
+        CourtSetting,
+        CourtSurfaceColor,
+        DoorState,
+        SafetyZone,
+        SideAccess,
+    )
 
-    # Official out-of-court layout: dual doorways on both sides
+    # Official out-of-court layout: dual doorways + 2x8m SafetyZone on both sides
     pro_court = Court(
+        turf_color=CourtSurfaceColor.BLUE,
         access_left=SideAccess.fip_dual_access(),
         access_right=SideAccess.fip_dual_access(),
+        safety_zone_left=SafetyZone.fip_standard(),
+        safety_zone_right=SafetyZone.fip_standard(),
     )
-    pro_court.has_fip_compliant_access(out_of_court_play=True)  # True
+    pro_court.is_out_of_court_play_allowed()            # True
+    pro_court.is_fip_compliant(out_of_court_play=True)  # True
 
     # Recreational single-side entry club court
     club_court = Court(
         access_left=SideAccess.fip_single_access(width=1.6, height=2.1),
         access_right=SideAccess.no_access(),
         door_left=DoorState.OPEN,
+        setting=CourtSetting.INDOOR,
+        ceiling_height=7.0,
+        turf_color=CourtSurfaceColor.BLACK,
     )
 
     # Query physics pass-through at the net (y=0.0, z=1.4m)

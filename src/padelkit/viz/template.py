@@ -495,19 +495,35 @@ __PADELKIT_SCRIPT_OPEN__
     plinthMesh.receiveShadow = true;
     scene.add(plinthMesh);
 
-    // 2. Procedural Silica-Sand Fibrillated Turf Texture with subtle weave stripes
+    // 2. Procedural Silica-Sand Fibrillated Turf Texture with FIP & championship palettes
+    function resolveTurfColorHex(colorName) {
+      const baseColors = {
+        blue: "#0d4b82",
+        green: "#1b5e20",
+        terracotta: "#9a3412",
+        black: "#182232",
+        purple: "#5b21b6",
+        red: "#991b1b",
+        orange: "#c2410c",
+        gray: "#475569",
+        grey: "#475569",
+        navy: "#172554",
+        teal: "#0f766e",
+        pink: "#9d174d",
+      };
+      const raw = String(colorName || "blue").trim();
+      const key = raw.toLowerCase();
+      if (baseColors[key]) return baseColors[key];
+      if (/^#[0-9a-f]{3,8}$/i.test(raw)) return raw;
+      return baseColors.blue;
+    }
+
     function createTurfTexture(colorName) {
       const canvas = document.createElement("canvas");
       canvas.width = 512;
       canvas.height = 512;
       const ctx = canvas.getContext("2d");
-      const baseColors = {
-        blue: "#0d4b82",
-        green: "#1b5e20",
-        black: "#182232",
-        terracotta: "#9a3412",
-      };
-      ctx.fillStyle = baseColors[colorName] || baseColors.blue;
+      ctx.fillStyle = resolveTurfColorHex(colorName);
       ctx.fillRect(0, 0, 512, 512);
 
       // Subtle turf roll stripes
@@ -528,9 +544,10 @@ __PADELKIT_SCRIPT_OPEN__
       return tex;
     }
 
+    const turfColorName = CONFIG.court.turf_color || "blue";
     const turfGeo = new THREE.PlaneGeometry(W, L);
     const turfMat = new THREE.MeshStandardMaterial({
-      map: createTurfTexture(CONFIG.court.turf_color || "blue"),
+      map: createTurfTexture(turfColorName),
       roughness: 0.76,
       metalness: 0.04,
     });
@@ -538,9 +555,10 @@ __PADELKIT_SCRIPT_OPEN__
     turfMesh.receiveShadow = true;
     scene.add(turfMesh);
 
-    // 3. Regulation 5cm White Court Lines
+    // 3. Regulation 5cm White Court Lines (including 20cm service center extension)
     const lineMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.42 });
-    const lineW = 0.05;
+    const lineW = dims.line_width || 0.05;
+    const svcExt = dims.service_line_extension !== undefined ? dims.service_line_extension : 0.20;
     const svcY = hl - dims.service_line_distance_from_back;
 
     function addCourtLine(x, y, width, length) {
@@ -558,7 +576,7 @@ __PADELKIT_SCRIPT_OPEN__
     addCourtLine( hw, 0, lineW, L);
     addCourtLine(0, -svcY, W, lineW);
     addCourtLine(0,  svcY, W, lineW);
-    addCourtLine(0, 0, lineW, svcY * 2 + 0.2);
+    addCourtLine(0, 0, lineW, svcY * 2 + 2 * svcExt);
 
     // 4. Tempered Glass Panels, Electro-Welded Metallic Fence & Structural Pillars
     const glassMat = new THREE.MeshPhysicalMaterial({
@@ -614,7 +632,7 @@ __PADELKIT_SCRIPT_OPEN__
     const sideWallProfile = CONFIG.court.side_wall_profile || (enclosureType === "wall" ? "stepped" : "uniform");
     const isMasonry = enclosureType === "wall";
     const masonryMat = new THREE.MeshStandardMaterial({
-      color: turfPalette.hex === 0x15803d ? 0x1e3a5f : 0x1e4d3b,
+      color: String(turfColorName).toLowerCase() === "green" ? 0x1e3a5f : 0x1e4d3b,
       roughness: 0.78,
       metalness: 0.05,
     });
@@ -810,14 +828,18 @@ __PADELKIT_SCRIPT_OPEN__
     }
 
     const netSegments = 36;
-    const netGeo = new THREE.PlaneGeometry(W - 0.12, 0.92, netSegments, 6);
+    const netPostRadius = 0.04;
+    const netPostH = dims.net_post_height || 1.05;
+    const netSpanW = Math.max(1.0, W - netPostRadius * 2);
+    const netGeo = new THREE.PlaneGeometry(netSpanW, dims.net_height_posts || 0.92, netSegments, 6);
     const posAttr = netGeo.attributes.position;
     for (let i = 0; i < posAttr.count; i++) {
       const vx = posAttr.getX(i);
       const vy = posAttr.getY(i);
       const normX = vx / hw;
       const topZ = dims.net_height_center + (dims.net_height_posts - dims.net_height_center) * (normX * normX);
-      const frac = (vy + 0.46) / 0.92;
+      const netHRef = dims.net_height_posts || 0.92;
+      const frac = (vy + netHRef / 2) / netHRef;
       posAttr.setY(i, 0);
       posAttr.setZ(i, frac * topZ);
     }
@@ -833,14 +855,17 @@ __PADELKIT_SCRIPT_OPEN__
     netMesh.castShadow = true;
     scene.add(netMesh);
 
-    // Net posts & center strap (faja central)
-    [-hw + 0.05, hw - 0.05].forEach((nx) => {
+    // Net posts (max 1.05m high, outer face aligned flush with sideline limits ±hw)
+    [-hw + netPostRadius, hw - netPostRadius].forEach((nx) => {
       const netPost = registerMesh(
-        new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.96, 16), pillarMat),
+        new THREE.Mesh(
+          new THREE.CylinderGeometry(netPostRadius, netPostRadius, netPostH, 16),
+          pillarMat
+        ),
         "net"
       );
       netPost.rotation.x = Math.PI / 2;
-      netPost.position.set(nx, 0, 0.48);
+      netPost.position.set(nx, 0, netPostH / 2);
       scene.add(netPost);
     });
     const centerStrap = registerMesh(
@@ -855,7 +880,7 @@ __PADELKIT_SCRIPT_OPEN__
     for (let i = 0; i <= netSegments; i++) {
       const u = (i / netSegments) * 2 - 1;
       const z = dims.net_height_center + (dims.net_height_posts - dims.net_height_center) * (u * u);
-      tapeCurvePts.push(new THREE.Vector3(u * (hw - 0.05), 0, z));
+      tapeCurvePts.push(new THREE.Vector3(u * (hw - netPostRadius), 0, z));
     }
     const tapeCurve = new THREE.CatmullRomCurve3(tapeCurvePts);
     const tapeGeo = new THREE.TubeGeometry(tapeCurve, 36, 0.025, 10, false);
@@ -865,15 +890,39 @@ __PADELKIT_SCRIPT_OPEN__
     // ------------------------------------------------------------------ //
     // 3D Textured Padel Ball + Spin Seam + Hawk-Eye Bounce Ring Markers
     // ------------------------------------------------------------------ //
-    function createPadelBallTexture() {
+    function resolveBallPalette(colorName) {
+      const presets = {
+        yellow:  { fill: "#d9f99d", emissive: 0x84cc16, seam: "#ffffff" },
+        white:   { fill: "#f8fafc", emissive: 0x94a3b8, seam: "#1e293b" },
+        orange:  { fill: "#fb923c", emissive: 0xea580c, seam: "#ffffff" },
+        magenta: { fill: "#ec4899", emissive: 0xdb2777, seam: "#ffffff" },
+        green:   { fill: "#a3e635", emissive: 0x65a30d, seam: "#ffffff" },
+        pink:    { fill: "#f472b6", emissive: 0xdb2777, seam: "#ffffff" },
+        blue:    { fill: "#38bdf8", emissive: 0x0284c7, seam: "#ffffff" },
+        black:   { fill: "#1e293b", emissive: 0x0f172a, seam: "#f8fafc" },
+      };
+      const raw = String(colorName || "yellow").trim();
+      const key = raw.toLowerCase();
+      if (presets[key]) return presets[key];
+      if (/^#[0-9a-f]{3,8}$/i.test(raw)) {
+        return { fill: raw, emissive: new THREE.Color(raw).getHex(), seam: "#ffffff" };
+      }
+      return presets.yellow;
+    }
+
+    const ballCfg = CONFIG.ball || {};
+    const ballPalette = resolveBallPalette(ballCfg.color || "yellow");
+    const ballRadius = ballCfg.radius || 0.033;
+
+    function createPadelBallTexture(palette) {
       const c = document.createElement("canvas");
       c.width = 256;
       c.height = 128;
       const ctx = c.getContext("2d");
-      ctx.fillStyle = "#d9f99d";
+      ctx.fillStyle = palette.fill;
       ctx.fillRect(0, 0, 256, 128);
-      // Curved white rubber seam
-      ctx.strokeStyle = "#ffffff";
+      // Curved rubber seam
+      ctx.strokeStyle = palette.seam;
       ctx.lineWidth = 8;
       ctx.beginPath();
       for (let x = 0; x <= 256; x += 4) {
@@ -885,11 +934,11 @@ __PADELKIT_SCRIPT_OPEN__
       return new THREE.CanvasTexture(c);
     }
 
-    const ballGeo = new THREE.SphereGeometry(0.0335, 28, 28);
+    const ballGeo = new THREE.SphereGeometry(ballRadius, 28, 28);
     const ballMat = new THREE.MeshStandardMaterial({
-      map: createPadelBallTexture(),
-      emissive: 0x84cc16,
-      emissiveIntensity: 0.28,
+      map: createPadelBallTexture(ballPalette),
+      emissive: ballPalette.emissive,
+      emissiveIntensity: 0.25,
       roughness: 0.55,
     });
     const ballMesh = registerMesh(new THREE.Mesh(ballGeo, ballMat), "ball");

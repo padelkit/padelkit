@@ -16,6 +16,7 @@ from padelkit.camera import (
 )
 from padelkit.court.court import (
     Court,
+    SafetyZone,
     SideAccess,
     SideEnclosurePanel,
     SideEnclosureSegment,
@@ -25,6 +26,7 @@ from padelkit.court.enums import (
     CoordinateSystem,
     CourtOrientation,
     CourtSetting,
+    CourtSurfaceColor,
     DoorState,
     EnclosureType,
     EnclosureVariant,
@@ -33,6 +35,7 @@ from padelkit.court.enums import (
 from padelkit.court.landmarks import CourtLandmark
 from padelkit.court.location import CourtLocation
 from padelkit.physics import (
+    BallColor,
     BallPhysicsEngine,
     BallProperties,
     BallState,
@@ -68,9 +71,11 @@ __all__ = [
     "CourtDimensions",
     "CourtLocation",
     "CourtLandmark",
+    "CourtSurfaceColor",
     "CoordinateSystem",
     "EnclosureType",
     "EnclosureVariant",
+    "SafetyZone",
     "SideWallProfile",
     "SideAccess",
     "SideEnclosurePanel",
@@ -86,6 +91,7 @@ __all__ = [
     "CameraPreset",
     "DistortionModel",
     # Physics & Aerodynamics
+    "BallColor",
     "BallPhysicsEngine",
     "BallProperties",
     "EnvironmentConditions",

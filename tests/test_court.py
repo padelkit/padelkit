@@ -7,9 +7,11 @@ from padelkit.court import (
     CourtLandmark,
     CourtLocation,
     CourtSetting,
+    CourtSurfaceColor,
     DoorState,
     EnclosureType,
     EnclosureVariant,
+    SafetyZone,
     SideAccess,
     SideEnclosurePanel,
     SideWallProfile,
@@ -406,3 +408,108 @@ def test_court_doorways_panels_and_serialization():
     restored_legacy = Court.from_dict(legacy)
     assert restored_legacy.access_left is None
     assert restored_legacy.access_right is None
+
+
+def test_court_dimensions_new_fip_fields():
+    dims_default = CourtDimensions.fip_standard()
+    assert dims_default.line_width == pytest.approx(0.05)
+    assert dims_default.service_line_extension == pytest.approx(0.20)
+    assert dims_default.net_post_height == pytest.approx(1.05)
+    assert dims_default.free_height == pytest.approx(6.0)
+
+    dims_new = CourtDimensions.fip_standard(new_construction=True)
+    assert dims_new.free_height == pytest.approx(8.0)
+
+    dims_v2_new = CourtDimensions.fip_variant_2(new_construction=True)
+    assert dims_v2_new.free_height == pytest.approx(8.0)
+    assert dims_v2_new.side_wall_height == pytest.approx(4.0)
+
+    assert CourtDimensions.from_dict(dims_new.to_dict()) == dims_new
+    # Backward compatibility when loading old dict without new keys
+    legacy_dims = {
+        "length": 20.0,
+        "width": 10.0,
+        "service_line_distance_from_back": 3.0,
+        "net_height_center": 0.88,
+        "net_height_posts": 0.92,
+        "back_wall_height": 3.0,
+        "side_wall_height": 3.0,
+    }
+    restored_legacy_dims = CourtDimensions.from_dict(legacy_dims)
+    assert restored_legacy_dims.free_height == pytest.approx(6.0)
+    assert restored_legacy_dims.line_width == pytest.approx(0.05)
+
+
+def test_turf_colors_safety_zone_ceiling_and_fip_compliance():
+    # Surface colors: enum normalization + custom CSS hex strings
+    court_blue = Court()
+    assert court_blue.effective_turf_color == "blue"
+
+    court_black_outdoor = Court(
+        setting=CourtSetting.OUTDOOR, turf_color=CourtSurfaceColor.BLACK
+    )
+    assert court_black_outdoor.effective_turf_color == "black"
+    assert not court_black_outdoor.is_fip_compliant()
+    assert any(
+        "black" in issue.lower()
+        for issue in court_black_outdoor.fip_compliance_issues()
+    )
+
+    court_black_indoor = Court(
+        setting=CourtSetting.INDOOR,
+        turf_color=CourtSurfaceColor.BLACK,
+        ceiling_height=6.5,
+    )
+    assert court_black_indoor.effective_turf_color == "black"
+    assert court_black_indoor.is_fip_compliant()
+    assert Court(
+        setting=CourtSetting.INDOOR, turf_color="BLACK", ceiling_height=6.5
+    ).is_fip_compliant()
+
+    court_low_ceiling = Court(setting=CourtSetting.INDOOR, ceiling_height=5.5)
+    assert not court_low_ceiling.is_fip_compliant()
+    assert any("ceiling_height" in i for i in court_low_ceiling.fip_compliance_issues())
+
+    assert Court(turf_color=CourtSurfaceColor.GREEN).is_fip_compliant()
+    assert Court(turf_color=CourtSurfaceColor.TERRACOTTA).is_fip_compliant()
+
+    court_custom_hex = Court(turf_color="#2563EB")
+    assert court_custom_hex.effective_turf_color == "#2563EB"
+    assert not court_custom_hex.is_fip_compliant()
+
+    # SafetyZone & Rule 16 out-of-court play
+    sz = SafetyZone.fip_standard()
+    assert sz.is_fip_compliant()
+    assert not SafetyZone.none().is_fip_compliant()
+
+    default_court = Court()
+    assert not default_court.is_out_of_court_play_allowed()
+    assert default_court.is_fip_compliant()
+
+    ooc_court = Court(
+        access_left=SideAccess.fip_dual_access(),
+        access_right=SideAccess.fip_dual_access(),
+        safety_zone_left=SafetyZone.fip_standard(),
+        safety_zone_right=SafetyZone.fip_standard(),
+    )
+    assert ooc_court.is_out_of_court_play_allowed()
+    assert ooc_court.is_fip_compliant(out_of_court_play=True)
+
+    # One-sided closed court is FIP compliant for normal play, not for out-of-court
+    club_court = Court(access_right=SideAccess.no_access())
+    assert club_court.is_fip_compliant()
+    assert not club_court.is_fip_compliant(out_of_court_play=True)
+
+    # Zero accesses on both sides is non-FIP compliant
+    sealed_court = Court(
+        access_left=SideAccess.no_access(),
+        access_right=SideAccess.no_access(),
+    )
+    assert not sealed_court.is_fip_compliant()
+
+    # Full serialization round-trip
+    restored = Court.from_dict(ooc_court.to_dict())
+    assert restored == ooc_court
+    restored_black = Court.from_dict(court_black_indoor.to_dict())
+    assert restored_black.ceiling_height == pytest.approx(6.5)
+    assert restored_black.effective_turf_color == "black"

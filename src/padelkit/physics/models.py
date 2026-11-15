@@ -5,6 +5,8 @@ from typing import Any
 
 import numpy as np
 
+from .enums import BallColor
+
 
 @dataclass(frozen=True)
 class BallProperties:
@@ -25,6 +27,8 @@ class BallProperties:
     moment_of_inertia: float = 3.47e-5
     fuzz_factor: float = 0.0
     pressure_psi: float = 11.0
+    color: BallColor | str = BallColor.YELLOW
+    bounce_restitution_factor: float = 1.0
 
     def __post_init__(self) -> None:
         if self.mass <= 0.0 or self.radius <= 0.0 or self.moment_of_inertia <= 0.0:
@@ -33,28 +37,88 @@ class BallProperties:
             )
         if not (0.0 <= self.fuzz_factor <= 1.0):
             raise ValueError("fuzz_factor must be in the range [0.0, 1.0].")
+        if self.bounce_restitution_factor <= 0.0:
+            raise ValueError("bounce_restitution_factor must be strictly positive.")
 
     @classmethod
-    def fip_standard(cls) -> "BallProperties":
+    def fip_standard(
+        cls,
+        color: BallColor | str = BallColor.YELLOW,
+    ) -> "BallProperties":
         """Returns a brand-new FIP regulation padel ball configuration."""
-        return cls()
+        return cls(color=color)
 
     @classmethod
     def worn(
         cls,
         fuzz_factor: float = 0.75,
         pressure_psi: float = 9.8,
+        color: BallColor | str = BallColor.YELLOW,
     ) -> "BallProperties":
         """Returns a worn, fluffed padel ball with increased aerodynamic drag."""
-        return cls(fuzz_factor=fuzz_factor, pressure_psi=pressure_psi)
+        return cls(fuzz_factor=fuzz_factor, pressure_psi=pressure_psi, color=color)
 
     @classmethod
-    def wet(cls, absorbed_water_g: float = 2.0) -> "BallProperties":
+    def high_altitude(
+        cls,
+        bounce_restitution_factor: float = 0.955,
+        pressure_psi: float = 9.5,
+        color: BallColor | str = BallColor.YELLOW,
+    ) -> "BallProperties":
+        """Returns an altitude ball (> 500 m, FIP *La Pelota* §4, p. 12).
+
+        FIP mandates lower-bounce balls at venues above 500 m (rebound
+        ``121.92-135 cm`` vs. ``135-145 cm`` sea level from a ``2.54 m`` drop).
+        """
+        return cls(
+            pressure_psi=pressure_psi,
+            color=color,
+            bounce_restitution_factor=bounce_restitution_factor,
+        )
+
+    @classmethod
+    def wet(
+        cls,
+        absorbed_water_g: float = 2.0,
+        color: BallColor | str = BallColor.YELLOW,
+    ) -> "BallProperties":
         """Returns a humid/wet padel ball with increased mass."""
         extra_kg = max(0.0, absorbed_water_g) / 1000.0
         new_mass = 0.058 + extra_kg
         new_moi = 0.55 * new_mass * (0.033**2)
-        return cls(mass=new_mass, moment_of_inertia=new_moi, fuzz_factor=0.35)
+        return cls(
+            mass=new_mass,
+            moment_of_inertia=new_moi,
+            fuzz_factor=0.35,
+            color=color,
+        )
+
+    @property
+    def effective_color(self) -> str:
+        """Resolved ball color string (e.g. ``'yellow'``, ``'orange'``)."""
+        return (
+            self.color.value if isinstance(self.color, BallColor) else str(self.color)
+        )
+
+    def is_fip_compliant(self, *, strict_colors: bool = False) -> bool:
+        """Returns ``True`` if mass, diameter, and color match FIP *La Pelota* p. 12.
+
+        Args:
+            strict_colors: If ``True``, restricts colors strictly to classic
+                ``yellow`` and ``white``; when ``False``, also permits approved
+                tournament high-visibility colors (``orange``, ``magenta``).
+        """
+        diameter = 2.0 * self.radius
+        if not (0.056 <= self.mass <= 0.0594):
+            return False
+        if not (0.0635 <= diameter <= 0.0677):
+            return False
+        allowed_colors = (
+            {"yellow", "white"}
+            if strict_colors
+            else {"yellow", "white", "orange", "magenta"}
+        )
+        return self.effective_color.lower() in allowed_colors
 
     @property
     def cross_section_area(self) -> float:
@@ -79,6 +143,8 @@ class BallProperties:
             "moment_of_inertia": self.moment_of_inertia,
             "fuzz_factor": self.fuzz_factor,
             "pressure_psi": self.pressure_psi,
+            "color": self.effective_color,
+            "bounce_restitution_factor": self.bounce_restitution_factor,
             "cross_section_area": round(self.cross_section_area, 7),
             "drag_coefficient": round(self.drag_coefficient, 4),
         }
@@ -87,6 +153,11 @@ class BallProperties:
     def from_dict(cls, data: dict[str, Any]) -> "BallProperties":
         """Reconstructs a :class:`BallProperties` instance from a dictionary."""
         std = cls.fip_standard()
+        raw_color = data.get("color", std.effective_color)
+        try:
+            color_val: BallColor | str = BallColor(str(raw_color))
+        except ValueError:
+            color_val = str(raw_color)
         return cls(
             mass=float(data.get("mass", std.mass)),
             radius=float(data.get("radius", std.radius)),
@@ -95,6 +166,10 @@ class BallProperties:
             ),
             fuzz_factor=float(data.get("fuzz_factor", std.fuzz_factor)),
             pressure_psi=float(data.get("pressure_psi", std.pressure_psi)),
+            color=color_val,
+            bounce_restitution_factor=float(
+                data.get("bounce_restitution_factor", std.bounce_restitution_factor)
+            ),
         )
 
 

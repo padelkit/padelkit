@@ -6,6 +6,7 @@ from .enums import (
     CoordinateSystem,
     CourtOrientation,
     CourtSetting,
+    CourtSurfaceColor,
     DoorState,
     EnclosureType,
     EnclosureVariant,
@@ -174,6 +175,77 @@ class SideAccess:
 
 
 @dataclass(frozen=True)
+class SafetyZone:
+    """Exterior safety & out-of-court play clearance for one court sideline.
+
+    Per FIP regulations (*Zona de seguridad y juego exterior*, p. 11), each side
+    requires an obstacle-free exterior volume of at least ``2.0 m`` width,
+    ``4.0 m`` length to each side of the net (``8.0 m`` total), and ``3.0 m``
+    vertical height, plus ``>= 2 cm`` shock-absorbing padding around doorways
+    and net posts.
+    """
+
+    width: float = 2.0
+    half_length: float = 4.0
+    height: float = 3.0
+    doorway_padding_thickness: float = 0.02
+
+    def __post_init__(self) -> None:
+        if (
+            self.width < 0.0
+            or self.half_length < 0.0
+            or self.height < 0.0
+            or self.doorway_padding_thickness < 0.0
+        ):
+            raise ValueError("SafetyZone dimensions must be non-negative.")
+
+    @classmethod
+    def fip_standard(cls) -> "SafetyZone":
+        """Minimum official FIP exterior clearance for out-of-court play."""
+        return cls()
+
+    @classmethod
+    def none(cls) -> "SafetyZone":
+        """Represents a court sideline with no exterior out-of-court clearance."""
+        return cls(
+            width=0.0,
+            half_length=0.0,
+            height=0.0,
+            doorway_padding_thickness=0.0,
+        )
+
+    def is_fip_compliant(self) -> bool:
+        """Returns ``True`` when exterior clearance satisfies FIP p. 11 rules."""
+        return (
+            self.width >= 2.0
+            and self.half_length >= 4.0
+            and self.height >= 3.0
+            and self.doorway_padding_thickness >= 0.02
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serializes the safety zone to a dictionary."""
+        return {
+            "width": float(self.width),
+            "half_length": float(self.half_length),
+            "height": float(self.height),
+            "doorway_padding_thickness": float(self.doorway_padding_thickness),
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "SafetyZone":
+        """Reconstructs a :class:`SafetyZone` from a dictionary."""
+        return cls(
+            width=float(data.get("width", 2.0)),
+            half_length=float(data.get("half_length", 4.0)),
+            height=float(data.get("height", 3.0)),
+            doorway_padding_thickness=float(
+                data.get("doorway_padding_thickness", 0.02)
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class Court:
     """Represents a padel court with its geometry, physical
     characteristics, and metadata.
@@ -194,7 +266,7 @@ class Court:
     enclosure_variant: EnclosureVariant | None = None
     side_wall_profile: SideWallProfile | None = None
     orientation: CourtOrientation | None = None
-    turf_color: str | None = None
+    turf_color: CourtSurfaceColor | str | None = None
     setting: CourtSetting | None = None
 
     # Access doors (one or two openings per lateral side)
@@ -204,9 +276,16 @@ class Court:
     door_right: DoorState | None = None
     access_left: SideAccess | None = None
     access_right: SideAccess | None = None
+    safety_zone_left: SafetyZone | None = None
+    safety_zone_right: SafetyZone | None = None
+    ceiling_height: float | None = None
 
     # Location
     location: CourtLocation | None = None
+
+    def __post_init__(self) -> None:
+        if self.ceiling_height is not None and self.ceiling_height <= 0.0:
+            raise ValueError("ceiling_height must be strictly positive when set.")
 
     # ------------------------------------------------------------------ #
     # Class methods
@@ -230,6 +309,13 @@ class Court:
     def width(self) -> float:
         """Total width of the court in meters."""
         return self.dimensions.width
+
+    @property
+    def effective_turf_color(self) -> str:
+        """Resolved court surface color string (defaults to ``'blue'``)."""
+        if isinstance(self.turf_color, CourtSurfaceColor):
+            return self.turf_color.value
+        return self.turf_color or CourtSurfaceColor.BLUE.value
 
     @property
     def effective_enclosure_type(self) -> EnclosureType:
@@ -313,6 +399,72 @@ class Court:
         if out_of_court_play:
             return left.count == 2 and right.count == 2
         return (left.count + right.count) >= 1
+
+    def is_out_of_court_play_allowed(self) -> bool:
+        """Returns ``True`` when doors and exterior safety zones permit Rule 16."""
+        if not self.has_fip_compliant_access(out_of_court_play=True):
+            return False
+        for zone in (self.safety_zone_left, self.safety_zone_right):
+            if zone is not None and not zone.is_fip_compliant():
+                return False
+        return True
+
+    def fip_compliance_issues(self, out_of_court_play: bool = False) -> list[str]:
+        """Returns a list of regulatory deviations against FIP court rules."""
+        issues: list[str] = []
+        d = self.dimensions
+        if abs(d.length - 20.0) > 20.0 * 0.005:
+            issues.append(f"length {d.length}m outside 20.0m +/- 0.5% tolerance.")
+        if abs(d.width - 10.0) > 10.0 * 0.005:
+            issues.append(f"width {d.width}m outside 10.0m +/- 0.5% tolerance.")
+        if abs(d.net_height_center - 0.88) > 0.005:
+            issues.append(
+                f"net_height_center {d.net_height_center}m outside 0.88m +/- 0.005m."
+            )
+        if d.net_height_posts > 0.92 + 0.005:
+            issues.append(
+                f"net_height_posts {d.net_height_posts}m exceeds 0.92m + 0.005m."
+            )
+        if d.net_post_height > 1.05 + 1e-6:
+            issues.append(f"net_post_height {d.net_post_height}m exceeds 1.05m max.")
+        if abs(d.line_width - 0.05) > 1e-6:
+            issues.append(f"line_width {d.line_width}m must be 0.05m.")
+        if abs(d.service_line_extension - 0.20) > 1e-6:
+            issues.append(
+                f"service_line_extension {d.service_line_extension}m must be 0.20m."
+            )
+        if abs(d.back_wall_height - 4.0) > 1e-6:
+            issues.append(f"back_wall_height {d.back_wall_height}m must be 4.0m.")
+        if not any(abs(d.side_wall_height - h) <= 1e-6 for h in (3.0, 4.0)):
+            issues.append(
+                f"side_wall_height {d.side_wall_height}m "
+                "must be 3.0m (V1) or 4.0m (V2)."
+            )
+        if d.free_height < 6.0 - 1e-6:
+            issues.append(f"free_height {d.free_height}m is below 6.0m FIP minimum.")
+        if self.ceiling_height is not None and self.ceiling_height < 6.0 - 1e-6:
+            issues.append(
+                f"ceiling_height {self.ceiling_height}m is below 6.0m FIP minimum."
+            )
+        if not self.has_fip_compliant_access(out_of_court_play=out_of_court_play):
+            issues.append(
+                "lateral access openings do not satisfy FIP dimensions/count."
+            )
+        if out_of_court_play and not self.is_out_of_court_play_allowed():
+            issues.append("safety zone clearance does not satisfy FIP Rule 16.")
+        if self.turf_color is not None:
+            color = self.effective_turf_color.lower()
+            if color == "black" and self.setting is not CourtSetting.INDOOR:
+                issues.append("black turf is only FIP-approved on indoor courts.")
+            elif color not in {"blue", "green", "terracotta", "black"}:
+                issues.append(
+                    f"turf_color {color!r} is outside FIP standard surface palette."
+                )
+        return issues
+
+    def is_fip_compliant(self, out_of_court_play: bool = False) -> bool:
+        """Returns ``True`` when the court passes all FIP regulatory checks."""
+        return len(self.fip_compliance_issues(out_of_court_play=out_of_court_play)) == 0
 
     def is_doorway_opening_at(
         self,
@@ -618,7 +770,11 @@ class Court:
             "orientation": (
                 self.orientation.value if self.orientation is not None else None
             ),
-            "turf_color": self.turf_color,
+            "turf_color": (
+                self.turf_color.value
+                if isinstance(self.turf_color, CourtSurfaceColor)
+                else self.turf_color
+            ),
             "setting": self.setting.value if self.setting is not None else None,
             "door_left": self.door_left.value if self.door_left is not None else None,
             "door_right": (
@@ -630,6 +786,17 @@ class Court:
             "access_right": (
                 self.access_right.to_dict() if self.access_right is not None else None
             ),
+            "safety_zone_left": (
+                self.safety_zone_left.to_dict()
+                if self.safety_zone_left is not None
+                else None
+            ),
+            "safety_zone_right": (
+                self.safety_zone_right.to_dict()
+                if self.safety_zone_right is not None
+                else None
+            ),
+            "ceiling_height": self.ceiling_height,
             "location": self.location.to_dict() if self.location is not None else None,
         }
 
@@ -646,6 +813,9 @@ class Court:
         loc = CourtLocation.from_dict(loc_data) if isinstance(loc_data, dict) else None
         acc_left_data = data.get("access_left")
         acc_right_data = data.get("access_right")
+        sz_left_data = data.get("safety_zone_left")
+        sz_right_data = data.get("safety_zone_right")
+        ceil_raw = data.get("ceiling_height")
         return cls(
             dimensions=dims,
             enclosure_type=(
@@ -694,5 +864,16 @@ class Court:
                 if isinstance(acc_right_data, dict)
                 else None
             ),
+            safety_zone_left=(
+                SafetyZone.from_dict(sz_left_data)
+                if isinstance(sz_left_data, dict)
+                else None
+            ),
+            safety_zone_right=(
+                SafetyZone.from_dict(sz_right_data)
+                if isinstance(sz_right_data, dict)
+                else None
+            ),
+            ceiling_height=float(ceil_raw) if ceil_raw is not None else None,
             location=loc,
         )

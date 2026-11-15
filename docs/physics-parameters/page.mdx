@@ -31,6 +31,12 @@ Defines the physical mass, radius, aerodynamic drag, and felt condition of a pad
       <Property name="cor_scale" type="float" optional default="1.0">
         Internal pressure multiplier scaling normal restitution (`< 1.0` for depressurized/worn balls).
       </Property>
+      <Property name="color" type="BallColor | str" optional default="BallColor.YELLOW">
+        Ball color (`YELLOW` or `WHITE` strict official FIP; plus tournament/custom colors such as `ORANGE`, `MAGENTA`, `GREEN`, `PINK`, `BLUE`, or hex). Rendered in [`PadelVisualizer`](/visualization-3d).
+      </Property>
+      <Property name="bounce_restitution_factor" type="float" optional default="1.0">
+        Surface-rebound multiplier (`0.955` for `BallProperties.high_altitude()` above `500 m` where FIP stipulates `121.92–135 cm` bounce vs `135–145 cm` at sea level).
+      </Property>
     </Properties>
 
   </Col>
@@ -39,10 +45,18 @@ Defines the physical mass, radius, aerodynamic drag, and felt condition of a pad
     <CodeGroup title="Ball Presets" tag="classmethod" label="BallProperties">
 
     ```python
-    from padelkit import BallProperties
+    from padelkit import BallColor, BallProperties
 
     # New pressurized FIP tournament ball
     ball_new = BallProperties.fip_standard()
+
+    # High-altitude venue ball (> 500 m, reduced rebound)
+    ball_altitude = BallProperties.high_altitude()
+
+    # Custom tournament color rendered in 3D viewer
+    ball_magenta = BallProperties(color=BallColor.MAGENTA)
+    assert ball_magenta.is_fip_compliant()
+    assert not ball_magenta.is_fip_compliant(strict_colors=True)
 
     # Fluffed felt & slightly depressurized after 2 sets
     ball_worn = BallProperties.worn()

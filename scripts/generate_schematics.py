@@ -1514,10 +1514,11 @@ def render_court_dimensions(palette: ThemePalette) -> str:
         stroke=palette.court_line_fg,
         stroke_width=1.6,
     )
+    svc_ext_px = dims.service_line_extension * scale
     svg.line(
-        cx0 + svc_px,
+        cx0 + svc_px - svc_ext_px,
         cy0 + ch / 2,
-        cx0 + cw - svc_px,
+        cx0 + cw - svc_px + svc_ext_px,
         cy0 + ch / 2,
         stroke=palette.court_line_fg,
         stroke_width=1.6,
@@ -2383,6 +2384,390 @@ def render_court_enclosure_variants_3d(palette: ThemePalette) -> str:
             ltext,
             fill=palette.text_muted,
             size=8.6,
+            mono=True,
+            anchor="start",
+        )
+
+    return svg.to_xml_string()
+
+
+def render_court_side_access(palette: ThemePalette) -> str:
+    """3c. Open 3-column comparison of 1, 2, and 0 lateral access openings + SafetyZone."""
+    svg = SvgCanvas(
+        960,
+        450,
+        "PadelKit Lateral Access Openings & Safety Zone",
+        "Comparison of FIP single access (1.05-2.00 x 2.00-2.20 m), dual out-of-court access (2 x 0.72-1.00 x 2.00-2.20 m) with 2m x 8m safety zone, and zero-access continuous mesh.",
+        palette,
+    )
+    svg.header(
+        "Lateral Access Openings (1 vs 2 vs 0 Doors per Side)",
+        "Central sideline elevation (Y ∈ [-4, +4] m) & plan view — overhead mesh lintels above 2.20m + Rule 16 SafetyZone",
+    )
+
+    # Clean hairline column & footer dividers (matching open schematic layout)
+    svg.line(320, 68, 320, 404, stroke=palette.border, stroke_width=1.0)
+    svg.line(640, 68, 640, 404, stroke=palette.border, stroke_width=1.0)
+    svg.line(24, 408, 936, 408, stroke=palette.border, stroke_width=1.0)
+
+    cols = [
+        (
+            24.0,
+            "1. SINGLE ACCESS (DEFAULT)",
+            "SideAccess.fip_single_access() · 1.05–2.00 × 2.00–2.20 m",
+            1,
+            palette.accent_secondary,
+            "Ball passes through [-1.0, +1.0]m × 2.2m; lintel Z>2.2m rebounds",
+        ),
+        (
+            332.0,
+            "2. DUAL ACCESS (OUT-OF-COURT)",
+            "SideAccess.fip_dual_access() · 2 × 0.72–1.00 × 2.00–2.20 m",
+            2,
+            palette.accent_primary,
+            "Both sides count=2 + 2.0m × 8.0m × 3.0m SafetyZone for Rule 16",
+        ),
+        (
+            652.0,
+            "3. NO ACCESS (CLOSED SIDE)",
+            "SideAccess.no_access() · Continuous 12m central mesh",
+            0,
+            palette.accent_tertiary,
+            "Common club single-side entry; rebounds everywhere (SIDE_FENCE)",
+        ),
+    ]
+
+    col_w = 284.0
+    elev_y0 = 248.0  # floor Z=0
+    scale_y = 28.0  # 8.0m (-4..+4) -> 224px
+    scale_z = 36.0  # 3.0m -> 108px
+    total_h_px = 3.0 * scale_z
+    door_h_px = 2.2 * scale_z
+    net_post_h_px = 1.05 * scale_z
+
+    for x0, title, subtitle, count, accent, note in cols:
+        cx = x0 + col_w / 2.0
+        elev_x0 = cx - 4.0 * scale_y
+        elev_w = 8.0 * scale_y
+
+        svg.text(
+            x0 + 4,
+            86,
+            title,
+            fill=palette.text_primary,
+            size=10.0,
+            weight="700",
+            mono=True,
+            anchor="start",
+        )
+        svg.text(
+            x0 + 4,
+            102,
+            subtitle,
+            fill=palette.text_muted,
+            size=7.9,
+            mono=True,
+            anchor="start",
+        )
+
+        # Elevation floor reference line & height ticks (0m, 2.2m, 3.0m)
+        svg.line(
+            elev_x0 - 8,
+            elev_y0,
+            elev_x0 + elev_w + 8,
+            elev_y0,
+            stroke=palette.text_primary,
+            stroke_width=1.4,
+        )
+        for hm, lbl in ((2.2, "2.2m"), (3.0, "3.0m")):
+            hz = elev_y0 - hm * scale_z
+            svg.line(
+                elev_x0 - 4, hz, elev_x0, hz, stroke=palette.border, stroke_width=1.0
+            )
+            svg.text(
+                elev_x0 - 6,
+                hz,
+                lbl,
+                fill=palette.text_muted,
+                size=7.4,
+                mono=True,
+                anchor="end",
+            )
+
+        # Side mesh intervals in [-4, +4] around doorway intervals
+        if count == 0:
+            mesh_spans = [(-4.0, 4.0)]
+            open_spans: list[tuple[float, float]] = []
+        elif count == 1:
+            open_spans = [(-1.0, 1.0)]
+            mesh_spans = [(-4.0, -1.0), (1.0, 4.0)]
+        else:
+            open_spans = [(-1.08, -0.08), (0.08, 1.08)]
+            mesh_spans = [(-4.0, -1.08), (-0.08, 0.08), (1.08, 4.0)]
+
+        # Render full-height metallic mesh bays
+        for ya, yb in mesh_spans:
+            rx = cx + ya * scale_y
+            rw = (yb - ya) * scale_y
+            svg.rect(
+                rx,
+                elev_y0 - total_h_px,
+                rw,
+                total_h_px,
+                fill=palette.fence_fill,
+                stroke="none",
+                opacity=0.65,
+            )
+            svg.rect(
+                rx,
+                elev_y0 - total_h_px,
+                rw,
+                total_h_px,
+                fill="none",
+                stroke=palette.fence_stroke,
+                stroke_width=1.2,
+                dash="4 2",
+            )
+
+        # Render doorway openings + overhead mesh lintels (Z = 2.2..3.0m)
+        for ya, yb in open_spans:
+            rx = cx + ya * scale_y
+            rw = (yb - ya) * scale_y
+            # Clear doorway space
+            svg.rect(
+                rx,
+                elev_y0 - door_h_px,
+                rw,
+                door_h_px,
+                fill=accent,
+                stroke="none",
+                opacity=0.10,
+            )
+            svg.rect(
+                rx,
+                elev_y0 - door_h_px,
+                rw,
+                door_h_px,
+                fill="none",
+                stroke=accent,
+                stroke_width=1.5,
+            )
+            # Overhead lintel mesh above doorway
+            svg.rect(
+                rx,
+                elev_y0 - total_h_px,
+                rw,
+                total_h_px - door_h_px,
+                fill=palette.fence_fill,
+                stroke="none",
+                opacity=0.72,
+            )
+            svg.rect(
+                rx,
+                elev_y0 - total_h_px,
+                rw,
+                total_h_px - door_h_px,
+                fill="none",
+                stroke=palette.fence_stroke,
+                stroke_width=1.2,
+                dash="3 2",
+            )
+            svg.text(
+                rx + rw / 2.0,
+                elev_y0 - door_h_px - (total_h_px - door_h_px) / 2.0,
+                "0.8m" if count == 2 else "lintel",
+                fill=palette.text_muted,
+                size=6.2 if count == 2 else 6.8,
+                mono=True,
+            )
+            label_y = (
+                elev_y0 - door_h_px * 0.72 if count == 1 else elev_y0 - door_h_px / 2.0
+            )
+            svg.text(
+                rx + rw / 2.0,
+                label_y,
+                f"{yb - ya:.1f}m" if count == 2 else f"{yb - ya:.1f}×2.2m",
+                fill=accent,
+                size=7.2 if count == 2 else 8.2,
+                weight="700",
+                mono=True,
+            )
+
+        # Net post at Y=0 (height <= 1.05m)
+        svg.line(
+            cx,
+            elev_y0,
+            cx,
+            elev_y0 - net_post_h_px,
+            stroke=palette.accent_secondary,
+            stroke_width=3.0,
+        )
+        svg.circle(cx, elev_y0 - net_post_h_px, 2.5, fill=palette.accent_secondary)
+
+        # Compact Top-Down Plan Strip (Y in [-4, +4], interior + exterior safety zone)
+        plan_y_wall = 314.0
+        plan_in_h = 40.0
+        plan_out_h = 44.0  # represents 2.0m exterior SafetyZone width
+        svg.rect(
+            elev_x0,
+            plan_y_wall - plan_in_h,
+            elev_w,
+            plan_in_h,
+            fill=palette.court_floor,
+            stroke="none",
+        )
+        # Net line in plan
+        svg.line(
+            cx,
+            plan_y_wall - plan_in_h,
+            cx,
+            plan_y_wall,
+            stroke=palette.accent_secondary,
+            stroke_width=1.5,
+            dash="3 2",
+        )
+        # Sideline wall + doorway gaps in plan
+        for ya, yb in mesh_spans:
+            svg.line(
+                cx + ya * scale_y,
+                plan_y_wall,
+                cx + yb * scale_y,
+                plan_y_wall,
+                stroke=palette.court_line_fg,
+                stroke_width=2.6,
+            )
+        for ya, yb in open_spans:
+            ax1 = cx + ya * scale_y
+            ax2 = cx + yb * scale_y
+            svg.line(
+                ax1,
+                plan_y_wall,
+                ax2,
+                plan_y_wall,
+                stroke=accent,
+                stroke_width=1.2,
+                dash="2 2",
+            )
+            # Ball exit arrow
+            mid_x = 0.5 * (ax1 + ax2)
+            svg.line(
+                mid_x,
+                plan_y_wall - 14,
+                mid_x,
+                plan_y_wall + 18,
+                stroke=accent,
+                stroke_width=1.6,
+            )
+        if count == 2:
+            # Highlight 2.0m x 8.0m SafetyZone (4.0m each side of net)
+            svg.rect(
+                elev_x0,
+                plan_y_wall + 2,
+                elev_w,
+                plan_out_h,
+                fill=accent,
+                stroke="none",
+                opacity=0.12,
+            )
+            svg.rect(
+                elev_x0,
+                plan_y_wall + 2,
+                elev_w,
+                plan_out_h,
+                fill="none",
+                stroke=accent,
+                stroke_width=1.2,
+                dash="4 3",
+            )
+            svg.text(
+                cx,
+                plan_y_wall + plan_out_h / 2.0 + 1,
+                "SafetyZone: 2.0m × 8.0m (h≥3m)",
+                fill=accent,
+                size=7.6,
+                weight="600",
+                mono=True,
+            )
+        elif count == 0:
+            # Rebound indicator against continuous sideline
+            svg.polyline(
+                [
+                    (cx - 24, plan_y_wall - 24),
+                    (cx, plan_y_wall - 3),
+                    (cx + 24, plan_y_wall - 24),
+                ],
+                stroke=accent,
+                stroke_width=1.6,
+            )
+            svg.text(
+                cx,
+                plan_y_wall + 16,
+                "No lateral opening (SIDE_FENCE rebound)",
+                fill=palette.text_muted,
+                size=7.6,
+                mono=True,
+            )
+        else:
+            svg.text(
+                cx,
+                plan_y_wall + 30,
+                "Interior: [-4m, +4m]  |  Open doorway pass-through",
+                fill=palette.text_muted,
+                size=7.6,
+                mono=True,
+            )
+
+        svg.text(
+            cx,
+            386,
+            note,
+            fill=palette.text_muted,
+            size=7.5,
+            mono=True,
+        )
+
+    # Open footer legend
+    for lx, lfill, lstroke, ldash, ltext in [
+        (
+            32,
+            palette.fence_fill,
+            palette.fence_stroke,
+            "3 2",
+            "Metallic Wire Mesh & Overhead Lintel (Z > 2.2m)",
+        ),
+        (
+            378,
+            palette.accent_secondary,
+            palette.accent_secondary,
+            None,
+            "Net & Post (<= 1.05m)",
+        ),
+        (
+            560,
+            palette.accent_primary,
+            palette.accent_primary,
+            None,
+            "Doorway Openings & Rule 16 SafetyZone (2×8m)",
+        ),
+    ]:
+        svg.rect(
+            lx,
+            422,
+            12,
+            12,
+            fill=lfill,
+            stroke=lstroke,
+            stroke_width=1.3,
+            dash=ldash,
+            opacity=0.75,
+            rx=2,
+        )
+        svg.text(
+            lx + 18,
+            428,
+            ltext,
+            fill=palette.text_muted,
+            size=8.4,
             mono=True,
             anchor="start",
         )
@@ -4334,6 +4719,7 @@ SCHEMATIC_GENERATORS: dict[str, Callable[[ThemePalette], str]] = {
     "court-dimensions": render_court_dimensions,
     "court-coordinate-systems": render_court_coordinate_systems,
     "court-enclosure-variants-3d": render_court_enclosure_variants_3d,
+    "court-side-access": render_court_side_access,
     "camera-frustum-3d": render_camera_frustum_3d,
     "camera-sensor-projection": render_camera_sensor_projection,
     "camera-distortion-grid": render_camera_distortion_grid,

@@ -42,12 +42,12 @@ The library exposes its functionality through modular subpackages and re-exports
 ### 1. `court` Module (`src/padelkit/court/`)
 Defines the dimensions, landmarks, and coordinate system of an official padel court.
 
-- **`CourtDimensions`:** Dataclass housing the official FIP measurements (`20.0m x 10.0m`, `4.0m` back wall, `3.0m`/`4.0m` side wall, `0.88m`/`0.92m` net height).
+- **`CourtDimensions`:** Dataclass housing the official FIP measurements (`20.0m x 10.0m`, `4.0m` back wall, `3.0m`/`4.0m` side wall, `0.88m`/`0.92m` net height, `line_width=0.05m`, `service_line_extension=0.20m`, `net_post_height=1.05m`, `free_height=6.0m` or `8.0m` when `new_construction=True`).
 - **Coordinate System (`CoordinateSystem`):**
   - `CENTERED` (default): Origin `(0.0, 0.0, 0.0)` at the center of the net on the floor, `X` in `[-5, 5]`, `Y` in `[-10, 10]`, `Z` height in meters.
   - `CORNER_BASED`: Origin `(0.0, 0.0, 0.0)` at the bottom-left (`FLOOR_NEAR_LEFT`) corner.
 - **`CourtLandmark`:** Enumeration for the 17 standardized 2D/3D positions (13 floor points + 4 back-wall top corners).
-- **`Court`:** Main geometry class providing `landmarks_2d()`, `landmarks_3d()`, `point(name)`, `side_wall_heights_at(dist_from_back)`, `side_enclosure_segments()`, `side_enclosure_panels()`, `is_doorway_opening_at()`, and `has_fip_compliant_access()`, along with `SideAccess` (`0/1/2` configurable sideline openings + overhead mesh lintel), `SideEnclosurePanel`, `EnclosureType` (`GLASS`, `WALL`), `EnclosureVariant` (`V1`, `V2`), `DoorState` (`OPEN`, `CLOSED`), and `SideWallProfile` (`STEPPED`, `UNIFORM`).
+- **`Court`:** Main geometry class providing `landmarks_2d()`, `landmarks_3d()`, `point(name)`, `side_wall_heights_at(dist_from_back)`, `side_enclosure_segments()`, `side_enclosure_panels()`, `is_doorway_opening_at()`, `has_fip_compliant_access()`, `is_out_of_court_play_allowed()`, `fip_compliance_issues()`, and `is_fip_compliant()`, along with `SideAccess` (`0/1/2` configurable sideline openings + overhead mesh lintel), `SafetyZone` (`2.0m x 8.0m x 3.0m` Rule 16 clearance + `>=2cm` padding), `ceiling_height`, `CourtSurfaceColor` (`BLUE`, `GREEN`, `TERRACOTTA`, indoor-only `BLACK`, plus custom/tournament colors), `SideEnclosurePanel`, `EnclosureType` (`GLASS`, `WALL`), `EnclosureVariant` (`V1`, `V2`), `DoorState` (`OPEN`, `CLOSED`), and `SideWallProfile` (`STEPPED`, `UNIFORM`).
 
 ### 2. `camera` Module (`src/padelkit/camera/`)
 Provides projective camera geometry, optical lens distortion, 2D-to-3D calibration, and 3D-to-2D / 2D-to-3D transformations.
@@ -60,9 +60,9 @@ Provides projective camera geometry, optical lens distortion, 2D-to-3D calibrati
 ### 3. `physics` Module (`src/padelkit/physics/`)
 Provides a 9-Dimensional (`9D`) aerodynamic and contact physics engine for padel balls (`[x, y, z, vx, vy, vz, wx, wy, wz]`).
 
-- **`BallProperties`, `EnvironmentConditions`, `SurfaceMaterials`:** Immutable physical configuration dataclasses with presets (`BallProperties.fip_standard()`, `worn()`, `wet()`, `EnvironmentConditions.from_atmosphere()` using barometric + Tetens humid air density, `SurfaceMaterials.fip_standard()`, `fast_indoor()`, `slow_sandy()`).
+- **`BallProperties`, `EnvironmentConditions`, `SurfaceMaterials`:** Immutable physical configuration dataclasses with presets (`BallProperties.fip_standard()`, `high_altitude()`, `worn()`, `wet()`, `BallColor` official/tournament ball colors & `is_fip_compliant()`, `EnvironmentConditions.from_atmosphere()` using barometric + Tetens humid air density, `SurfaceMaterials.fip_standard()`, `fast_indoor()`, `slow_sandy()`).
 - **`BallState`, `BallTrajectory`, `BounceEvent`:** `BallState.from_shot()` decomposes `topspin_rpm` and `sidespin_rpm` into 3D angular velocity. `BallTrajectory` stores full 9D history with interpolation (`state_at()`), Pandas/CSV export, and `to_timeline()` conversion for 3D visualization.
-- **`BallPhysicsEngine`:** Integrates gravity, quadratic drag with felt `fuzz_factor`, and non-linear Spindt Magnus lift via 4th-order Runge-Kutta (`RK4`). Resolves collisions with analytical Coulomb `SLIDING` vs `ROLLING` transition across all court surfaces (`FLOOR`, `BACK_GLASS`, `SIDE_GLASS`, `BACK_WALL`, `SIDE_WALL`, `BACK_FENCE`, `SIDE_FENCE`, `NET`), honoring `SideAccess` passable doorways vs. overhead lintels and `DoorState.CLOSED` gates. Supports both single-trajectory `simulate()` and vectorized NumPy `simulate_batch()`.
+- **`BallPhysicsEngine`:** Integrates gravity, quadratic drag with felt `fuzz_factor`, and non-linear Spindt Magnus lift via 4th-order Runge-Kutta (`RK4`). Resolves collisions with analytical Coulomb `SLIDING` vs `ROLLING` transition across all court surfaces (`FLOOR`, `BACK_GLASS`, `SIDE_GLASS`, `BACK_WALL`, `SIDE_WALL`, `BACK_FENCE`, `SIDE_FENCE`, `NET`, `CEILING`), honoring `SideAccess` passable doorways vs. overhead lintels and `DoorState.CLOSED` gates. Supports both single-trajectory `simulate()` and vectorized NumPy `simulate_batch()`.
 
 ### 4. `viz` Module (`src/padelkit/viz/`)
 Provides the temporal state contract (`FrameState`, `PlayerPose`, `MatchTimeline`) and the interactive Three.js 3D studio (`PadelVisualizer`).
@@ -76,7 +76,7 @@ Provides the temporal state contract (`FrameState`, `PlayerPose`, `MatchTimeline
   5. **Mixamo GLB Skeletal Animation Library & Baked 17-Joint H36M 3D Rig Support** (`animation_library_dir` / `load_animation_library()` consuming `manifest.json` and `.glb` clips generated by `padelkit-animator`, or direct 3D playback of baked 17-joint H36M skeletons `kp3d` from `.parquet` files).
 
 ### 5. `scoring` Module (`src/padelkit/scoring/`)
-Implements match rules, event-sourced score progression (`MatchScoreHistory`), `Match`, `MatchScore`, `Team`, `Player`, `ServingState`, `ServingEngine`, and `MatchConfiguration`.
+Implements match rules, event-sourced score progression (`MatchScoreHistory`), `Match`, `MatchScore` (including automatic FIP Rule 5 `side_changes`, `team_a_side`, and `is_side_change`), `Team`, `Player`, `ServingState`, `ServingEngine`, and `MatchConfiguration`.
 
 ---
 

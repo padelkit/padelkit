@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from padelkit import (
+    BallColor,
     BallPhysicsEngine,
     BallProperties,
     BallState,
@@ -269,3 +270,65 @@ def test_doorway_passthrough_lintel_and_closed_door():
     batch_out = open_engine.simulate_batch(batch, num_steps=30, dt=1.0 / 240.0)
     assert batch_out[0, -1, 0] < -5.5
     assert batch_out[1, -1, 0] > -5.0
+
+
+def test_ball_colors_high_altitude_and_fip_compliance():
+    # Official and tournament color normalization
+    magenta_ball = BallProperties(color=BallColor.MAGENTA)
+    assert magenta_ball.effective_color == "magenta"
+    assert magenta_ball.is_fip_compliant()
+    assert not magenta_ball.is_fip_compliant(strict_colors=True)
+
+    orange_ball = BallProperties(color="orange")
+    assert orange_ball.effective_color == "orange"
+    assert orange_ball.is_fip_compliant()
+    assert not orange_ball.is_fip_compliant(strict_colors=True)
+
+    yellow_ball = BallProperties.fip_standard()
+    assert yellow_ball.effective_color == "yellow"
+    assert yellow_ball.is_fip_compliant(strict_colors=True)
+
+    # Serialization round-trip + legacy fallback
+    assert BallProperties.from_dict(magenta_ball.to_dict()) == magenta_ball
+    legacy_payload = yellow_ball.to_dict()
+    legacy_payload.pop("color")
+    legacy_payload.pop("bounce_restitution_factor")
+    legacy_restored = BallProperties.from_dict(legacy_payload)
+    assert legacy_restored.color == BallColor.YELLOW
+    assert legacy_restored.bounce_restitution_factor == pytest.approx(1.0)
+
+    # High-altitude ball (>500 m) rebounds lower than sea-level FIP standard
+    std_engine = BallPhysicsEngine(ball=BallProperties.fip_standard())
+    ha_ball = BallProperties.high_altitude()
+    assert ha_ball.bounce_restitution_factor == pytest.approx(0.955)
+    assert ha_ball.is_fip_compliant()
+    ha_engine = BallPhysicsEngine(ball=ha_ball)
+
+    drop = BallState(position=(0.0, -3.0, 2.54), velocity=(0.0, 0.0, 0.0))
+    std_traj = std_engine.simulate(drop, duration_s=1.6)
+    ha_traj = ha_engine.simulate(drop, duration_s=1.6)
+    assert float(np.max(ha_traj.states[len(ha_traj) // 2 :, 2])) < float(
+        np.max(std_traj.states[len(std_traj) // 2 :, 2])
+    )
+
+
+def test_ceiling_collision_single_and_batch():
+    # Indoor court with 6.5m ceiling vs unobstructed court (ceiling_height=None)
+    high_lob = BallState(position=(0.0, -4.0, 5.8), velocity=(0.0, 3.0, 10.0))
+
+    open_sky_engine = BallPhysicsEngine(court=Court(ceiling_height=None))
+    open_traj = open_sky_engine.simulate(high_lob, duration_s=0.4)
+    assert SurfaceType.CEILING not in [b.surface for b in open_traj.bounces]
+    assert float(np.max(open_traj.states[:, 2])) > 7.5
+
+    ceiling_engine = BallPhysicsEngine(court=Court(ceiling_height=6.5))
+    ceil_traj = ceiling_engine.simulate(high_lob, duration_s=0.4)
+    assert SurfaceType.CEILING in [b.surface for b in ceil_traj.bounces]
+    assert float(np.max(ceil_traj.states[:, 2])) <= 6.5 + 1e-6
+
+    # Batch simulation honors ceiling_height too
+    batch = np.array(
+        [[0.0, -4.0, 5.8, 0.0, 3.0, 10.0, 0.0, 0.0, 0.0]], dtype=np.float64
+    )
+    batch_ceil = ceiling_engine.simulate_batch(batch, num_steps=96, dt=1.0 / 240.0)
+    assert float(np.max(batch_ceil[0, :, 2])) <= 6.5 + 1e-6

@@ -301,7 +301,13 @@ class BallPhysicsEngine:
         r = self.ball.radius
         x_min, x_max, y_min, y_max, net_y = self._court_bounds()
         is_wall = self.court.enclosure_type is EnclosureType.WALL
-        solid_cor = self.surfaces.wall_cor if is_wall else self.surfaces.glass_cor
+        ball_cor_scale = self.ball.bounce_restitution_factor
+        floor_cor = min(1.0, self.surfaces.floor_cor * ball_cor_scale)
+        solid_cor = min(
+            1.0,
+            (self.surfaces.wall_cor if is_wall else self.surfaces.glass_cor)
+            * ball_cor_scale,
+        )
         solid_fric = (
             self.surfaces.wall_friction if is_wall else self.surfaces.glass_friction
         )
@@ -316,7 +322,7 @@ class BallPhysicsEngine:
             s, regime = self.resolve_collision(
                 s,
                 np.array([0.0, 0.0, 1.0]),
-                self.surfaces.floor_cor,
+                floor_cor,
                 self.surfaces.floor_friction,
             )
             s[2] = max(float(s[2]), r)
@@ -501,6 +507,23 @@ class BallPhysicsEngine:
                     regime=ContactRegime.DAMPED,
                 )
 
+        # 5. Optional physical ceiling collision (indoor roofs / overhead beams)
+        ceiling_h = self.court.ceiling_height
+        if ceiling_h is not None and s[2] >= ceiling_h - r and s[5] > 0.0:
+            s, bounce_event = self._resolve_wall_bounce(
+                s,
+                np.array([0.0, 0.0, -1.0]),
+                min(1.0, self.surfaces.wall_cor * ball_cor_scale),
+                self.surfaces.wall_friction,
+                SurfaceType.CEILING,
+                True,
+                2,
+                ceiling_h - r,
+                False,
+                t_next,
+                rng,
+            )
+
         return BallState.from_vector(s), bounce_event
 
     # ------------------------------------------------------------------ #
@@ -583,10 +606,17 @@ class BallPhysicsEngine:
 
         r = self.ball.radius
         x_min, x_max, y_min, y_max, net_y = self._court_bounds()
-        floor_cor = self.surfaces.floor_cor
+        ball_cor_scale = self.ball.bounce_restitution_factor
+        floor_cor = min(1.0, self.surfaces.floor_cor * ball_cor_scale)
         floor_fric = self.surfaces.floor_friction
         is_wall = self.court.enclosure_type is EnclosureType.WALL
-        wall_cor = self.surfaces.wall_cor if is_wall else self.surfaces.glass_cor
+        wall_cor = min(
+            1.0,
+            (self.surfaces.wall_cor if is_wall else self.surfaces.glass_cor)
+            * ball_cor_scale,
+        )
+        ceiling_h = self.court.ceiling_height
+        ceiling_cor = min(1.0, self.surfaces.wall_cor * ball_cor_scale)
         back_h = self.court.dimensions.back_wall_height
         central_side_h = (
             max(back_h, self.court.dimensions.side_wall_height)
@@ -685,6 +715,11 @@ class BallPhysicsEngine:
             )
             curr[hit_far, 4] *= -wall_cor
             curr[hit_far, 1] = y_max - r
+
+            if ceiling_h is not None:
+                hit_ceil = (curr[:, 2] >= ceiling_h - r) & (curr[:, 5] > 0.0)
+                curr[hit_ceil, 5] *= -ceiling_cor
+                curr[hit_ceil, 2] = ceiling_h - r
 
             out[:, step_idx, :] = curr
 

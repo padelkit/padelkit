@@ -38,6 +38,15 @@ The `MatchScore` dataclass is an immutable snapshot of the match score at a spec
   <Property name="is_gold_point" type="bool">
     Indicates whether the current game is at `40-40` and is being decided by a *Punto de Oro* (Golden Point) without advantages.
   </Property>
+  <Property name="side_changes" type="int">
+    Cumulative FIP Rule 5 court side changes completed so far (after odd total games per set, odd-sum set transitions, and every `6` points during tie-breaks).
+  </Property>
+  <Property name="team_a_side" type='Literal["near", "far"]'>
+    Current court half occupied by Team A (`"near"` for `y < 0`, toggling to `"far"` on each `side_changes` increment).
+  </Property>
+  <Property name="is_side_change" type="bool">
+    `True` on the exact point that triggers an official FIP Rule 5 side change.
+  </Property>
 </Properties>
 
 

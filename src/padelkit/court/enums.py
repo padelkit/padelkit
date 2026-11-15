@@ -82,3 +82,25 @@ class CourtSetting(str, Enum):
     INDOOR = "indoor"
     OUTDOOR = "outdoor"
     SEMI_COVERED = "semi_covered"
+
+
+class CourtSurfaceColor(str, Enum):
+    """Surface turf colors including FIP official and championship palettes.
+
+    Per FIP regulations (*Suelo*, p. 9), standard outdoor/indoor colors are
+    blue, green, and terracotta (*pardo-terroso*), while black turf is allowed
+    exclusively on indoor courts. Professional championships may also use
+    custom high-contrast colors (e.g., purple, red, gray, navy, pink).
+    """
+
+    BLUE = "blue"
+    GREEN = "green"
+    TERRACOTTA = "terracotta"
+    BLACK = "black"
+    PURPLE = "purple"
+    RED = "red"
+    ORANGE = "orange"
+    GRAY = "gray"
+    NAVY = "navy"
+    TEAL = "teal"
+    PINK = "pink"

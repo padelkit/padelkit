@@ -280,3 +280,78 @@ def test_tiebreak_server_rotation():
     score = history.add_point(TeamId.A)
     assert score.server is not None
     assert score.server.team == TeamId.B  # 6th point served by Team B
+
+
+def test_fip_rule_5_side_changes_and_tiebreaks():
+    history = MatchScoreHistory()
+    s0 = history.get_current_score()
+    assert s0.side_changes == 0
+    assert s0.team_a_side == "near"
+    assert s0.is_side_change is False
+
+    # Game 1 won by A -> 1-0 (odd sum -> side change)
+    for _ in range(4):
+        s = history.add_point(TeamId.A)
+    assert (s.games_A, s.games_B) == (1, 0)
+    assert s.side_changes == 1
+    assert s.team_a_side == "far"
+    assert s.is_side_change is True
+
+    # Next point inside game 2 -> no immediate game-boundary side change flag
+    s = history.add_point(TeamId.A)
+    assert s.side_changes == 1
+    assert s.team_a_side == "far"
+    assert s.is_side_change is False
+
+    # Finish game 2 (1-1, even sum -> no change)
+    for _ in range(3):
+        s = history.add_point(TeamId.A)
+    assert (s.games_A, s.games_B) == (2, 0)
+    assert s.side_changes == 1
+    assert s.team_a_side == "far"
+    assert s.is_side_change is False
+
+    # Finish set 1 at 6-3 (9 games total, odd -> set transition triggers side change)
+    h_6_3 = MatchScoreHistory()
+    for team in [TeamId.A, TeamId.B] * 3 + [TeamId.A] * 3:
+        for _ in range(4):
+            s_last = h_6_3.add_point(team)
+    assert s_last.sets_A == 1
+    assert s_last.completed_sets == [(6, 3)]
+    assert s_last.is_side_change is True  # 9 total games is odd
+
+    # Finish set 1 at 6-4 (10 games total, even -> NO side change at set end)
+    h_6_4 = MatchScoreHistory()
+    for team in [TeamId.A, TeamId.B] * 4 + [TeamId.A] * 2:
+        for _ in range(4):
+            s_even = h_6_4.add_point(team)
+    assert s_even.sets_A == 1
+    assert s_even.completed_sets == [(6, 4)]
+    assert s_even.is_side_change is False
+
+    # Tie-break at 6-6: side change every 6 tie-break points AND after 7-6 set end
+    h_tb = MatchScoreHistory()
+    for team in [TeamId.A, TeamId.B] * 6:
+        for _ in range(4):
+            s_pre = h_tb.add_point(team)
+    assert s_pre.in_tiebreak is True
+    assert s_pre.is_side_change is False  # 12 games even
+    changes_before_tb = s_pre.side_changes
+    side_before_tb = s_pre.team_a_side
+
+    # Play 6 tie-break points (3-3)
+    for pt_team in [TeamId.A, TeamId.B, TeamId.A, TeamId.B, TeamId.A, TeamId.B]:
+        s_tb = h_tb.add_point(pt_team)
+    assert s_tb.side_changes == changes_before_tb + 1
+    assert s_tb.team_a_side != side_before_tb
+    assert s_tb.is_side_change is True
+
+    # Win tie-break 7-3 (13 total games in set -> odd -> side change at set end)
+    for _ in range(3):
+        s_tb = h_tb.add_point(TeamId.A)
+        assert s_tb.is_side_change is False
+    s_tb_end = h_tb.add_point(TeamId.A)
+    assert s_tb_end.sets_A == 1
+    assert s_tb_end.completed_sets == [(7, 6)]
+    assert s_tb_end.is_side_change is True
+    assert s_tb_end.side_changes == changes_before_tb + 2
