@@ -28,6 +28,7 @@ from padelkit.camera import (
     CameraDistortion,
     CameraExtrinsics,
     CameraIntrinsics,
+    CameraPreset,
 )
 from padelkit.court import (
     CoordinateSystem,
@@ -609,12 +610,36 @@ class Segment3D:
     layer_bias: float = 0.0
 
 
+@dataclass(frozen=True)
+class MultiFace3D:
+    """Group of 3D planar polygons sharing fill & depth-sort anchor, emitted as one `<path>`."""
+
+    polys: tuple[np.ndarray, ...]
+    fill: str
+    fill_opacity: float = 0.08
+    layer_bias: float = 0.0
+
+
+@dataclass(frozen=True)
+class MultiSegment3D:
+    """Group of 3D line segments sharing style & depth-sort anchor, emitted as one `<path>`."""
+
+    pairs: tuple[tuple[np.ndarray, np.ndarray], ...]
+    stroke: str
+    stroke_width: float = 1.2
+    opacity: float = 1.0
+    dash: str | None = None
+    layer_bias: float = 0.0
+
+
 @dataclass
 class Scene3D:
     """3D CAD scene graph holding faces and line segments for projective rendering."""
 
     faces: list[Face3D] = field(default_factory=list)
     segments: list[Segment3D] = field(default_factory=list)
+    multi_faces: list[MultiFace3D] = field(default_factory=list)
+    multi_segments: list[MultiSegment3D] = field(default_factory=list)
 
     def add_face(
         self,
@@ -665,10 +690,58 @@ class Scene3D:
             )
         )
 
+    def add_multi_face(
+        self,
+        polys: Sequence[Sequence[Sequence[float]] | np.ndarray],
+        *,
+        fill: str,
+        fill_opacity: float = 0.08,
+        layer_bias: float = 0.0,
+    ) -> None:
+        self.multi_faces.append(
+            MultiFace3D(
+                polys=tuple(np.asarray(p, dtype=np.float64) for p in polys),
+                fill=fill,
+                fill_opacity=fill_opacity,
+                layer_bias=layer_bias,
+            )
+        )
+
+    def add_multi_segment(
+        self,
+        pairs: Sequence[
+            tuple[Sequence[float] | np.ndarray, Sequence[float] | np.ndarray]
+        ],
+        *,
+        stroke: str,
+        stroke_width: float = 1.2,
+        opacity: float = 1.0,
+        dash: str | None = None,
+        layer_bias: float = 0.0,
+    ) -> None:
+        self.multi_segments.append(
+            MultiSegment3D(
+                pairs=tuple(
+                    (np.asarray(p1, dtype=np.float64), np.asarray(p2, dtype=np.float64))
+                    for p1, p2 in pairs
+                ),
+                stroke=stroke,
+                stroke_width=stroke_width,
+                opacity=opacity,
+                dash=dash,
+                layer_bias=layer_bias,
+            )
+        )
+
     def all_vertices(self) -> np.ndarray:
         """Return all 3D vertices across faces and segments for auto-fitting."""
         chunks: list[np.ndarray] = [f.vertices for f in self.faces]
         chunks.extend(s.points for s in self.segments)
+        for mf in self.multi_faces:
+            chunks.extend(mf.polys)
+        for ms in self.multi_segments:
+            for p1, p2 in ms.pairs:
+                chunks.append(np.vstack([p1, p2]))
         return np.vstack(chunks) if chunks else np.zeros((0, 3), dtype=np.float64)
 
 
@@ -723,13 +796,27 @@ class ViewportProjector3D:
 
     def render_scene(self, svg: SvgCanvas, scene: Scene3D) -> None:
         """Render all 3D faces and segments sorted back-to-front by camera depth."""
-        draw_ables: list[tuple[float, Literal["face", "seg"], Face3D | Segment3D]] = []
+        draw_ables: list[
+            tuple[
+                float,
+                Literal["face", "seg", "mface", "mseg"],
+                Face3D | Segment3D | MultiFace3D | MultiSegment3D,
+            ]
+        ] = []
         for f in scene.faces:
             z_depth = self.camera_depth(f.vertices) + f.layer_bias
             draw_ables.append((z_depth, "face", f))
         for s in scene.segments:
             z_depth = self.camera_depth(s.points) + s.layer_bias
             draw_ables.append((z_depth, "seg", s))
+        for mf in scene.multi_faces:
+            pts = np.vstack(mf.polys)
+            z_depth = self.camera_depth(pts) + mf.layer_bias
+            draw_ables.append((z_depth, "mface", mf))
+        for ms in scene.multi_segments:
+            pts = np.vstack([np.vstack(pair) for pair in ms.pairs])
+            z_depth = self.camera_depth(pts) + ms.layer_bias
+            draw_ables.append((z_depth, "mseg", ms))
 
         # Painter's algorithm: largest Z_cam (furthest from camera) drawn first
         draw_ables.sort(key=lambda item: item[0], reverse=True)
@@ -747,7 +834,7 @@ class ViewportProjector3D:
                     stroke_opacity=obj.stroke_opacity,
                     dash=obj.dash,
                 )
-            else:
+            elif kind == "seg":
                 assert isinstance(obj, Segment3D)
                 if obj.subdivide <= 1 and obj.points.shape[0] == 2:
                     u1, v1 = self.project_point(obj.points[0])
@@ -771,6 +858,40 @@ class ViewportProjector3D:
                         opacity=obj.opacity,
                         dash=obj.dash,
                     )
+            elif kind == "mface":
+                assert isinstance(obj, MultiFace3D)
+                d_parts: list[str] = []
+                for poly in obj.polys:
+                    uv = self.project_points(poly)
+                    cmds = [f"M {_fmt(uv[0, 0])} {_fmt(uv[0, 1])}"]
+                    for row in uv[1:]:
+                        cmds.append(f"L {_fmt(row[0])} {_fmt(row[1])}")
+                    cmds.append("Z")
+                    d_parts.append(" ".join(cmds))
+                el = svg.path(
+                    " ".join(d_parts),
+                    stroke="none",
+                    stroke_width=0.0,
+                    fill=obj.fill,
+                )
+                el.attrib.pop("stroke-width", None)
+                el.attrib.pop("stroke-linecap", None)
+                el.attrib.pop("stroke-linejoin", None)
+                el.attrib["fill-opacity"] = _fmt(obj.fill_opacity)
+            else:
+                assert isinstance(obj, MultiSegment3D)
+                d_parts = []
+                for p1, p2 in obj.pairs:
+                    u1, v1 = self.project_point(p1)
+                    u2, v2 = self.project_point(p2)
+                    d_parts.append(f"M {_fmt(u1)} {_fmt(v1)} L {_fmt(u2)} {_fmt(v2)}")
+                svg.path(
+                    " ".join(d_parts),
+                    stroke=obj.stroke,
+                    stroke_width=obj.stroke_width,
+                    dash=obj.dash,
+                    opacity=obj.opacity,
+                )
 
 
 def build_fip_court_3d_scene(
@@ -3116,6 +3237,342 @@ def render_camera_frustum_3d(palette: ThemePalette) -> str:
     return svg.to_xml_string()
 
 
+def _add_camera_preset_rig(
+    scene: Scene3D,
+    cam: Camera,
+    color: str,
+    palette: ThemePalette,
+    *,
+    far_m: float = 2.25,
+    near_m: float = 0.28,
+) -> None:
+    """Append a 3D camera body, viewing frustum pyramid, optical ray, and Z=0 plumb footprint to `scene`."""
+    pos = np.asarray(cam.extrinsics.position, dtype=np.float64)
+    r_vec = np.asarray(cam.extrinsics.right, dtype=np.float64)
+    d_vec = np.asarray(cam.extrinsics.down, dtype=np.float64)
+    f_vec = np.asarray(cam.extrinsics.forward, dtype=np.float64)
+
+    # Vertical plumb line to floor Z=0 + cross footprint marker
+    floor_pt = np.array([float(pos[0]), float(pos[1]), 0.0], dtype=np.float64)
+    c_sz = 0.26
+    scene.add_multi_segment(
+        (
+            (pos, floor_pt),
+            (floor_pt + [-c_sz, 0.0, 0.0], floor_pt + [c_sz, 0.0, 0.0]),
+            (floor_pt + [0.0, -c_sz, 0.0], floor_pt + [0.0, c_sz, 0.0]),
+        ),
+        stroke=color,
+        stroke_width=1.0,
+        opacity=0.52,
+        dash="2 3",
+        layer_bias=2.0,
+    )
+
+    fr = cam.frustum_corners_world(near_m=near_m, far_m=far_m)
+    near_pts = fr["near"]
+    far_pts = fr["far"]
+
+    # 4 frustum side faces + 4 corner rays grouped as compact <path> primitives
+    side_polys = [
+        [near_pts[k], near_pts[(k + 1) % 4], far_pts[(k + 1) % 4], far_pts[k]]
+        for k in range(4)
+    ]
+    scene.add_multi_face(side_polys, fill=color, fill_opacity=0.07)
+    scene.add_multi_segment(
+        [(near_pts[k], far_pts[k]) for k in range(4)],
+        stroke=color,
+        stroke_width=1.05,
+        opacity=0.72,
+        dash="3 2",
+    )
+
+    # Far image-plane rectangle & optical axis ray
+    scene.add_face(
+        far_pts,
+        fill=color,
+        fill_opacity=0.15,
+        stroke=color,
+        stroke_width=1.35,
+        stroke_opacity=0.90,
+    )
+    scene.add_segment(
+        pos,
+        pos + far_m * f_vec,
+        stroke=color,
+        stroke_width=1.45,
+        opacity=0.90,
+    )
+
+    # Compact 3D tapered camera body + lens aperture aligned with (right, down, forward)
+    bw, bh, blen, llen = 0.30, 0.20, 0.56, 0.26
+    hw, hh = 0.40, 0.26
+    back_ring = [
+        pos - blen * f_vec - bw * r_vec - bh * d_vec,
+        pos - blen * f_vec + bw * r_vec - bh * d_vec,
+        pos - blen * f_vec + bw * r_vec + bh * d_vec,
+        pos - blen * f_vec - bw * r_vec + bh * d_vec,
+    ]
+    hood_ring = [
+        pos + llen * f_vec - hw * r_vec - hh * d_vec,
+        pos + llen * f_vec + hw * r_vec - hh * d_vec,
+        pos + llen * f_vec + hw * r_vec + hh * d_vec,
+        pos + llen * f_vec - hw * r_vec + hh * d_vec,
+    ]
+    scene.add_face(
+        back_ring,
+        fill=palette.bg_canvas,
+        fill_opacity=0.94,
+        stroke=color,
+        stroke_width=1.25,
+    )
+    scene.add_multi_segment(
+        [(back_ring[k], hood_ring[k]) for k in range(4)],
+        stroke=color,
+        stroke_width=1.2,
+    )
+    scene.add_face(
+        hood_ring,
+        fill=color,
+        fill_opacity=0.28,
+        stroke=color,
+        stroke_width=1.35,
+    )
+
+
+def render_camera_presets_3d(palette: ThemePalette) -> str:
+    """4b. 3D court showing all 9 CameraPreset placements, viewing frustums, and floor footprints."""
+    svg = SvgCanvas(
+        960,
+        560,
+        "PadelKit 9 Standardized CameraPreset Placements & Frustums",
+        "3D CAD schematic of all 9 CameraPreset positions, orientations, and viewing frustums around a regulation FIP padel court.",
+        palette,
+    )
+    svg.header(
+        "9 Venue Camera Presets & Viewing Frustums (CameraPreset)",
+        "CoordinateSystem.CENTERED  |  1920×1080 (16:9)  |  Camera.from_preset(preset, court=Court.fip_standard())",
+    )
+    svg.line(626, 68, 626, 536, stroke=palette.border, stroke_width=1.0)
+
+    court = Court.fip_standard()
+    observer = Camera(
+        intrinsics=CameraIntrinsics.from_fov(
+            width_px=1200, height_px=900, horizontal_fov_deg=20.0
+        ),
+        extrinsics=CameraExtrinsics.from_look_at(
+            position=(-54.0, -8.0, 42.0),
+            target=(0.0, 0.0, 3.3),
+        ),
+    )
+
+    scene = build_fip_court_3d_scene(
+        palette,
+        court=court,
+        include_walls=True,
+        include_panel_divisions=False,
+    )
+
+    preset_styles: dict[CameraPreset, tuple[str, tuple[float, float]]] = {
+        CameraPreset.BROADCAST_NEAR: (palette.accent_secondary, (28.0, 10.0)),
+        CameraPreset.BROADCAST_FAR: (palette.accent_secondary, (26.0, -16.0)),
+        CameraPreset.OVERHEAD_ZENITH: (palette.accent_tertiary, (26.0, -6.0)),
+        CameraPreset.CORNER_NEAR_LEFT: (palette.accent_primary, (26.0, 16.0)),
+        CameraPreset.CORNER_NEAR_RIGHT: (palette.accent_primary, (26.0, -16.0)),
+        CameraPreset.CORNER_FAR_LEFT: (palette.accent_primary, (-28.0, -14.0)),
+        CameraPreset.CORNER_FAR_RIGHT: (palette.accent_primary, (26.0, -14.0)),
+        CameraPreset.SIDE_NET_LEFT: (palette.accent_danger, (-28.0, 12.0)),
+        CameraPreset.SIDE_NET_RIGHT: (palette.accent_danger, (28.0, 8.0)),
+    }
+
+    presets_data: list[tuple[CameraPreset, Camera, str, tuple[float, float]]] = []
+    for preset in CameraPreset:
+        col, badge_offset = preset_styles.get(
+            preset, (palette.accent_secondary, (24.0, -12.0))
+        )
+        cam = Camera.from_preset(preset, court=court)
+        _add_camera_preset_rig(scene, cam, col, palette, far_m=2.25)
+        presets_data.append((preset, cam, col, badge_offset))
+
+    projector = ViewportProjector3D(
+        observer,
+        scene.all_vertices(),
+        rect_x=18.0,
+        rect_y=64.0,
+        rect_w=602.0,
+        rect_h=446.0,
+        padding_px=26.0,
+        shift_uv=(-2.0, 2.0),
+    )
+
+    clip_g = svg.clip_group("clip-presets-3d", 18, 64, 602, 456, rx=10)
+    svg.set_target(clip_g)
+    projector.render_scene(svg, scene)
+
+    # World origin triad at net center (0, 0, 0)
+    o_u, o_v = projector.project_point((0.0, 0.0, 0.0))
+    x_u, x_v = projector.project_point((1.7, 0.0, 0.0))
+    y_u, y_v = projector.project_point((0.0, 2.1, 0.0))
+    z_u, z_v = projector.project_point((0.0, 0.0, 2.4))
+    svg.line(
+        o_u,
+        o_v,
+        x_u,
+        x_v,
+        stroke=palette.accent_danger,
+        stroke_width=1.6,
+        marker_end="arrow-danger",
+    )
+    svg.text(
+        x_u + 11,
+        x_v + 2,
+        "+X",
+        fill=palette.accent_danger,
+        size=8.5,
+        weight="700",
+        mono=True,
+    )
+    svg.line(
+        o_u,
+        o_v,
+        y_u,
+        y_v,
+        stroke=palette.accent_primary,
+        stroke_width=1.6,
+        marker_end="arrow-primary",
+    )
+    svg.text(
+        y_u + 4,
+        y_v - 10,
+        "+Y",
+        fill=palette.accent_primary,
+        size=8.5,
+        weight="700",
+        mono=True,
+    )
+    svg.line(
+        o_u,
+        o_v,
+        z_u,
+        z_v,
+        stroke=palette.accent_tertiary,
+        stroke_width=1.6,
+        marker_end="arrow-tertiary",
+    )
+    svg.text(
+        z_u - 12,
+        z_v - 3,
+        "+Z",
+        fill=palette.accent_tertiary,
+        size=8.5,
+        weight="700",
+        mono=True,
+    )
+
+    for idx, (_, cam, col, badge_offset) in enumerate(presets_data, start=1):
+        pu, pv = projector.project_point(cam.extrinsics.position)
+        svg.callout_badge(pu, pv, str(idx), color=col, offset=badge_offset)
+
+    svg.set_target(None)
+
+    # Family legend below 3D viewport
+    for lx, col, txt in [
+        (30, palette.accent_secondary, "Broadcast (1–2)"),
+        (162, palette.accent_tertiary, "Overhead (3)"),
+        (278, palette.accent_primary, "Corners (4–7)"),
+        (396, palette.accent_danger, "Side Net (8–9)"),
+    ]:
+        svg.rect(lx, 524, 10, 10, fill=col, stroke=col, opacity=0.85, rx=2)
+        svg.text(
+            lx + 15,
+            529,
+            txt,
+            fill=palette.text_muted,
+            size=8.8,
+            mono=True,
+            anchor="start",
+        )
+
+    # Right panel table of CameraPreset placements & HFOV
+    svg.text(
+        644,
+        86,
+        "IDX",
+        fill=palette.text_muted,
+        size=8.8,
+        weight="700",
+        mono=True,
+        anchor="start",
+    )
+    svg.text(
+        672,
+        86,
+        "CAMERA PRESET",
+        fill=palette.text_muted,
+        size=8.8,
+        weight="700",
+        mono=True,
+        anchor="start",
+    )
+    svg.text(
+        938,
+        86,
+        "POS (X,Y,Z) · HFOV",
+        fill=palette.text_muted,
+        size=8.8,
+        weight="700",
+        mono=True,
+        anchor="end",
+    )
+    svg.line(644, 98, 938, 98, stroke=palette.border, stroke_width=1.0)
+
+    for idx, (preset, cam, col, _) in enumerate(presets_data, start=1):
+        row_y = 104 + idx * 41.0
+        svg.callout_badge(654, row_y, str(idx), color=col)
+        svg.text(
+            672,
+            row_y - 5,
+            preset.value,
+            fill=palette.text_primary,
+            size=9.4,
+            weight="700",
+            mono=True,
+            anchor="start",
+        )
+        px, py, pz = cam.extrinsics.position
+        hfov = cam.intrinsics.fov_horizontal_deg
+        svg.text(
+            938,
+            row_y - 5,
+            f"{hfov:.0f}° HFOV",
+            fill=col,
+            size=8.6,
+            weight="700",
+            mono=True,
+            anchor="end",
+        )
+        svg.text(
+            672,
+            row_y + 10,
+            f"pos ({px:+.1f}, {py:+.1f}, {pz:.1f}) m",
+            fill=palette.text_muted,
+            size=8.4,
+            mono=True,
+            anchor="start",
+        )
+
+    svg.text(
+        644,
+        529,
+        "Plumb lines drop to Z=0 floor footprints",
+        fill=palette.text_muted,
+        size=8.2,
+        mono=True,
+        anchor="start",
+    )
+
+    return svg.to_xml_string()
+
+
 def render_camera_sensor_projection(palette: ThemePalette) -> str:
     """5. 1920x1080 sensor view showing full 3D court projection and all 17 landmarks."""
     svg = SvgCanvas(
@@ -4721,6 +5178,7 @@ SCHEMATIC_GENERATORS: dict[str, Callable[[ThemePalette], str]] = {
     "court-enclosure-variants-3d": render_court_enclosure_variants_3d,
     "court-side-access": render_court_side_access,
     "camera-frustum-3d": render_camera_frustum_3d,
+    "camera-presets-3d": render_camera_presets_3d,
     "camera-sensor-projection": render_camera_sensor_projection,
     "camera-distortion-grid": render_camera_distortion_grid,
     "physics-forces-9d": render_physics_forces_9d,
@@ -4733,7 +5191,7 @@ MAX_SVG_BYTES = 45_000
 
 
 def build_all_schematics_in_memory() -> dict[str, str]:
-    """Generate all 20 themed schematic SVG strings (`{name}-{light|dark}.svg`)."""
+    """Generate all themed schematic SVG strings (`{name}-{light|dark}.svg`)."""
     outputs: dict[str, str] = {}
     for name, fn in SCHEMATIC_GENERATORS.items():
         for palette in (LIGHT_PALETTE, DARK_PALETTE):
