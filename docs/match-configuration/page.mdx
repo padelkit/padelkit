@@ -1,133 +1,107 @@
 # MatchConfiguration
 
-The `MatchConfiguration` dataclass groups together all scoring formats, rules, starting server rotations, and other parameters that define the conditions of a padel match. This class is passed to [`Match`](/match) or [`MatchScoreHistory`](/match-score-history) to establish rules like Golden Point (Punto de Oro), Mini Sets, or Match Deciding Super Tie-breaks. {{ className: 'lead' }}
+`MatchConfiguration` is a self-validating dataclass encapsulating all tournament and format rules for a padel match. Import via `from padelkit import MatchConfiguration`. {{ className: 'lead' }}
 
-## Properties
-
-<Properties>
-  <Property name="best_of_sets" type="int">
-    The maximum number of sets to be played in the match (default is `3` for best-of-three, but can also be configured to `5`).
-  </Property>
-  <Property name="advantage_method" type="Literal['advantage', 'gold_point']">
-    The method used to break a deuce (`40-40`) tie in games. Use `'advantage'` for traditional advantages, or `'gold_point'` for the FIP-official deciding gold point (Punto de Oro).
-  </Property>
-  <Property name="set_format" type="Literal['standard', 'mini']">
-    The structure of each regular set. `'standard'` sets are won by reaching 6 games (with a margin of 2, or a tie-break at 6-6). `'mini'` sets are played to 4 games (with a tie-break at 4-4).
-  </Property>
-  <Property name="deciding_set_format" type="Literal['regular', 'tiebreak', 'super_tiebreak']">
-    The format of the final set if a tie occurs (e.g. at 1-1 in a best-of-three match). Use `'regular'` for a full set, `'tiebreak'` for a match-deciding 7-point tie-break, or `'super_tiebreak'` for a 10-point super tie-break.
-  </Property>
-  <Property name="starting_server_team" type="TeamId">
-    The [`TeamId`](/team) who will start serving on the very first point of the match. Defaults to `TeamId.A`.
-  </Property>
-  <Property name="set_starting_servers" type="dict[int, dict[TeamId, Player]]">
-    A dictionary mapping 1-indexed set indices to their starting servers for each team. Allows declaring serving rosters for each set dynamically.
-  </Property>
-</Properties>
+Unlike plain dataclasses, `MatchConfiguration` hooks both `__post_init__` and `__setattr__` to invoke [`validate()`](#validate) on every change—making it impossible to assign an even `best_of_sets` or an invalid `advantage_method`.
 
 ---
 
-## Initialization
+## Parameters & Fields {{ tag: 'dataclass', label: 'MatchConfiguration' }}
 
 <Row>
   <Col>
 
-    Creates a new instance of a `MatchConfiguration`.
-
-    *Note: PadelKit validates configurations early on both initialization and dynamically on dynamic updates, raising a `ValueError` for invalid parameters (e.g. non-positive or even `best_of_sets`, invalid format option strings, or incorrect types).*
-
-    ### Keyword Arguments
-
     <Properties>
-      <Property name="best_of_sets" type="int" optional default="3">
-        Number of sets to play (usually `3` or `5`).
+      <Property name="best_of_sets" type="int">
+        Maximum number of sets in the match. Must be a positive odd integer (`1`, `3`, `5`, ...). Defaults to `3`.
       </Property>
-      <Property name="advantage_method" type="str" optional default="'advantage'">
-        Deuce-breaking format: `'advantage'` or `'gold_point'`.
+      <Property name="advantage_method" type='Literal["advantage", "gold_point"]'>
+        Deuce resolution at `40-40`: traditional `"advantage"` vs FIP *Punto de Oro* (`"gold_point"`). Defaults to `"advantage"`.
       </Property>
-      <Property name="set_format" type="str" optional default="'standard'">
-        Set length: `'standard'` (to 6 games) or `'mini'` (to 4 games).
+      <Property name="set_format" type='Literal["standard", "mini"]'>
+        Games per set: `"standard"` (first to 6, tiebreak at 6-6) or `"mini"` (first to 4, tiebreak at 4-4). Defaults to `"standard"`.
       </Property>
-      <Property name="deciding_set_format" type="str" optional default="'regular'">
-        Deciding final set behavior: `'regular'`, `'tiebreak'` or `'super_tiebreak'`.
+      <Property name="deciding_set_format" type='Literal["regular", "tiebreak", "super_tiebreak"]'>
+        Rule when sets are tied heading into the final set: full `"regular"` set, 7-point `"tiebreak"`, or 10-point `"super_tiebreak"`. Defaults to `"regular"`.
       </Property>
-      <Property name="starting_server_team" type="TeamId" optional default="TeamId.A">
-        The starting server team on point 1 of set 1.
+      <Property name="starting_server_team" type="TeamId">
+        Team serving Game 1 of Set 1 (`TeamId.A` or `TeamId.B`). Defaults to `TeamId.A`.
       </Property>
-      <Property name="set_starting_servers" type="dict[int, dict[TeamId, Player]]" optional default="{}">
-        Starting serving players dictionary by set index and team.
+      <Property name="set_starting_servers" type="dict[int, dict[TeamId, Player]]">
+        Optional overrides mapping 1-based set numbers (`1`, `2`, ...) to `{TeamId: Player}` designating who serves first for each pair in that set. Defaults to empty dict `{}`.
       </Property>
     </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Instantiation" tag="class" label="MatchConfiguration">
+    <CodeGroup title="Initialization" tag="dataclass" label="MatchConfiguration">
 
     ```python
-    from padelkit import MatchConfiguration, TeamId, Player
+    from padelkit import MatchConfiguration, TeamId
 
-    p1 = Player(name="Coello")
-    p3 = Player(name="Galán")
-
-    config = MatchConfiguration(
+    cfg = MatchConfiguration(
         best_of_sets=3,
         advantage_method="gold_point",
         set_format="standard",
         deciding_set_format="super_tiebreak",
-        starting_server_team=TeamId.A,
-        set_starting_servers={
-            1: {
-                TeamId.A: p1,
-                TeamId.B: p3
-            }
-        }
+        starting_server_team=TeamId.B,
     )
     ```
 
     </CodeGroup>
-
-    ```json {{ title: 'Output structure' }}
-    MatchConfiguration(
-      best_of_sets=3,
-      advantage_method='gold_point',
-      set_format='standard',
-      deciding_set_format='super_tiebreak',
-      starting_server_team=<TeamId.A: 'A'>,
-      set_starting_servers={1: {<TeamId.A: 'A'>: Player(name='Coello'), ...}}
-    )
-    ```
 
   </Col>
 </Row>
 
 ---
 
-## Dictionary Serialization {{ tag: 'methods', label: 'to_dict / from_dict' }}
+## `validate()` {{ tag: 'method', label: 'config.validate()' }}
 
 <Row>
   <Col>
 
-    <Properties>
-      <Property name="config.to_dict()" type="dict[str, Any]">
-        Serializes all match rules and `set_starting_servers` into a JSON-compatible dictionary.
-      </Property>
-      <Property name="MatchConfiguration.from_dict(data)" type="MatchConfiguration">
-        Classmethod that reconstructs a `MatchConfiguration` from a dictionary.
-      </Property>
-    </Properties>
+    Validates every rule constraint and raises `ValueError` immediately if any value is out of bounds (`best_of_sets` even or `<= 0`, unknown format string, non-positive set index, or non-`Player` value in `set_starting_servers`). Called automatically on construction and attribute mutation.
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Serialize Configuration" tag="method" label="to_dict / from_dict">
+    <CodeGroup title="Automatic Validation" tag="method" label="validate">
 
     ```python
     from padelkit import MatchConfiguration
 
-    cfg = MatchConfiguration(advantage_method="gold_point")
-    restored = MatchConfiguration.from_dict(cfg.to_dict())
-    assert restored == cfg
+    cfg = MatchConfiguration(best_of_sets=3)
+    try:
+        cfg.best_of_sets = 2  # triggers validate()
+    except ValueError as exc:
+        print("Rejected invalid rule:", exc)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Serialization (`to_dict` / `from_dict`) {{ tag: 'method', label: 'dict I/O' }}
+
+<Row>
+  <Col>
+
+    Exports rules and custom `set_starting_servers` mappings (`config.to_dict()`) and reconstructs an identical validated configuration (`MatchConfiguration.from_dict(data)`).
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Dictionary Round-Trip" tag="method" label="to_dict / from_dict">
+
+    ```python
+    from padelkit import MatchConfiguration
+
+    cfg = MatchConfiguration(advantage_method="gold_point", set_format="mini")
+    assert MatchConfiguration.from_dict(cfg.to_dict()) == cfg
     ```
 
     </CodeGroup>

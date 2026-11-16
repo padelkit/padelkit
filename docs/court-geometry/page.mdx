@@ -1,10 +1,14 @@
 # Court Geometry
 
-The court module defines the dimensions, landmarks, and coordinate system of an official padel court. On this page, we'll dive into the different classes and methods you can use to interact with court geometry programmatically. {{ className: 'lead' }}
+Understand how PadelKit models an official International Padel Federation (FIP) padel court in 3D space—from coordinate axis conventions and floor markings to enclosure heights, lateral doorways, exterior safety zones, and indoor roof clearance. {{ className: 'lead' }}
 
-## The CourtDimensions model
+<Note>
+  This guide explains **spatial intuition and FIP court rules**. For exact constructor fields, defaults, and method signatures, jump directly to [`Court`](/court), [`CourtDimensions`](/court-dimensions), [`SideAccess`](/side-access), [`SafetyZone`](/safety-zone), [`CourtLandmark`](/court-landmark), and [Court Enums](/court-enums).
+</Note>
 
-The `CourtDimensions` dataclass houses the official measurements of the court. All units are expressed in meters.
+## Official FIP Layout & Dimensions {{ tag: 'guide' }}
+
+An official doubles padel court has an **interior playing area of `20.0 m × 10.0 m`** divided across the midpoint by a `10.0 m` net (`0.88 m` high at the center strap and `0.92 m` at the side posts). Each half-court (`10.0 m × 10.0 m`) has a service line placed `3.0 m` in front of its back wall (`6.95 m` from the net, measured inside lines).
 
 <Schematic
   name="court-dimensions"
@@ -12,25 +16,25 @@ The `CourtDimensions` dataclass houses the official measurements of the court. A
   caption="Official FIP court plan (20.0m × 10.0m), Enclosure Variant 1 (3.0m) vs Variant 2 (4.0m) side walls, and net height profile (0.88m center / 0.92m posts)."
 />
 
-### Properties
-
-<Properties>
-  <Property name="length" type="float">
-    The total length of the padel court (`20.0` m by default).
-  </Property>
-  <Property name="width" type="float">
-    The total width of the padel court (`10.0` m by default).
-  </Property>
-</Properties>
+All spatial quantities in PadelKit follow **SI meters (`m`)** unless explicitly stated otherwise. See [`CourtDimensions`](/court-dimensions) for all 11 geometric fields and regulatory tolerances.
 
 ---
 
-## Coordinate Systems
+## Coordinate Systems & Perspective Convention {{ tag: 'guide' }}
 
-PadelKit supports two spatial reference frames via `CoordinateSystem`:
+A recurring source of confusion in multi-camera sports geometry is deciding where `(0, 0, 0)` sits and what "near", "far", "left", and "right" mean. PadelKit enforces one unambiguous convention across court geometry, cameras, physics, and 3D visualization:
 
-- **`CoordinateSystem.CENTERED` (default):** Origin `(0.0, 0.0, 0.0)` lies at the center of the net on the court floor, with `X` in `[-5.0, 5.0]` and `Y` in `[-10.0, 10.0]`.
-- **`CoordinateSystem.CORNER_BASED`:** Origin `(0.0, 0.0, 0.0)` lies at `floor_near_left`, shifting horizontal coordinates by `(+5.0m, +10.0m)` so `X` is in `[0.0, 10.0]` and `Y` is in `[0.0, 20.0]`.
+- **Point of view (`NEAR` / `FAR`, `LEFT` / `RIGHT`):** Always oriented from a **player standing on the `NEAR` side facing the net** (matching the standard TV broadcast camera behind the near back glass):
+  - **`-X` (Left) to `+X` (Right):** Court width (`10.0 m`). Left sideline is `-X`, right sideline is `+X`.
+  - **`-Y` (Near) to `+Y` (Far):** Court length (`20.0 m`). Behind the camera is the **NEAR** half (`Y < 0` in centered coordinates); across the net is the **FAR** half (`Y > 0`).
+  - **`+Z` (Up):** Height vertically above the court floor (`Z = 0.0` at the playing surface).
+
+PadelKit exposes two reference frames through [`CoordinateSystem`](/court-enums#coordinate-system):
+
+| Coordinate System | Origin `(0, 0, 0)` | `X` Range (`10 m` width) | `Y` Range (`20 m` length) | Typical Use Case |
+| :--- | :--- | :--- | :--- | :--- |
+| **`CoordinateSystem.CENTERED`** *(default)* | Center of the net on the floor ([`CENTER`](/court-landmark)) | `[-5.0, +5.0]` | `[-10.0, +10.0]` | Physics simulation, Three.js / Blender 3D scenes, symmetrical analytics |
+| **`CoordinateSystem.CORNER_BASED`** | Near-left floor corner ([`FLOOR_NEAR_LEFT`](/court-landmark)) | `[0.0, 10.0]` | `[0.0, 20.0]` | 2D top-down court maps and non-negative pixel/grid heatmaps |
 
 <Schematic
   name="court-coordinate-systems"
@@ -40,15 +44,15 @@ PadelKit supports two spatial reference frames via `CoordinateSystem`:
 
 ---
 
-## Enclosure Types & Regulatory Variants
+## Enclosure Walls, Mesh Heights & Corner Profiles {{ tag: 'guide' }}
 
-According to the official FIP *Rules of Padel*, every court enclosure combines solid rebound panels (tempered glass or masonry wall) with electro-welded or woven metallic mesh fencing:
+Under official FIP regulations (*Cerramientos*), the perimeter of a padel court combines **solid rebound panels** (tempered glass or concrete/masonry wall) with **electro-welded metallic wire mesh**. Every back wall (`10.0 m` wide × `4.0 m` high) always consists of `3.0 m` of solid wall topped by `1.0 m` of metallic mesh.
 
-- **Back walls (`10.0 m` width × `4.0 m` total height):** Always composed of **`3.0 m`** of solid wall (`EnclosureType.GLASS` or `EnclosureType.WALL`) topped by **`1.0 m`** of metallic mesh.
-- **Side enclosures (`20.0 m` length):** Defined along three orthogonal axes in [`Court`](/court):
-  1. **Material (`EnclosureType`):** `GLASS` (tempered safety glass EN 12150-1, low friction) vs. `WALL` (brick/concrete wall, higher spin grip). Per FIP rules, walls may be built from any smooth, uniform transparent or opaque material (`GLASS` or `WALL`)—both `STEPPED` glass and `STEPPED` masonry walls are valid, whereas floor surfaces (`SurfaceType`: turf, porous concrete, acrylic, wood) are independent of enclosure choice.
-  2. **Upper mesh height (`EnclosureVariant`):** `V1` drops the central `16.0 m` metallic mesh to **`3.0 m`** (rising to `4.0 m` only in the `2.0 m` corners), whereas `V2` keeps a uniform **`4.0 m`** mesh height across the full `20.0 m`.
-  3. **Solid end-zone profile (`SideWallProfile`):** `STEPPED` places two stepped solid panels (`3.0 m × 2.0 m` + `2.0 m × 2.0 m`) at each end, while `UNIFORM` (*Variant 1/2 Crystal*, "sin escalón") uses a continuous **`3.0 m × 4.0 m`** panel with no step down. When `side_wall_profile` is left as `None`, `WALL` courts default to `STEPPED` and `GLASS` courts default to `UNIFORM` (or pass `SideWallProfile.STEPPED` explicitly for stepped glass courts).
+On the **`20.0 m` sidelines**, [`Court`](/court) models the geometry orthogonally along three independent axes:
+
+1. **Material (`EnclosureType`):** `GLASS` (tempered safety glass, low friction so slice/backspin slides fast) vs `WALL` (brick/concrete wall, higher friction that grips spin). Both materials can be stepped or uniform under FIP rules.
+2. **Upper mesh height (`EnclosureVariant`):** In `V1`, the central `16.0 m` wire mesh drops to `3.0 m` (with `4.0 m` only in the `2.0 m` corners adjacent to each back wall). In `V2`, the perimeter stays at a uniform `4.0 m` height all the way down the sideline.
+3. **Solid corner silhouette (`SideWallProfile`):** Over the `4.0 m` end zones from each back wall, `STEPPED` places two panels stepping down (`3.0 m × 2.0 m` then `2.0 m × 2.0 m`), whereas `UNIFORM` (*Variant Crystal*, "sin escalón") keeps a flat `3.0 m × 4.0 m` solid glass panel. When omitted (`None`), `WALL` courts default to `STEPPED` and `GLASS` courts default to `UNIFORM`.
 
 <Schematic
   name="court-enclosure-variants-3d"
@@ -56,34 +60,26 @@ According to the official FIP *Rules of Padel*, every court enclosure combines s
   caption="3D CAD comparison of all four official FIP enclosure configurations: Variant 1/2 (V1/V2 central 3m vs uniform 4m mesh) × STEPPED (3m→2m) vs UNIFORM (flat 3m×4m crystal)."
 />
 
-| FIP Variant | `enclosure_type` | `enclosure_variant` | `side_wall_profile` | End solid (`0..4 m`) | Center mesh (`4..16 m`) |
-|---|---|---|---|---|---|
-| **Variant 1 (Stepped)** | `WALL` or `GLASS` | `V1` | `STEPPED` | `3m×2m` + `2m×2m` | `3.0 m` |
-| **Variant 2 (Stepped)** | `WALL` or `GLASS` | `V2` | `STEPPED` | `3m×2m` + `2m×2m` | `4.0 m` |
-| **Variant 1 Crystal** | `GLASS` | `V1` | `UNIFORM` | `3m×4m` flat | `3.0 m` |
-| **Variant 2 Crystal** | `GLASS` | `V2` | `UNIFORM` | `3m×4m` flat | `4.0 m` |
+| Official Variant | `enclosure_type` | `enclosure_variant` | `side_wall_profile` | End Solid (`0–4 m` from back) | Center Mesh (`4–16 m`) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Variant 1 (Stepped)** | `WALL` or `GLASS` | `V1` | `STEPPED` | `3.0 m × 2.0 m` + `2.0 m × 2.0 m` | `3.0 m` |
+| **Variant 2 (Stepped)** | `WALL` or `GLASS` | `V2` | `STEPPED` | `3.0 m × 2.0 m` + `2.0 m × 2.0 m` | `4.0 m` |
+| **Variant 1 Crystal** | `GLASS` | `V1` | `UNIFORM` | Flat `3.0 m × 4.0 m` | `3.0 m` |
+| **Variant 2 Crystal** | `GLASS` | `V2` | `UNIFORM` | Flat `3.0 m × 4.0 m` | `4.0 m` |
+
+Both [`BallPhysicsEngine`](/ball-physics-engine) and [`PadelVisualizer`](/padel-visualizer) query [`Court.side_wall_heights_at()`](/court#side-wall-heights-at) and [`Court.side_enclosure_panels()`](/court#side-enclosure-panels) directly so rebound physics and rendered 3D walls never disagree.
 
 <Row>
   <Col>
 
-    <Properties>
-      <Property name="enclosure_type" type="EnclosureType" optional default="None">
-        Solid rebound wall material (`GLASS` or `WALL`). Determines whether stepped vs flat profile defaults to `UNIFORM` (`GLASS`) or `STEPPED` (`WALL`) when `side_wall_profile` is omitted.
-      </Property>
-      <Property name="enclosure_variant" type="EnclosureVariant" optional default="None">
-        Upper metallic mesh profile along the central `16.0 m` (`V1` at `3.0 m` vs `V2` at `4.0 m`). Defaults from `dimensions.side_wall_height`.
-      </Property>
-      <Property name="side_wall_profile" type="SideWallProfile" optional default="None">
-        Solid end-zone silhouette over `0..4 m` from each back corner: `STEPPED` (`3m×2m + 2m×2m`) or `UNIFORM` (continuous `3m×4m` without step).
-      </Property>
-    </Properties>
+    ### Configuring a Stepped vs Crystal Court
 
-    Access openings sit symmetrically on the net axis (`1` opening of `1.05–2.00 m × 2.00–2.20 m`, or `2` openings of `0.72–1.00 m × 2.00–2.20 m` per side), topped by metallic wire mesh lintels up to the perimeter roof (`3.0 m` in `V1`, `4.0 m` in `V2`). Both [`BallPhysicsEngine`](/ball-physics-engine) and [`PadelVisualizer`](/padel-visualizer) query `court.side_wall_heights_at()`, `court.is_doorway_opening_at()`, and `court.side_enclosure_panels()` directly so collisions and 3D meshes always match.
+    Pass only the regulatory overrides you need when building a [`Court`](/court). For instance, choosing `EnclosureType.WALL` automatically resolves `effective_side_wall_profile` to `SideWallProfile.STEPPED`, while passing `CourtDimensions.fip_variant_2()` automatically selects `EnclosureVariant.V2` (`4.0 m` sides).
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Configure Enclosure Variants" tag="enum" label="SideWallProfile">
+    <CodeGroup title="Enclosure Configuration" tag="guide" label="Court">
 
     ```python
     from padelkit import (
@@ -94,20 +90,13 @@ According to the official FIP *Rules of Padel*, every court enclosure combines s
         SideWallProfile,
     )
 
-    # 1. FIP Variant 1 — Stepped masonry wall (default STEPPED)
+    # 1. FIP Variant 1 masonry court (defaults to STEPPED)
     wall_v1 = Court(
         enclosure_type=EnclosureType.WALL,
         enclosure_variant=EnclosureVariant.V1,
     )
 
-    # 2. FIP Variant 1 — Stepped tempered glass (explicit STEPPED)
-    glass_stepped = Court(
-        enclosure_type=EnclosureType.GLASS,
-        enclosure_variant=EnclosureVariant.V1,
-        side_wall_profile=SideWallProfile.STEPPED,
-    )
-
-    # 3. FIP Variant 2 Crystal — Non-stepped 3m x 4m glass + 4m mesh
+    # 2. FIP Variant 2 Crystal glass court (4m continuous mesh + flat 3x4m glass)
     crystal_v2 = Court(
         dimensions=CourtDimensions.fip_variant_2(),
         enclosure_type=EnclosureType.GLASS,
@@ -115,22 +104,32 @@ According to the official FIP *Rules of Padel*, every court enclosure combines s
         side_wall_profile=SideWallProfile.UNIFORM,
     )
 
-    # Query exact (solid_h, total_h) 3.0m inward from back wall
-    solid_h, total_h = crystal_v2.side_wall_heights_at(3.0)
+    # Inspect exact (solid_height_m, total_height_m) 3.0 m inward from a back wall
+    print("wall_v1 @ 3m:", wall_v1.side_wall_heights_at(3.0))
+    print("crystal_v2 @ 3m:", crystal_v2.side_wall_heights_at(3.0))
+    # wall_v1 @ 3m: (2.0, 3.0)
+    # crystal_v2 @ 3m: (3.0, 4.0)
     ```
 
     </CodeGroup>
-
-    ```json {{ title: 'Output (crystal_v2 at 3.0m)' }}
-    (3.0, 4.0)
-    ```
 
   </Col>
 </Row>
 
 ---
 
-## Lateral Access Openings (Doors) {{ tag: 'dataclass', label: 'SideAccess' }}
+## Lateral Doorways, Exterior Safety Zones & Ceilings {{ tag: 'guide' }}
+
+In padel, lateral exits are more than architectural openings: **Rule 16 (Out-of-Court Play)** lets players leave the court through open side doorways to chase smashes (*por 3* / *por 4*). Each sideline in PadelKit therefore combines:
+
+1. **Opening Geometry ([`SideAccess`](/side-access)):** Centered at `Y = 0.0` (the net line), configured independently per side (`access_left`, `access_right`):
+   - **Single access (`count=1`):** One central doorway `1.05–2.00 m` wide × `2.00–2.20 m` tall (default `2.00 m × 2.20 m` FIP maximum).
+   - **Dual access (`count=2`):** Two symmetric doorways `0.72–1.00 m` wide × `2.00–2.20 m` tall separated by a central structural post at `Y = 0`.
+   - **No access (`count=0`):** Continuous wire mesh (`12.0 m` span), common on recreational courts with entry on one side only.
+   - **Overhead lintel:** Above `Z > access.height` (e.g. `2.20 m` up to `3.0 m` or `4.0 m`), metallic mesh still exists and rebounds balls normally!
+2. **Door Gate State ([`DoorState`](/court-enums#door-state)):** Setting `door_left=DoorState.CLOSED` treats the doorway as closed metallic mesh during physics collisions and renders a closed gate in [`PadelVisualizer`](/padel-visualizer).
+3. **Exterior Safety Clearance ([`SafetyZone`](/safety-zone)):** Official out-of-court play requires **both** sidelines to have `count=2` doorways, an obstacle-free exterior clearance zone at least **`2.0 m` wide × `8.0 m` long** (`4.0 m` to each side of the net) × **`3.0 m` high**, and at least **`0.02 m` (`2 cm`)** of shock-absorbing padding on frames and posts.
+4. **Surface Color & Indoor Ceiling ([`CourtSurfaceColor`](/court-enums#court-surface-color)):** FIP allows `BLUE`, `GREEN`, and `TERRACOTTA` anywhere, restricts `BLACK` exclusively to `CourtSetting.INDOOR`, and requires `ceiling_height >= 6.0 m` (`8.0 m` recommended for new indoor construction). When `ceiling_height` is set, balls hitting the roof trigger a [`SurfaceType.CEILING`](/physics-enums#surface-type) impact.
 
 <Schematic
   name="court-side-access"
@@ -138,47 +137,23 @@ According to the official FIP *Rules of Padel*, every court enclosure combines s
   caption="Central sideline elevation (Y ∈ [-4, +4] m) and plan view showing 1-door default, 2-door Rule 16 out-of-court play + SafetyZone, and 0-door single-side entry club courts."
 />
 
-| Access Configuration | Preset / `count` | Official Width × Height (each) | Regulatory Notes |
+| Layout Preset | Doorways (`count`) | FIP Official Bounds (each) | Out-of-Court Play Permitted? |
 | :--- | :--- | :--- | :--- |
-| **Single Access** (default) | `SideAccess.fip_single_access()` (`1`) | `1.05–2.00 m × 2.00–2.20 m` | Default `2.00 m × 2.20 m` (FIP max); overhead mesh lintel from `height` to `3.0 / 4.0 m` |
-| **Dual Access** (out-of-court) | `SideAccess.fip_dual_access()` (`2`) | `0.72–1.00 m × 2.00–2.20 m` | Dual openings separated by a central structural post; required on **both** sides for out-of-court play |
-| **No Access** (closed side) | `SideAccess.no_access()` (`0`) | Continuous `12 m` wire mesh | Common on recreational courts with access on one side only |
+| **`SideAccess.fip_single_access()`** *(default)* | `1` centered at `Y = 0` | `1.05–2.00 m` × `2.00–2.20 m` | Only if upgraded to dual doors + safety zones |
+| **`SideAccess.fip_dual_access()`** | `2` around center post | `0.72–1.00 m` × `2.00–2.20 m` | **Yes**, when present on both sides with [`SafetyZone`](/safety-zone) |
+| **`SideAccess.no_access()`** | `0` (solid mesh) | Continuous wire mesh | No |
 
 <Row>
   <Col>
 
-    By default, `Court` exposes a single `2.00 m × 2.20 m` doorway centered at the net (`Y ∈ [-1.0, +1.0]`) on both sidelines (`access_left` and `access_right`), matching the maximum official FIP single-access dimensions. Above the doorway lintel (`Z > access.height`), metallic mesh continues up to the enclosure top (`3.0 m` or `4.0 m`), rebounding high balls while letting open-doorway shots pass out of court.
+    ### Validating FIP Compliance Programmatically
 
-    Non-official club layouts — such as courts with access on only one side (`access_right=SideAccess.no_access()`), custom door dimensions, or `DoorState.CLOSED` gates — are configured per side without errors and checked via `court.has_fip_compliant_access(out_of_court_play=...)`.
-
-    <Properties>
-      <Property name="SideAccess.count" type="0 | 1 | 2" default="1">
-        Number of doorway openings centered symmetrically at the net on that sideline.
-      </Property>
-      <Property name="SideAccess.width" type="float" default="2.0">
-        Clear width of each doorway opening in meters.
-      </Property>
-      <Property name="SideAccess.height" type="float" default="2.2">
-        Clear vertical height in meters below the overhead wire mesh lintel.
-      </Property>
-      <Property name="SideAccess.center_pillar_width" type="float" default="0.16">
-        Width in meters of the structural post separating dual openings when `count == 2`.
-      </Property>
-      <Property name="SafetyZone(width=2.0, half_length=4.0, height=3.0)" type="dataclass">
-        Exterior obstacle-free clearance zone (`safety_zone_left` / `safety_zone_right`) required for official Rule 16 out-of-court play (`>= 2.0 m` wide × `8.0 m` total length centered on the net × `>= 3.0 m` vertical clearance + `>= 2 cm` post/frame padding).
-      </Property>
-      <Property name="ceiling_height" type="float | None">
-        Optional physical roof height in meters (`>= 6.0 m` FIP minimum, `8.0 m` suggested for new indoor construction). Triggers `SurfaceType.CEILING` collisions when set.
-      </Property>
-      <Property name="court.is_fip_compliant(out_of_court_play=False)" type="bool">
-        Validates official FIP compliance across court dimensions, lateral access, `SafetyZone`, `ceiling_height`, and surface color (black turf indoor-only). Inspect `court.fip_compliance_issues()` for human-readable violations.
-      </Property>
-    </Properties>
+    Even non-official club courts can be modeled without errors; whenever you need to audit whether a venue meets official FIP rules (including indoor black turf, ceiling clearance, doorways, and Rule 16 safety zones), call [`court.is_fip_compliant()`](/court#fip-regulatory-validation) or inspect exact reasons via [`court.fip_compliance_issues()`](/court#fip-regulatory-validation).
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Side Access, SafetyZone & Compliance" tag="dataclass" label="SideAccess / SafetyZone">
+    <CodeGroup title="Doorways, Safety Zones & FIP Audit" tag="guide" label="Court">
 
     ```python
     from padelkit import (
@@ -190,7 +165,7 @@ According to the official FIP *Rules of Padel*, every court enclosure combines s
         SideAccess,
     )
 
-    # Official out-of-court layout: dual doorways + 2x8m SafetyZone on both sides
+    # Tournament venue certified for official out-of-court play
     pro_court = Court(
         turf_color=CourtSurfaceColor.BLUE,
         access_left=SideAccess.fip_dual_access(),
@@ -198,10 +173,10 @@ According to the official FIP *Rules of Padel*, every court enclosure combines s
         safety_zone_left=SafetyZone.fip_standard(),
         safety_zone_right=SafetyZone.fip_standard(),
     )
-    pro_court.is_out_of_court_play_allowed()            # True
-    pro_court.is_fip_compliant(out_of_court_play=True)  # True
+    print("Out-of-court allowed:", pro_court.is_out_of_court_play_allowed())
+    print("FIP issues:", pro_court.fip_compliance_issues(out_of_court_play=True))
 
-    # Recreational single-side entry club court
+    # Recreational indoor court with single-side entry and closed right side
     club_court = Court(
         access_left=SideAccess.fip_single_access(width=1.6, height=2.1),
         access_right=SideAccess.no_access(),
@@ -210,11 +185,8 @@ According to the official FIP *Rules of Padel*, every court enclosure combines s
         ceiling_height=7.0,
         turf_color=CourtSurfaceColor.BLACK,
     )
-
-    # Query physics pass-through at the net (y=0.0, z=1.4m)
-    club_court.is_doorway_opening_at("left", y_centered=0.0, z=1.4)   # True
-    club_court.is_doorway_opening_at("left", y_centered=0.0, z=2.5)   # False (lintel)
-    club_court.is_doorway_opening_at("right", y_centered=0.0, z=1.4)  # False (mesh)
+    print("Passable through left door @ z=1.4m:", club_court.is_doorway_opening_at("left", 0.0, 1.4))
+    print("Passable through lintel @ z=2.5m:", club_court.is_doorway_opening_at("left", 0.0, 2.5))
     ```
 
     </CodeGroup>
@@ -224,123 +196,13 @@ According to the official FIP *Rules of Padel*, every court enclosure combines s
 
 ---
 
-## The Court model
+## API Reference
 
-The `Court` class is the main geometry model. By default, it uses `CoordinateSystem.CENTERED` where `(0.0, 0.0)` is at the midpoint of the net. The **X** axis represents the width, and the **Y** axis represents the length.
-
-### Properties
-
-<Properties>
-  <Property name="dimensions" type="CourtDimensions">
-    An instance of the `CourtDimensions` class containing the physical measurements.
-  </Property>
-</Properties>
-
----
-
-## Standard Initialization {{ tag: 'classmethod', label: 'Court.fip_standard()' }}
-
-<Row>
-  <Col>
-
-    This class method allows you to easily instantiate a `Court` using the standard measurements established by the International Padel Federation (FIP).
-
-    By default, an FIP court is 20.0m in length and 10.0m in width.
-
-  </Col>
-  <Col sticky>
-
-    <CodeGroup title="Instantiation" tag="classmethod" label="fip_standard">
-
-    ```python
-    from padelkit import Court
-
-    court = Court.fip_standard()
-    ```
-
-    </CodeGroup>
-
-    ```json {{ title: 'Output structure' }}
-    Court(
-      dimensions=CourtDimensions(length=20.0, width=10.0)
-    )
-    ```
-
-  </Col>
-</Row>
-
----
-
-## Get a landmark coordinate {{ tag: 'method', label: 'court.point()' }}
-
-<Row>
-  <Col>
-
-    This method allows you to retrieve the exact `(x, y)` coordinates of a specific standard landmark on the court.
-
-    ### Required arguments
-
-    <Properties>
-      <Property name="name" type="CourtLandmark | str">
-        The name of the landmark. This can be an instance of the `CourtLandmark` Enum (e.g., `CourtLandmark.CENTER`) or its string equivalent (e.g., `"center"`).
-      </Property>
-    </Properties>
-
-  </Col>
-  <Col sticky>
-
-    <CodeGroup title="Usage" tag="method" label="point">
-
-    ```python
-    from padelkit import Court
-
-    court = Court.fip_standard()
-    net_center = court.point("center")
-    ```
-
-    </CodeGroup>
-
-    ```json {{ title: 'Output' }}
-    (0.0, 0.0)
-    ```
-
-  </Col>
-</Row>
-
----
-
-## List all landmarks {{ tag: 'method', label: 'court.landmarks_2d()' }}
-
-<Row>
-  <Col>
-
-    This method returns a dictionary containing all the standardized 2D positions of the court landmarks. It's useful if you need to draw the court or access multiple points at once.
-
-  </Col>
-  <Col sticky>
-
-    <CodeGroup title="Usage" tag="method" label="landmarks_2d">
-
-    ```python
-    from padelkit import Court
-
-    court = Court.fip_standard()
-    all_points = court.landmarks_2d()
-    ```
-
-    </CodeGroup>
-
-    ```json {{ title: 'Output (abridged)' }}
-    {
-      "center": [0.0, 0.0],
-      "net_left": [-5.0, 0.0],
-      "net_right": [5.0, 0.0],
-      "floor_near_left": [-5.0, -10.0],
-      "floor_near_right": [5.0, -10.0],
-      "floor_far_left": [-5.0, 10.0],
-      "floor_far_right": [5.0, 10.0]
-    }
-    ```
-
-  </Col>
-</Row>
+- [`Court`](/court) — Main immutable court assembly, landmarks, panel geometry, doorways, and FIP checks.
+- [`CourtDimensions`](/court-dimensions) — All 11 official court measurements and regulatory presets (`V1` / `V2` / new construction).
+- [`SideAccess`](/side-access) — Lateral doorway configuration (`0`, `1`, or `2` openings) and Y-interval solver.
+- [`SafetyZone`](/safety-zone) — Exterior Rule 16 clearance volume and doorway/post padding.
+- [`SideEnclosurePanel`](/side-enclosure-panel) & [`SideEnclosureSegment`](/side-enclosure-segment) — Full-length sideline panel decompositions for physics and 3D rendering.
+- [`CourtLandmark`](/court-landmark) — Standardized 17-point calibration landmark index (`1–13` floor, `14–17` wall tops).
+- [`CourtLocation`](/court-location) — Optional club, city, country, and GPS venue metadata.
+- [Court Enums](/court-enums) — `CoordinateSystem`, `EnclosureType`, `EnclosureVariant`, `SideWallProfile`, `CourtSurfaceColor`, `CourtOrientation`, `DoorState`, `CourtSetting`.

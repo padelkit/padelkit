@@ -1,204 +1,177 @@
 # Match
 
-The `Match` class is the top-level entity representing a padel match. It encapsulates both the metadata (teams, duration, location) and the state management logic by holding a `MatchScoreHistory` instance. {{ className: 'lead' }}
+`Match` is the top-level match aggregate uniting competing pairs (`teams`), format rules ([`MatchConfiguration`](/match-configuration)), the event-sourced point ledger ([`MatchScoreHistory`](/match-score-history)), venue metadata ([`Court`](/court)), match duration, and completion/winner detection. Import via `from padelkit import Match`. {{ className: 'lead' }}
 
-## Properties
+If you only need pure score computation without teams, dates, or court links, you can also use [`MatchScoreHistory`](/match-score-history) directly. When `teams` is omitted, `Match()` creates default 2v2 teams (`Player 1` / `Player 2` vs. `Player 3` / `Player 4`).
 
-### Core Properties
+---
+
+## Constructor {{ tag: 'constructor', label: 'Match' }}
+
+<Row>
+  <Col>
+
+    Pass either a complete `MatchConfiguration` object (`config`) or individual format keyword shortcuts (`best_of_sets`, `advantage_method`, `set_format`, `deciding_set_format`, `starting_server_team`, `set_starting_servers`).
+
+    <Properties>
+      <Property name="teams" type="dict[TeamId, Team] | None">
+        Competing doubles pairs keyed by `TeamId.A` and `TeamId.B`. Defaults to auto-generated 4-player teams when `None`.
+      </Property>
+      <Property name="best_of_sets" type="int">
+        Total maximum sets in the match (positive odd integer: `1`, `3`, `5`, ...). Defaults to `3`.
+      </Property>
+      <Property name="duration_minutes" type="int | None">
+        Optional recorded match length in minutes. Defaults to `None`.
+      </Property>
+      <Property name="date" type="datetime | None">
+        Optional match timestamp (`datetime`). Defaults to `None`.
+      </Property>
+      <Property name="court" type="Court | None">
+        Optional [`Court`](/court) where the match took place. Defaults to `None`.
+      </Property>
+      <Property name="advantage_method" type="str">
+        Deuce resolution rule (`"advantage"` or `"gold_point"`). Defaults to `"advantage"`.
+      </Property>
+      <Property name="set_format" type="str">
+        Games needed per set (`"standard"` first to 6, or `"mini"` first to 4). Defaults to `"standard"`.
+      </Property>
+      <Property name="deciding_set_format" type="str">
+        Final-set format (`"regular"`, `"tiebreak"` 7-pt, or `"super_tiebreak"` 10-pt). Defaults to `"regular"`.
+      </Property>
+      <Property name="starting_server_team" type="TeamId">
+        Team serving Game 1 of Set 1 (`TeamId.A` default or `TeamId.B`).
+      </Property>
+      <Property name="set_starting_servers" type="dict[int, dict[TeamId, Player]] | None">
+        Optional overrides specifying which player serves first for each team per 1-based set index. Defaults to `None`.
+      </Property>
+      <Property name="config" type="MatchConfiguration | None">
+        Optional pre-built [`MatchConfiguration`](/match-configuration). Overrides individual format keyword arguments if provided.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Initialization" tag="constructor" label="Match">
+
+    ```python
+    from datetime import datetime
+    from padelkit import Court, Match, Player, Team, TeamId
+
+    team_a = Team(TeamId.A, Player("A. Coello"), Player("A. Tapia"))
+    team_b = Team(TeamId.B, Player("A. Galan"), Player("F. Chingotto"))
+
+    match = Match(
+        teams={TeamId.A: team_a, TeamId.B: team_b},
+        best_of_sets=3,
+        advantage_method="gold_point",
+        court=Court.fip_standard(),
+        date=datetime(2026, 5, 10, 18, 30),
+    )
+    match.history.add_point(TeamId.A)
+    print(match.history.get_current_score())
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Attributes {{ tag: 'fields', label: 'Match State' }}
 
 <Properties>
-  <Property name="teams" type="dict[TeamId, Team]">
-    A dictionary mapping [`TeamId`](/team) to each [`Team`](/team) playing the match.
-  </Property>
-  <Property name="court" type="Court | None">
-    The [`Court`](/court) geometry instance representing the physical padel court.
-  </Property>
   <Property name="config" type="MatchConfiguration">
-    The complete [`MatchConfiguration`](/match-configuration) instance containing the rules and formats for the match.
+    Validated [`MatchConfiguration`](/match-configuration) governing all rules of this match.
   </Property>
   <Property name="history" type="MatchScoreHistory">
-    The underlying [`MatchScoreHistory`](/match-score-history) engine driving the score logic.
+    Event-sourced [`MatchScoreHistory`](/match-score-history) instance holding all recorded points and recomputing scores.
+  </Property>
+  <Property name="duration_minutes" type="int | None">
+    Optional match duration in minutes.
+  </Property>
+  <Property name="date" type="datetime | None">
+    Optional match date/time metadata.
+  </Property>
+  <Property name="court" type="Court | None">
+    Optional [`Court`](/court) geometry metadata attached to the match.
   </Property>
 </Properties>
 
-### Match Status & Logic
+---
+
+## Properties {{ tag: 'property', label: 'Completion & Config Proxies' }}
 
 <Properties>
   <Property name="winner" type="Team | None">
-    Returns the [`Team`](/team) that won the match based on the score and `best_of_sets`, or `None` if incomplete.
+    Returns the winning [`Team`](/team) once a pair reaches `(best_of_sets // 2) + 1` sets, or `None` while still in progress.
   </Property>
   <Property name="is_completed" type="bool">
-    Returns `True` if a winner has been decided.
+    `True` when `winner is not None` (`False` while live).
   </Property>
-</Properties>
-
-### Configuration Shortcuts (Proxies)
-
-The following properties are convenience proxies for the properties encapsulated within the `config` ([`MatchConfiguration`](/match-configuration)) instance. Reading or writing these properties directly forwards the action to the configuration instance.
-
-<Properties>
+  <Property name="teams" type="dict[TeamId, Team] | None">
+    Read/write proxy to `history.teams` validating unique player names across both teams.
+  </Property>
   <Property name="best_of_sets" type="int">
-    Shortcut for `config.best_of_sets`. The maximum number of sets to determine a winner (typically 3 or 5).
+    Read/write proxy to `config.best_of_sets`.
   </Property>
   <Property name="advantage_method" type="str">
-    Shortcut for `config.advantage_method`. The game-level scoring rules. Can be `"advantage"` or `"gold_point"`.
+    Read/write proxy to `config.advantage_method`.
   </Property>
   <Property name="set_format" type="str">
-    Shortcut for `config.set_format`. The format of sets played. Can be `"standard"` or `"mini"`.
+    Read/write proxy to `config.set_format`.
   </Property>
   <Property name="deciding_set_format" type="str">
-    Shortcut for `config.deciding_set_format`. The format of the final/deciding set. Can be `"regular"`, `"tiebreak"`, or `"super_tiebreak"`.
+    Read/write proxy to `config.deciding_set_format`.
   </Property>
   <Property name="starting_server_team" type="TeamId">
-    Shortcut for `config.starting_server_team`. The team configured to start serving first in the match.
+    Read/write proxy to `config.starting_server_team`.
   </Property>
   <Property name="set_starting_servers" type="dict[int, dict[TeamId, Player]]">
-    Shortcut for `config.set_starting_servers`. A dictionary mapping 1-based set indexes (e.g. `1`, `2`, `3`) to each team's chosen initial server for that set.
+    Read/write proxy to `config.set_starting_servers` (revalidates player membership on assignment).
   </Property>
 </Properties>
 
 ---
 
-## Initialization
+## `set_set_starting_server()` {{ tag: 'method', label: 'match.set_set_starting_server()' }}
 
 <Row>
   <Col>
 
-    You can create a `Match` by providing optional parameters. If no `teams` are provided, default generic teams will be instantiated.
+    Designates which [`Player`](/player) in a pair serves first for that team in a specific set (`1`-indexed), validating that `player` belongs to `teams[team_id]`. Delegates directly to `history.set_set_starting_server()`.
 
-    *Note: During initialization, PadelKit performs early validation checks. A `ValueError` will be raised if duplicate player names are found across teams, or if any configured starting servers do not belong to their respective teams.*
-
-    ### Core Arguments
-
-    <Properties>
-      <Property name="teams" type="dict[TeamId, Team]" optional>
-        A dictionary mapping a `TeamId` to a [`Team`](/team) object.
-      </Property>
-      <Property name="config" type="MatchConfiguration | None" optional default="None">
-        An optional custom [`MatchConfiguration`](/match-configuration) object to initialize the match rules. If provided, other individual scoring parameter arguments (like `best_of_sets`, `advantage_method`) are ignored.
-      </Property>
-      <Property name="court" type="Court | None" optional default="None">
-        The [`Court`](/court) geometry instance representing the court bounds and landmark points.
-      </Property>
-      <Property name="date" type="datetime | None" optional>
-        The date and time of the match.
-      </Property>
-      <Property name="duration_minutes" type="int | None" optional>
-        Total duration of the match in minutes.
-      </Property>
-    </Properties>
-
-    ### Configuration Shortcut Arguments
-
-    These arguments are automatically packaged into a `MatchConfiguration` if a custom `config` object is not provided.
-
-    <Properties>
-      <Property name="best_of_sets" type="int" optional default="3">
-        The number of sets to determine a winner (e.g., `3` means the first to win 2 sets wins).
-      </Property>
-      <Property name="advantage_method" type="str" optional default="&quot;advantage&quot;">
-        The game-level scoring system. Can be `"advantage"` (normal deuce/advantage) or `"gold_point"` (golden point at 40-40).
-      </Property>
-      <Property name="set_format" type="str" optional default="&quot;standard&quot;">
-        The length of sets. Can be `"standard"` (sets to 6 games) or `"mini"` (sets to 4 games).
-      </Property>
-      <Property name="deciding_set_format" type="str" optional default="&quot;regular&quot;">
-        How the final set is resolved if sets are tied. Can be `"regular"` (standard set), `"tiebreak"` (7-point tie-break), or `"super_tiebreak"` (10-point super tie-break).
-      </Property>
-      <Property name="starting_server_team" type="TeamId" optional default="TeamId.A">
-        The team that starts serving first in the match.
-      </Property>
-      <Property name="set_starting_servers" type="dict[int, dict[TeamId, Player]] | None" optional default="None">
-        A dictionary mapping a 1-based set index (e.g., `1`, `2`, `3`) to a nested dictionary mapping `TeamId` to the `Player` chosen to start serving for that team in that set.
-      </Property>
-    </Properties>
-
-  </Col>
-  <Col sticky>
-
-    <CodeGroup title="Instantiation" tag="class" label="Match">
-
-    ```python
-    from padelkit import Match, Court
-    from datetime import datetime
-
-    # Initialize a standard court
-    court = Court.fip_standard()
-
-    # Start a premium mini-set match with gold points
-    # and a match-deciding super tie-break
-    match = Match(
-        best_of_sets=3,
-        advantage_method="gold_point",
-        set_format="mini",
-        deciding_set_format="super_tiebreak",
-        date=datetime.now(),
-        court=court
-    )
-    ```
-
-    </CodeGroup>
-
-    ```json {{ title: 'Output structure' }}
-    Match(
-      teams={
-        TeamId.A: Team(id=TeamId.A, player1=Player(name='Player 1'), player2=Player(name='Player 2')),
-        TeamId.B: Team(id=TeamId.B, player1=Player(name='Player 3'), player2=Player(name='Player 4'))
-      },
-      config=MatchConfiguration(
-        best_of_sets=3,
-        advantage_method='gold_point',
-        set_format='mini',
-        deciding_set_format='super_tiebreak',
-        starting_server_team=<TeamId.A: 'A'>,
-        set_starting_servers={}
-      ),
-      history=<MatchScoreHistory object at 0x...>,
-      duration_minutes=None,
-      date=datetime.datetime(...),
-      court=Court(dimensions=CourtDimensions(length=20.0, width=10.0, ...))
-    )
-    ```
-
-  </Col>
-</Row>
-
----
-
-## Setting Set Starting Servers {{ tag: 'method', label: 'match.set_set_starting_server()' }}
-
-<Row>
-  <Col>
-
-    Configures the starting server player for a specific team in a specific set.
-
-    *Note: The configured `player` must belong to the specified team. If the player is not a member of that team, a `ValueError` will be raised.*
-
-    ### Required arguments
-
+    ### Arguments
     <Properties>
       <Property name="set_index" type="int">
-        The 1-based index of the set (e.g., `1` for the first set, `2` for the second set).
+        1-based set number (`1`, `2`, `3`, ...).
       </Property>
       <Property name="team_id" type="TeamId">
-        The team identifying (`TeamId.A` or `TeamId.B`).
+        Team identifier (`TeamId.A` or `TeamId.B`).
       </Property>
       <Property name="player" type="Player">
-        The [`Player`](/player) chosen to serve first for the team in that set.
+        Player within `teams[team_id]` who will serve the team's opening game in that set.
       </Property>
     </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Usage" tag="method" label="set_set_starting_server">
+    <CodeGroup title="Override Set 2 Server" tag="method" label="set_set_starting_server">
 
     ```python
-    from padelkit import Player, TeamId
+    from padelkit import Match, Player, Team, TeamId
 
-    player = Player("Juan Lebrón")
-    # Set server for Set 1
-    match.set_set_starting_server(set_index=1, team_id=TeamId.A, player=player)
+    p1, p2 = Player("Coello"), Player("Tapia")
+    p3, p4 = Player("Galan"), Player("Chingotto")
+    match = Match(
+        teams={
+            TeamId.A: Team(TeamId.A, p1, p2),
+            TeamId.B: Team(TeamId.B, p3, p4),
+        }
+    )
+    match.set_set_starting_server(2, TeamId.A, p2)
     ```
 
     </CodeGroup>
@@ -208,42 +181,28 @@ The following properties are convenience proxies for the properties encapsulated
 
 ---
 
-## Dictionary Serialization {{ tag: 'methods', label: 'to_dict / from_dict' }}
+## Serialization (`to_dict` / `from_dict`) {{ tag: 'method', label: 'dict I/O' }}
 
 <Row>
   <Col>
 
-    Serializes and reconstructs a complete `Match` (including both [`Team`](/team) instances, [`MatchConfiguration`](/match-configuration), [`Court`](/court), `date`, `duration_minutes`, and the full event-sourced `points_history` in [`MatchScoreHistory`](/match-score-history)).
-
-    <Properties>
-      <Property name="match.to_dict()" type="dict[str, Any]">
-        Serializes the match and its point-by-point progression into a JSON-compatible dictionary.
-      </Property>
-      <Property name="Match.from_dict(data)" type="Match">
-        Classmethod that reconstructs the `Match` and replays all recorded points into `match.history`.
-      </Property>
-    </Properties>
+    Losslessly serializes `teams`, `config`, `points_history`, `duration_minutes`, `date` (ISO 8601), and `court` into a plain JSON-friendly dictionary (`match.to_dict()`), and replays the complete match state via `Match.from_dict(data)`.
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Serialize Match" tag="method" label="to_dict / from_dict">
+    <CodeGroup title="Dictionary Round-Trip" tag="method" label="to_dict / from_dict">
 
     ```python
     from padelkit import Match, TeamId
 
-    match = Match(advantage_method="gold_point")
-    match.history.add_point(TeamId.A)
-    match.history.add_point(TeamId.B)
-
-    restored = Match.from_dict(match.to_dict())
-    assert restored.history.get_current_score() == match.history.get_current_score()
+    m = Match(advantage_method="gold_point")
+    m.history.add_point(TeamId.A)
+    restored = Match.from_dict(m.to_dict())
+    assert str(restored.history.get_current_score()) == str(m.history.get_current_score())
     ```
 
     </CodeGroup>
 
   </Col>
 </Row>
-
-
-

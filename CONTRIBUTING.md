@@ -87,7 +87,7 @@ You do **not** need access to the Next.js frontend repository to add pages, edit
      .venv/bin/python scripts/generate_schematics.py
      ```
 5. **Validate your documentation changes:**
-   - Run `.venv/bin/pytest tests/test_docs_schematics.py tests/test_version_and_docs.py` — our test suite automatically verifies that `docs.config.json` has no broken routes, missing `.mdx` files, invalid icons, or forbidden `export const metadata` blocks!
+   - Run `.venv/bin/pytest` — our test suite (`tests/test_docs_schematics.py`, `tests/test_version_and_docs.py`, and `tests/test_docs_api_sync.py`) verifies 100% `padelkit.__all__` coverage, runtime signature parity against Python classes/enums, internal `/slug#anchor` links, valid JSX tags, custom icons, schematics, and Diátaxis structure!
 
 👉 For full details on MDX components (`<Row>`, `<Col>`, `<Properties>`, `<CodeGroup>`, `<Schematic>`) and custom SVG icons, read the **[Documentation Guide (`docs/README.md`)](./docs/README.md)**.
 

@@ -26,11 +26,13 @@ class CameraExtrinsics:
     """
 
     position: tuple[float, float, float]
+    """3D camera optical center `(x, y, z)` in world court meters."""
     rotation_matrix: tuple[
         tuple[float, float, float],
         tuple[float, float, float],
         tuple[float, float, float],
     ]
+    """Orthonormal `3x3` SO(3) world-to-camera rotation matrix `[right, down, fwd]`."""
 
     def __post_init__(self) -> None:
         if len(self.position) != 3:
@@ -56,11 +58,11 @@ class CameraExtrinsics:
         roll_deg: float = 0.0,
         world_up: tuple[float, float, float] | Sequence[float] = (0.0, 0.0, 1.0),
     ) -> "CameraExtrinsics":
-        """Creates :class:`CameraExtrinsics` oriented towards a 3D target point.
+        """Creates `CameraExtrinsics` oriented towards a 3D target point.
 
         Handles zenith/nadir views gracefully: if the viewing direction is
-        collinear with ``world_up``, ``(0.0, 1.0, 0.0)`` is automatically used
-        as the image-up reference so that the court's ``+Y`` axis points up
+        collinear with `world_up`, `(0.0, 1.0, 0.0)` is automatically used
+        as the image-up reference so that the court's `+Y` axis points up
         in overhead views.
         """
         pos = np.asarray(position, dtype=np.float64)
@@ -115,15 +117,15 @@ class CameraExtrinsics:
         pitch_deg: float = 0.0,
         roll_deg: float = 0.0,
     ) -> "CameraExtrinsics":
-        """Creates :class:`CameraExtrinsics` from intuitive pan/tilt/roll angles.
+        """Creates `CameraExtrinsics` from intuitive pan/tilt/roll angles.
 
         Angle convention:
-        - ``yaw_deg = 0`` points along ``+Y`` (from NEAR to FAR side).
-          Positive ``yaw_deg`` pans clockwise when viewed from above
-          (``yaw_deg = 90`` points along ``+X``, ``yaw_deg = 180`` points along ``-Y``).
-        - ``pitch_deg = 0`` is horizontal. Negative ``pitch_deg`` tilts the
+        - `yaw_deg = 0` points along `+Y` (from NEAR to FAR side).
+          Positive `yaw_deg` pans clockwise when viewed from above
+          (`yaw_deg = 90` points along `+X`, `yaw_deg = 180` points along `-Y`).
+        - `pitch_deg = 0` is horizontal. Negative `pitch_deg` tilts the
           camera downwards towards the court floor.
-        - ``roll_deg`` rotates the camera around its optical axis.
+        - `roll_deg` rotates the camera around its optical axis.
         """
         yaw = math.radians(yaw_deg)
         pitch = math.radians(pitch_deg)
@@ -160,9 +162,9 @@ class CameraExtrinsics:
         r_matrix: np.ndarray | Sequence[Sequence[float]],
         t_vector: np.ndarray | Sequence[float],
     ) -> "CameraExtrinsics":
-        """Creates :class:`CameraExtrinsics` from OpenCV ``R`` (3x3) and ``t`` (3,).
+        """Creates `CameraExtrinsics` from OpenCV `R` (3x3) and `t` (3,).
 
-        Computes the world camera center as ``position = -R.T @ t``.
+        Computes the world camera center as `position = -R.T @ t`.
         """
         rot = np.asarray(r_matrix, dtype=np.float64)
         t_vec = np.asarray(t_vector, dtype=np.float64).reshape(3)

@@ -10,20 +10,35 @@ class MatchScore:
     """An immutable snapshot of the match score at a given point in time."""
 
     points_A: int | str  # noqa: N815
+    """Current game points for Team A (`0`, `15`, `30`, `40`, `"AD"`, or tiebreak)."""
     points_B: int | str  # noqa: N815
+    """Current game points for Team B (`0`, `15`, `30`, `40`, `"AD"`, or tiebreak)."""
     games_A: int  # noqa: N815
+    """Games won by Team A in the active set."""
     games_B: int  # noqa: N815
+    """Games won by Team B in the active set."""
     sets_A: int  # noqa: N815
+    """Completed sets won by Team A."""
     sets_B: int  # noqa: N815
+    """Completed sets won by Team B."""
     completed_sets: list[tuple[int, int]]
+    """Chronological `(games_A, games_B)` final scores of finished sets."""
     server: ServingState | None = None
+    """Active `ServingState` (serving team, player, receiver, court side)."""
     teams: dict[TeamId, Team] | None = None
+    """Optional `TeamId -> Team` mapping used for rich scoreboard labels."""
     in_tiebreak: bool = False
+    """`True` when a standard 7-point tiebreak is currently in progress."""
     in_super_tiebreak: bool = False
+    """`True` when a 10-point match-deciding super-tiebreak is active."""
     is_gold_point: bool = False
+    """`True` when at 40-40 under Golden Point (`advantage_method="gold_point"`)."""
     side_changes: int = 0
+    """Cumulative court-end switches triggered under FIP Rule 5 (odd games / 6 TB)."""
     team_a_side: Literal["near", "far"] = "near"
+    """Physical court half currently occupied by Team A (`"near"` or `"far"`)."""
     is_side_change: bool = False
+    """`True` when the immediately preceding point triggered a side change."""
 
     def __str__(self) -> str:
         # Determine team labels
@@ -86,6 +101,7 @@ class MatchScoreHistory:
         set_starting_servers: dict[int, dict[TeamId, Player]] | None = None,
         config: MatchConfiguration | None = None,
     ):
+        """Initializes an event-sourced score history with match rules and teams."""
         self._points_history: list[TeamId] = []
         self._teams = None
 
@@ -117,6 +133,7 @@ class MatchScoreHistory:
 
     @property
     def teams(self) -> dict[TeamId, Team] | None:
+        """Competing pairs keyed by `TeamId.A` and `TeamId.B`."""
         return self._teams
 
     @teams.setter
@@ -140,6 +157,7 @@ class MatchScoreHistory:
 
     @property
     def best_of_sets(self) -> int:
+        """Maximum number of sets configured for this match."""
         return self.config.best_of_sets
 
     @best_of_sets.setter
@@ -148,6 +166,7 @@ class MatchScoreHistory:
 
     @property
     def advantage_method(self) -> str:
+        """Deuce scoring rule (`"advantage"` or `"gold_point"`)."""
         return self.config.advantage_method
 
     @advantage_method.setter
@@ -156,6 +175,7 @@ class MatchScoreHistory:
 
     @property
     def set_format(self) -> str:
+        """Games-to-win rule per set (`"standard"` or `"mini"`)."""
         return self.config.set_format
 
     @set_format.setter
@@ -164,6 +184,7 @@ class MatchScoreHistory:
 
     @property
     def deciding_set_format(self) -> str:
+        """Final-set format (`"regular"`, `"tiebreak"`, or `"super_tiebreak"`)."""
         return self.config.deciding_set_format
 
     @deciding_set_format.setter
@@ -172,6 +193,7 @@ class MatchScoreHistory:
 
     @property
     def starting_server_team(self) -> TeamId:
+        """Team serving the opening game of Set 1 (`TeamId.A` or `TeamId.B`)."""
         return self.config.starting_server_team
 
     @starting_server_team.setter
@@ -180,6 +202,7 @@ class MatchScoreHistory:
 
     @property
     def set_starting_servers(self) -> dict[int, dict[TeamId, Player]]:
+        """Overrides mapping 1-based set index -> `{TeamId: starting Player}`."""
         return self.config.set_starting_servers
 
     @set_starting_servers.setter

@@ -1,39 +1,34 @@
 # CourtLandmark
 
-`CourtLandmark` is a string enum that enumerates the 17 standard positions on a padel court used for geometry calculations and camera calibration. {{ className: 'lead' }}
+`CourtLandmark` is a string enum defining the **17 standardized reference points** on a padel court used across geometry queries, 3D visualization, and automatic camera calibration. Import via `from padelkit import CourtLandmark`. {{ className: 'lead' }}
 
-The 17 points mirror the calibration convention of the padelamix computer-vision pipeline: points **1–13** lie on the **court floor** (Z = 0), and points **14–17** are at the **top of the back walls** (Z = `back_wall_height`, typically 4.0 m).
+Points **1–13** lie flat on the playing floor (`Z = 0.0 m`) along the boundary lines, service lines, and net line. Points **14–17** sit vertically above the four corners at the top of the back walls (`Z = dimensions.back_wall_height`, typically `4.0 m`), adding non-planar vertical elevation constraints essential for accurate 6-DoF [`Camera.from_landmarks()`](/camera#from-landmarks) calibration.
 
 ---
 
-## Values
+## Enum Values (17 Standard Points) {{ tag: 'enum', label: 'CourtLandmark' }}
 
-```python
-from padelkit import CourtLandmark
+**Perspective rule:** `"near"` has negative `Y` (`Y = -10.0`), `"far"` has positive `Y` (`Y = +10.0`), and `"left"` / `"right"` follow the view of a player on the NEAR side facing the net (`-X` is left, `+X` is right).
 
-# All members
-list(CourtLandmark)
-```
-
-| # | Member | Value string |
-|---|---|---|
-| 1 | `CourtLandmark.FLOOR_NEAR_LEFT` | `"floor_near_left"` |
-| 2 | `CourtLandmark.FLOOR_NEAR_RIGHT` | `"floor_near_right"` |
-| 3 | `CourtLandmark.SERVICE_NEAR_LEFT` | `"service_near_left"` |
-| 4 | `CourtLandmark.SERVICE_NEAR_CENTER` | `"service_near_center"` |
-| 5 | `CourtLandmark.SERVICE_NEAR_RIGHT` | `"service_near_right"` |
-| 6 | `CourtLandmark.NET_LEFT` | `"net_left"` |
-| 7 | `CourtLandmark.CENTER` | `"center"` |
-| 8 | `CourtLandmark.NET_RIGHT` | `"net_right"` |
-| 9 | `CourtLandmark.SERVICE_FAR_LEFT` | `"service_far_left"` |
-| 10 | `CourtLandmark.SERVICE_FAR_CENTER` | `"service_far_center"` |
-| 11 | `CourtLandmark.SERVICE_FAR_RIGHT` | `"service_far_right"` |
-| 12 | `CourtLandmark.FLOOR_FAR_LEFT` | `"floor_far_left"` |
-| 13 | `CourtLandmark.FLOOR_FAR_RIGHT` | `"floor_far_right"` |
-| 14 | `CourtLandmark.WALL_TOP_NEAR_LEFT` | `"wall_top_near_left"` |
-| 15 | `CourtLandmark.WALL_TOP_NEAR_RIGHT` | `"wall_top_near_right"` |
-| 16 | `CourtLandmark.WALL_TOP_FAR_LEFT` | `"wall_top_far_left"` |
-| 17 | `CourtLandmark.WALL_TOP_FAR_RIGHT` | `"wall_top_far_right"` |
+| # | Member | Value String | Plane (`Z`) | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `1` | `CourtLandmark.FLOOR_NEAR_LEFT` | `"floor_near_left"` | `0.0 m` | Near back wall, left corner (`(-5, -10, 0)` centered; origin in `CORNER_BASED`) |
+| `2` | `CourtLandmark.FLOOR_NEAR_RIGHT` | `"floor_near_right"` | `0.0 m` | Near back wall, right corner |
+| `3` | `CourtLandmark.SERVICE_NEAR_LEFT` | `"service_near_left"` | `0.0 m` | Near service line intersection with left sideline |
+| `4` | `CourtLandmark.SERVICE_NEAR_CENTER` | `"service_near_center"` | `0.0 m` | Near T-junction (service line & center service line) |
+| `5` | `CourtLandmark.SERVICE_NEAR_RIGHT` | `"service_near_right"` | `0.0 m` | Near service line intersection with right sideline |
+| `6` | `CourtLandmark.NET_LEFT` | `"net_left"` | `0.0 m` | Left net post floor anchor |
+| `7` | `CourtLandmark.CENTER` | `"center"` | `0.0 m` | Exact center of the court (`(0, 0, 0)` in `CENTERED`) |
+| `8` | `CourtLandmark.NET_RIGHT` | `"net_right"` | `0.0 m` | Right net post floor anchor |
+| `9` | `CourtLandmark.SERVICE_FAR_LEFT` | `"service_far_left"` | `0.0 m` | Far service line intersection with left sideline |
+| `10` | `CourtLandmark.SERVICE_FAR_CENTER` | `"service_far_center"` | `0.0 m` | Far T-junction (service line & center service line) |
+| `11` | `CourtLandmark.SERVICE_FAR_RIGHT` | `"service_far_right"` | `0.0 m` | Far service line intersection with right sideline |
+| `12` | `CourtLandmark.FLOOR_FAR_LEFT` | `"floor_far_left"` | `0.0 m` | Far back wall, left corner |
+| `13` | `CourtLandmark.FLOOR_FAR_RIGHT` | `"floor_far_right"` | `0.0 m` | Far back wall, right corner |
+| `14` | `CourtLandmark.WALL_TOP_NEAR_LEFT` | `"wall_top_near_left"` | `4.0 m` | Top of near back wall, left corner |
+| `15` | `CourtLandmark.WALL_TOP_NEAR_RIGHT` | `"wall_top_near_right"` | `4.0 m` | Top of near back wall, right corner |
+| `16` | `CourtLandmark.WALL_TOP_FAR_LEFT` | `"wall_top_far_left"` | `4.0 m` | Top of far back wall, left corner |
+| `17` | `CourtLandmark.WALL_TOP_FAR_RIGHT` | `"wall_top_far_right"` | `4.0 m` | Top of far back wall, right corner |
 
 <Schematic
   name="court-landmarks-3d"
@@ -43,45 +38,35 @@ list(CourtLandmark)
 
 ---
 
-## Usage
+## Usage {{ tag: 'method', label: 'Court Landmarks' }}
 
 <Row>
   <Col>
 
-    `CourtLandmark` members can be used directly with [`Court`](/court) methods, either as enum members or their string values.
+    Because `CourtLandmark` inherits from `(str, Enum)`, you can pass either enum members (e.g. `CourtLandmark.NET_LEFT`) or raw string values (`"net_left"`) directly to [`Court`](/court) and [`Camera`](/camera) methods. Note that [`court.point()`](/court#point) accepts only the 13 floor landmarks (`Z = 0`), whereas [`court.landmarks_3d()`](/court#landmarks-3d) returns all 17 landmarks including elevated wall corners.
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Usage" tag="enum" label="CourtLandmark">
+    <CodeGroup title="Query Landmarks" tag="enum" label="CourtLandmark">
 
     ```python
-    from padelkit import Court, CourtLandmark, CoordinateSystem
+    from padelkit import CoordinateSystem, Court, CourtLandmark
 
     court = Court.fip_standard()
 
-    # Using an enum member
-    pos = court.point(CourtLandmark.NET_LEFT)
+    # Enum member or raw string value
+    pos_a = court.point(CourtLandmark.NET_LEFT)
+    pos_b = court.point("net_left")
+    assert pos_a == pos_b  # (-5.0, 0.0)
 
-    # Using the string value
-    pos = court.point("net_left")
-
-    # Retrieve all 3D points in corner-based system
-    points = court.landmarks_3d(
-        coordinate_system=CoordinateSystem.CORNER_BASED
-    )
-    wall_top = points[CourtLandmark.WALL_TOP_NEAR_LEFT.value]
+    # All 17 3D landmarks in CORNER_BASED coordinates
+    pts = court.landmarks_3d(coordinate_system=CoordinateSystem.CORNER_BASED)
+    print(pts[CourtLandmark.WALL_TOP_NEAR_LEFT.value])
+    # (0.0, 0.0, 4.0)
     ```
 
     </CodeGroup>
-
-    ```json {{ title: 'Output' }}
-    # court.point(CourtLandmark.NET_LEFT)
-    (-5.0, 0.0)
-
-    # wall_top (CORNER_BASED)
-    (0.0, 0.0, 4.0)
-    ```
 
   </Col>
 </Row>

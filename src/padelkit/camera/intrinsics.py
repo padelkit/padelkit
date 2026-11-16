@@ -9,25 +9,32 @@ import numpy as np
 class CameraIntrinsics:
     """Intrinsic pinhole camera parameters and image sensor resolution.
 
-    Represents the upper-triangular camera calibration matrix ``K``:
+    Represents the upper-triangular camera calibration matrix `K`:
 
-    .. code-block:: text
-
-        [[fx, skew, cx],
-         [ 0,   fy, cy],
-         [ 0,    0,  1]]
+    ```text
+    [[fx, skew, cx],
+     [ 0,   fy, cy],
+     [ 0,    0,  1]]
+    ```
 
     All pixel measurements (`width_px`, `height_px`, `fx`, `fy`, `cx`, `cy`)
     are expressed in pixels, with `(0, 0)` at the top-left corner of the image.
     """
 
     width_px: int
+    """Horizontal sensor resolution in pixels (must be `> 0`)."""
     height_px: int
+    """Vertical sensor resolution in pixels (must be `> 0`)."""
     fx: float
+    """Horizontal focal length in pixel units (must be `> 0`)."""
     fy: float
+    """Vertical focal length in pixel units (must be `> 0`)."""
     cx: float
+    """Horizontal optical center (principal point) in pixels."""
     cy: float
+    """Vertical optical center (principal point) in pixels."""
     skew: float = 0.0
+    """Axis skew coefficient in pixels (typically `0.0` for square pixels)."""
 
     def __post_init__(self) -> None:
         if self.width_px <= 0 or self.height_px <= 0:
@@ -53,11 +60,11 @@ class CameraIntrinsics:
         cy: float | None = None,
         skew: float = 0.0,
     ) -> "CameraIntrinsics":
-        """Creates a :class:`CameraIntrinsics` instance from horizontal FOV.
+        """Creates a `CameraIntrinsics` instance from horizontal FOV.
 
-        Assumes square pixels (``fx == fy``). If ``cx`` or ``cy`` are omitted,
+        Assumes square pixels (`fx == fy`). If `cx` or `cy` are omitted,
         the principal point defaults to the exact optical center of the image
-        ``(width_px / 2, height_px / 2)``.
+        `(width_px / 2, height_px / 2)`.
         """
         if not (1.0 <= horizontal_fov_deg < 179.0):
             raise ValueError(
@@ -89,7 +96,7 @@ class CameraIntrinsics:
         cx: float | None = None,
         cy: float | None = None,
     ) -> "CameraIntrinsics":
-        """Creates a :class:`CameraIntrinsics` instance from physical lens parameters.
+        """Creates a `CameraIntrinsics` instance from physical lens parameters.
 
         Args:
             width_px: Horizontal image resolution in pixels.
@@ -97,10 +104,10 @@ class CameraIntrinsics:
             focal_length_mm: Physical focal length of the lens in millimeters.
             sensor_width_mm: Physical sensor width in millimeters (defaults to
                 36.0 mm full-frame).
-            sensor_height_mm: Physical sensor height in millimeters. If ``None``,
+            sensor_height_mm: Physical sensor height in millimeters. If `None`,
                 it is derived proportionally from the image aspect ratio.
-            cx: Horizontal principal point in pixels. Defaults to ``width_px / 2``.
-            cy: Vertical principal point in pixels. Defaults to ``height_px / 2``.
+            cx: Horizontal principal point in pixels. Defaults to `width_px / 2`.
+            cy: Vertical principal point in pixels. Defaults to `height_px / 2`.
         """
         if focal_length_mm <= 0.0 or sensor_width_mm <= 0.0:
             raise ValueError(

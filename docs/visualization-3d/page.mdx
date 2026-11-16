@@ -1,58 +1,56 @@
 # 3D Visualization & Replay Studio
 
-The `padelkit.viz` module provides an interactive Three.js 3D court visualizer, multi-camera inspector, and synthetic pass viewer (`RGB`, `Semantic Segmentation`, `Depth`, and `17 Court Landmarks`) powered by a unified temporal state contract (`MatchTimeline`). {{ className: 'lead' }}
+Explore how `padelkit.viz` turns court geometry, cameras, physics trajectories, and skeletal player tracking into an interactive Three.js 3D court studio—usable offline in standalone HTML, inside Jupyter notebooks, or streamed live over HTTP. {{ className: 'lead' }}
 
-## Operating Modes
+<Note>
+  This guide explains **visualization modes and scene architecture**. For exact constructors and method signatures, see [`PadelVisualizer`](/padel-visualizer), [`MatchTimeline`](/match-timeline), [`FrameState`](/frame-state), [`PlayerPose`](/player-pose), and [Visualization Constants](/viz-constants).
+</Note>
 
-<Properties>
-  <Property name="1. CSV / Timeline Replay Mode" type="MatchTimeline.from_csv()">
-    Load any saved match or rally CSV file and scrub through time at `0.25x`–`2.0x` speed, switch between [`Camera`](/camera) presets, or drag-and-drop a `.csv` file directly into the browser window.
-  </Property>
-  <Property name="2. Real-Time Live Streaming Mode" type="visualizer.serve()">
-    Launch a local HTTP + Server-Sent Events (SSE) server and push `FrameState` objects in real time from a Python simulation loop or live tracking pipeline using `visualizer.push_frame(frame)`.
-  </Property>
-  <Property name="3. Standalone HTML & Jupyter Mode" type="visualizer.export_html()">
-    Export a self-contained `.html` file that runs in any browser with zero server dependencies, or render the 3D studio directly inside a Jupyter / Google Colab notebook cell.
-  </Property>
-</Properties>
+## Three Operating Modes {{ tag: 'guide' }}
+
+| Mode | Primary Entrypoint | When to Use |
+| :--- | :--- | :--- |
+| **1. Parquet / CSV / Timeline Replay** | [`PadelVisualizer.from_parquet()`](/padel-visualizer#from-parquet) / [`from_csv()`](/padel-visualizer#from-csv) | Inspect recorded matches or synthetic rallies interactively (`0.25x–2.0x` playback, telemetry HUD, bounce markers, multi-camera switching, or browser drag-and-drop). |
+| **2. Real-Time Live Streaming** | [`viz.serve(background=True)`](/padel-visualizer#serve) + [`viz.push_frame()`](/padel-visualizer#push-frame-and-stop-server) | Stream live `FrameState` frames from a Python simulation loop or camera tracking pipeline over Server-Sent Events (SSE) with zero page reloads. |
+| **3. Offline HTML & Jupyter Notebooks** | [`viz.export_html()`](/padel-visualizer#export-html-to-html-and-repr-html) / `_repr_html_()` | Share a single zero-dependency `.html` report (with Three.js embedded when `offline=True`) or inspect a court inline inside Jupyter / Colab. |
+
+In addition to standard **RGB** rendering, the Three.js studio exposes built-in computer-vision inspection passes (**Semantic Segmentation**, **Depth Map**, and **17 Court Landmarks** overlay) so you can visually verify camera calibration and synthetic labels.
 
 ---
 
-## Quickstart: Generate a Rally CSV & Launch the 3D Studio
+## How Timeline Data Feeds the 3D Scene {{ tag: 'guide' }}
+
+The studio separates **static venue metadata** from **dynamic per-frame motion**:
+
+- **Static layer (`Court`, `BallProperties`, `Camera` presets):** Draws the court floor color, enclosure glass/walls/wire mesh, open or closed side doors ([`SideAccess`](/side-access)), safety clearances ([`SafetyZone`](/safety-zone)), ceiling bounds, ball size/color, and camera viewpoints.
+- **Dynamic layer ([`MatchTimeline`](/match-timeline) of [`FrameState`](/frame-state) snapshots):** Moves the 3D ball (rendering spin seam rotation from `ball_spin` and speed from `ball_velocity`), updates scoreboard HUD overlays (`sets_a..points_b`, `server_team`, `is_gold_point`), and animates the 4 players (`"P1"`–`"P4"` via [`PlayerPose`](/player-pose) either from Mixamo `.glb` stroke clips or baked 17-joint H36M 3D skeletons).
 
 <Row>
   <Col>
 
-    `MatchTimeline.demo_rally()` generates a complete 60 FPS 3D rally with realistic ball parabolas, floor and glass-wall rebounds, and 4 articulated players moving and swinging rackets. You can export it to CSV and inspect it in 3D immediately.
+    ### Generating a Demo Rally & Exporting Offline HTML
+
+    Call [`MatchTimeline.demo_rally()`](/match-timeline#demo-rally) to synthesize a 60 FPS rally driven by [`BallPhysicsEngine`](/ball-physics-engine). Passing `bake_skeleton=True` populates 17-joint H36M poses inside each frame, or you can attach a [`padelkit-animator`](/stroke-library) `.glb` clip library via `animation_library_dir`.
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="CSV Replay & HTML Export" tag="guide" label="PadelVisualizer">
+    <CodeGroup title="Replay & Offline HTML Export" tag="guide" label="PadelVisualizer">
 
     ```python
     from padelkit import Court, MatchTimeline, PadelVisualizer
 
-    court = Court(
-        dimensions=Court.fip_standard().dimensions,
-        turf_color="blue",
-    )
+    court = Court(turf_color="blue")
 
-    # 1. Generate a 3D rally timeline and save it to CSV
-    timeline = MatchTimeline.demo_rally(court=court, fps=60.0)
-    timeline.to_csv("demo_rally.csv")
+    # 1. Generate a 60 FPS rally with baked 17-joint 3D skeletons
+    timeline = MatchTimeline.demo_rally(court=court, fps=60.0, bake_skeleton=True)
+    timeline.to_parquet("demo_rally.parquet")
 
-    # 2. Load the CSV into the Three.js 3D Visualizer
-    #    (optionally pass animation_library_dir for Mixamo .glb strokes)
-    viz = PadelVisualizer.from_csv(
-        "demo_rally.csv",
-        court=court,
-        animation_library_dir="../padelkit-animator/data/animations",
-    )
+    # 2. Load into the Three.js studio
+    viz = PadelVisualizer.from_parquet("demo_rally.parquet")
 
-    # 3. Export standalone HTML or launch interactive server
-    viz.export_html("padel_studio.html")
-    # viz.serve(port=8765, open_browser=True)
+    # 3. Export a standalone offline HTML viewer (embeds Three.js)
+    viz.export_html("padel_studio.html", offline=True)
     ```
 
     </CodeGroup>
@@ -62,71 +60,58 @@ The `padelkit.viz` module provides an interactive Three.js 3D court visualizer, 
 
 ---
 
-## Real-Time Streaming Mode {{ tag: 'method', label: 'visualizer.push_frame()' }}
+## Streaming Live Frames Over SSE {{ tag: 'guide' }}
 
 <Row>
   <Col>
 
-    When running `viz.serve(background=True)`, your Python code can stream live `FrameState` updates to all connected browser tabs in real time.
-
-    ### FrameState Properties
-
-    <Properties>
-      <Property name="timestamp" type="float">
-        Elapsed time in seconds.
-      </Property>
-      <Property name="ball_position" type="tuple[float, float, float]">
-        3D ball coordinates `(X, Y, Z)` in meters.
-      </Property>
-      <Property name="ball_velocity" type="tuple[float, float, float]" optional default="(0.0, 0.0, 0.0)">
-        3D linear ball velocity `(vx, vy, vz)` in `m/s`. Exposes `.ball_speed_kmh`.
-      </Property>
-      <Property name="ball_spin" type="tuple[float, float, float]" optional default="(0.0, 0.0, 0.0)">
-        3D angular velocity `(wx, wy, wz)` in `rad/s`. Exposes `.ball_spin_rpm` and drives 3D ball seam rotation in the studio.
-      </Property>
-      <Property name="players" type="dict[str, PlayerPose]">
-        Dictionary mapping `"P1"`..`"P4"` to their `PlayerPose(player_id, x, y, z, yaw_deg, animation, team, swing_phase)`.
-      </Property>
-      <Property name="score" type="str">
-        Formatted match score string displayed on the 3D HUD.
-      </Property>
-      <Property name="event" type="str | None">
-        Optional event tag (`"serve"`, `"bounce_floor"`, `"bounce_glass"`, `"shot_smash"`).
-      </Property>
-    </Properties>
+    Start a background server with `viz.serve(background=True)` and push [`FrameState`](/frame-state) objects as fast as your pipeline produces them. Every browser connected to `http://127.0.0.1:8765/` updates smoothly via Server-Sent Events (`/events`). When finished, call [`viz.stop_server()`](/padel-visualizer#push-frame-and-stop-server) to release the port cleanly.
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Live Streaming" tag="method" label="push_frame">
+    <CodeGroup title="Live SSE Streaming" tag="guide" label="push_frame">
 
     ```python
     import time
-    from padelkit import PadelVisualizer, FrameState, PlayerPose
+    from padelkit import FrameState, PadelVisualizer, PlayerPose
 
     viz = PadelVisualizer()
-    viz.serve(port=8765, open_browser=True, background=True)
+    viz.serve(port=8765, open_browser=False, background=True)
 
-    for step in range(120):
-        t = step / 60.0
-        viz.push_frame(
-            FrameState(
-                timestamp=t,
-                ball_position=(0.0, -5.0 + 5.0 * t, 1.2),
-                players={
-                    "P1": PlayerPose("P1", x=1.8, y=-6.5, yaw_deg=0.0, team="A"),
-                    "P2": PlayerPose("P2", x=-2.0, y=-3.0, yaw_deg=0.0, team="A"),
-                    "P3": PlayerPose("P3", x=-2.2, y=7.0, yaw_deg=180.0, team="B"),
-                    "P4": PlayerPose("P4", x=2.2, y=7.0, yaw_deg=180.0, team="B"),
-                },
-                score="0-0 | 15-0 *",
-                event="live_tracking",
+    try:
+        for step in range(120):
+            t = step / 60.0
+            viz.push_frame(
+                FrameState(
+                    timestamp=t,
+                    ball_position=(0.0, -5.0 + 5.0 * t, 1.2),
+                    players={
+                        "P1": PlayerPose("P1", x=1.8, y=-6.5, yaw_deg=0.0, team="A"),
+                        "P2": PlayerPose("P2", x=-2.0, y=-3.0, yaw_deg=0.0, team="A"),
+                        "P3": PlayerPose("P3", x=-2.2, y=7.0, yaw_deg=180.0, team="B"),
+                        "P4": PlayerPose("P4", x=2.2, y=7.0, yaw_deg=180.0, team="B"),
+                    },
+                    score="0-0 | 0-0 | 15 *-0",
+                    event="live_tracking",
+                )
             )
-        )
-        time.sleep(1 / 60)
+            time.sleep(1 / 60)
+    finally:
+        viz.stop_server()
     ```
 
     </CodeGroup>
 
   </Col>
 </Row>
+
+---
+
+## API Reference
+
+- [`PadelVisualizer`](/padel-visualizer) — Interactive Three.js studio (Parquet/CSV loading, `.glb` animation libraries, standalone HTML, Jupyter `_repr_html_()`, and SSE server).
+- [`MatchTimeline`](/match-timeline) — Temporal container holding frames, domain metadata, `bake_skeletal_poses()`, `demo_rally()`, and Parquet/CSV/DataFrame I/O.
+- [`FrameState`](/frame-state) — Single-timestamp ball, players, event tag, and scoreboard snapshot.
+- [`PlayerPose`](/player-pose) — Root position, heading `yaw_deg`, stroke action tag, `swing_phase`, and optional 17 H36M 3D joints.
+- [Visualization Constants](/viz-constants) — `H36M_JOINT_NAMES` 17-joint anatomical ordering (`0: Pelvis` through `16: RightWrist`).

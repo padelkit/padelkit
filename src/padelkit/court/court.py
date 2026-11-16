@@ -24,9 +24,13 @@ class SideEnclosureSegment:
     """
 
     y_start_from_back: float
+    """Start distance from the nearest back wall in meters."""
     y_end_from_back: float
+    """End distance from the nearest back wall in meters."""
     solid_height: float
+    """Height of the solid glass or masonry wall section in meters."""
     total_height: float
+    """Total enclosure height including overhead metallic mesh in meters."""
 
     @property
     def length(self) -> float:
@@ -53,10 +57,15 @@ class SideEnclosurePanel:
     """
 
     y_start: float
+    """Start Y coordinate along the sideline in CENTERED meters."""
     y_end: float
+    """End Y coordinate along the sideline in CENTERED meters."""
     z_start: float
+    """Bottom elevation above the court floor in meters."""
     z_end: float
+    """Top elevation above the court floor in meters."""
     is_solid: bool
+    """`True` for glass/wall panels; `False` for metallic mesh or closed gates."""
 
 
 @dataclass(frozen=True)
@@ -75,9 +84,13 @@ class SideAccess:
     """
 
     count: int = 1
+    """Number of doorway openings on this sideline (`0`, `1`, or `2`)."""
     width: float = 2.0
+    """Clear doorway width in meters (`1.05-2.00` single, `0.72-1.00` dual)."""
     height: float = 2.2
+    """Clear doorway height from floor in meters (FIP: `2.00-2.20` m)."""
     center_pillar_width: float = 0.16
+    """Width of the central post between dual doors at `Y = 0` in meters."""
 
     def __post_init__(self) -> None:
         if self.count not in (0, 1, 2):
@@ -165,7 +178,7 @@ class SideAccess:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "SideAccess":
-        """Reconstructs a :class:`SideAccess` from a dictionary."""
+        """Reconstructs a `SideAccess` from a dictionary."""
         return cls(
             count=int(data.get("count", 1)),
             width=float(data.get("width", 2.0)),
@@ -186,9 +199,13 @@ class SafetyZone:
     """
 
     width: float = 2.0
+    """Exterior clearance width outside the sideline in meters (FIP `>= 2.0`)."""
     half_length: float = 4.0
+    """Clearance half-length along Y on each side of the net in meters (`>= 4.0`)."""
     height: float = 3.0
+    """Vertical clearance height over the exterior safety zone in meters (`>= 3.0`)."""
     doorway_padding_thickness: float = 0.02
+    """Protective padding thickness on doorway frames/posts in meters (`>= 0.02`)."""
 
     def __post_init__(self) -> None:
         if (
@@ -234,7 +251,7 @@ class SafetyZone:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "SafetyZone":
-        """Reconstructs a :class:`SafetyZone` from a dictionary."""
+        """Reconstructs a `SafetyZone` from a dictionary."""
         return cls(
             width=float(data.get("width", 2.0)),
             half_length=float(data.get("half_length", 4.0)),
@@ -260,28 +277,43 @@ class Court:
     """
 
     dimensions: CourtDimensions = field(default_factory=CourtDimensions.fip_standard)
+    """Geometric dimensions of the court in meters (`CourtDimensions`)."""
 
     # Physical characteristics
     enclosure_type: EnclosureType | None = None
+    """Enclosure material (`GLASS` or `WALL`). Defaults to `GLASS` when unset."""
     enclosure_variant: EnclosureVariant | None = None
+    """Regulatory enclosure height profile (`V1` stepped `3m` or `V2` uniform `4m`)."""
     side_wall_profile: SideWallProfile | None = None
+    """Corner solid side-wall shape (`STEPPED` or `UNIFORM`)."""
     orientation: CourtOrientation | None = None
+    """Cardinal compass orientation of the court length axis."""
     turf_color: CourtSurfaceColor | str | None = None
+    """Playing surface color (`CourtSurfaceColor` or custom hex/color string)."""
     setting: CourtSetting | None = None
+    """Venue environment (`INDOOR`, `OUTDOOR`, or `SEMI_COVERED`)."""
 
     # Access doors (one or two openings per lateral side)
     # "left" and "right" are from the perspective of a player
     # on the NEAR side facing the net.
     door_left: DoorState | None = None
+    """Open/closed state of the left (`X = -width/2`) access doorway."""
     door_right: DoorState | None = None
+    """Open/closed state of the right (`X = +width/2`) access doorway."""
     access_left: SideAccess | None = None
+    """Geometric doorway specification for the left (`X = -width/2`) sideline."""
     access_right: SideAccess | None = None
+    """Geometric doorway specification for the right (`X = +width/2`) sideline."""
     safety_zone_left: SafetyZone | None = None
+    """Exterior Rule 16 safety clearance outside the left (`X < -width/2`) sideline."""
     safety_zone_right: SafetyZone | None = None
+    """Exterior Rule 16 safety clearance outside the right (`X > +width/2`) sideline."""
     ceiling_height: float | None = None
+    """Actual ceiling height in meters (`Z` boundary for indoor roof, or `None`)."""
 
     # Location
     location: CourtLocation | None = None
+    """Optional venue metadata (`club`, `city`, GPS coordinates)."""
 
     def __post_init__(self) -> None:
         if self.ceiling_height is not None and self.ceiling_height <= 0.0:
@@ -369,7 +401,7 @@ class Court:
         )
 
     def effective_access(self, side: Literal["left", "right"]) -> SideAccess:
-        """Returns the resolved :class:`SideAccess` for ``'left'`` or ``'right'``."""
+        """Returns the resolved `SideAccess` for `'left'` or `'right'`."""
         if side == "left":
             return self.effective_access_left
         if side == "right":
@@ -377,7 +409,7 @@ class Court:
         raise ValueError(f"side must be 'left' or 'right' (got {side!r}).")
 
     def door_state_for(self, side: Literal["left", "right"]) -> DoorState | None:
-        """Returns :attr:`door_left` or :attr:`door_right` for ``side``."""
+        """Returns `door_left` or `door_right` for `side`."""
         if side == "left":
             return self.door_left
         if side == "right":
@@ -651,8 +683,7 @@ class Court:
                 Defaults to ``CoordinateSystem.CENTERED``.
 
         Returns:
-            A dictionary mapping each :class:`CourtLandmark` name to its (X, Y)
-            position.
+            A dictionary mapping each `CourtLandmark` name to its (X, Y) position.
         """
         hw = self.width / 2
         hl = self.length / 2
@@ -693,8 +724,7 @@ class Court:
                 Defaults to ``CoordinateSystem.CENTERED``.
 
         Returns:
-            A dictionary mapping each :class:`CourtLandmark` name to its (X, Y, Z)
-            position.
+            A dictionary mapping each `CourtLandmark` name to its (X, Y, Z) position.
         """
         hw = self.width / 2
         hl = self.length / 2
@@ -736,7 +766,7 @@ class Court:
         """Returns the (X, Y) coordinates of a specific 2D landmark.
 
         Args:
-            name: A :class:`CourtLandmark` value string (e.g., ``"center"``).
+            name: A `CourtLandmark` value string (e.g., `"center"`).
             coordinate_system: The reference frame for the returned coordinates.
                 Defaults to ``CoordinateSystem.CENTERED``.
 
@@ -802,7 +832,7 @@ class Court:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Court":
-        """Reconstructs a :class:`Court` instance from a dictionary."""
+        """Reconstructs a `Court` instance from a dictionary."""
         dims_data = data.get("dimensions")
         dims = (
             CourtDimensions.from_dict(dims_data)

@@ -1,41 +1,41 @@
 # CourtLocation
 
-The `CourtLocation` dataclass stores structured geographic information about a court's location. All fields are optional — any subset can be provided. {{ className: 'lead' }}
+`CourtLocation` is an immutable dataclass storing optional geographic and venue metadata for a [`Court`](/court). All fields default to `None`, so you can record anything from just a club name to exact GPS coordinates. {{ className: 'lead' }}
 
-## Initialization
+Import via `from padelkit import CourtLocation`. Note that the venue field is named `club` (not `venue_name`).
+
+---
+
+## Parameters & Fields {{ tag: 'dataclass', label: 'CourtLocation' }}
 
 <Row>
   <Col>
 
-    Creates a new instance of `CourtLocation`.
-
-    ### Keyword Arguments
-
     <Properties>
-      <Property name="club" type="str | None" optional>
-        Name of the padel club.
+      <Property name="club" type="str | None">
+        Name of the sports club, stadium, or venue (e.g. `"Club de Pádel Sol"`). Defaults to `None`.
       </Property>
-      <Property name="city" type="str | None" optional>
-        City where the court is located.
+      <Property name="city" type="str | None">
+        City where the venue is located. Defaults to `None`.
       </Property>
-      <Property name="address" type="str | None" optional>
-        Street address.
+      <Property name="address" type="str | None">
+        Street address of the venue. Defaults to `None`.
       </Property>
-      <Property name="country" type="str | None" optional>
-        Country name or ISO 3166-1 code.
+      <Property name="country" type="str | None">
+        Country name or ISO country code. Defaults to `None`.
       </Property>
-      <Property name="latitude" type="float | None" optional>
-        Geographic latitude in decimal degrees.
+      <Property name="latitude" type="float | None">
+        WGS84 decimal latitude in degrees (`[-90.0, 90.0]`). Defaults to `None`.
       </Property>
-      <Property name="longitude" type="float | None" optional>
-        Geographic longitude in decimal degrees.
+      <Property name="longitude" type="float | None">
+        WGS84 decimal longitude in degrees (`[-180.0, 180.0]`). Defaults to `None`.
       </Property>
     </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Instantiation" tag="class" label="CourtLocation">
+    <CodeGroup title="Initialization" tag="dataclass" label="CourtLocation">
 
     ```python
     from padelkit import CourtLocation
@@ -47,49 +47,33 @@ The `CourtLocation` dataclass stores structured geographic information about a c
         latitude=40.4168,
         longitude=-3.7038,
     )
+    print(loc.club, loc.city)
+    # Club de Pádel Sol Madrid
     ```
 
     </CodeGroup>
-
-    ```json {{ title: 'Output structure' }}
-    CourtLocation(
-      club='Club de Pádel Sol',
-      city='Madrid',
-      address=None,
-      country='Spain',
-      latitude=40.4168,
-      longitude=-3.7038
-    )
-    ```
 
   </Col>
 </Row>
 
 ---
 
-## Dictionary Serialization {{ tag: 'methods', label: 'to_dict / from_dict' }}
+## Serialization (`to_dict` / `from_dict`) {{ tag: 'method', label: 'dict I/O' }}
 
 <Row>
   <Col>
 
-    <Properties>
-      <Property name="location.to_dict()" type="dict[str, Any]">
-        Serializes the geographic location fields (`club`, `city`, `address`, `country`, `latitude`, `longitude`) into a JSON-compatible dictionary.
-      </Property>
-      <Property name="CourtLocation.from_dict(data)" type="CourtLocation">
-        Classmethod that reconstructs a `CourtLocation` instance from a dictionary.
-      </Property>
-    </Properties>
+    Exports all 6 location fields to a JSON-serializable dictionary (`loc.to_dict()`) or reconstructs a `CourtLocation` instance (`CourtLocation.from_dict(data)`). Note that this header is also embedded inside [`MatchTimeline.to_parquet()`](/match-timeline#to-parquet-and-from-parquet) metadata under `envelope["court"]["location"]["club"]`.
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Serialize Location" tag="method" label="to_dict / from_dict">
+    <CodeGroup title="Dictionary Round-Trip" tag="method" label="to_dict / from_dict">
 
     ```python
     from padelkit import CourtLocation
 
-    loc = CourtLocation(club="Club de Pádel Sol", city="Madrid", country="Spain")
+    loc = CourtLocation(club="WiZink Center", city="Madrid", country="Spain")
     restored = CourtLocation.from_dict(loc.to_dict())
     assert restored == loc
     ```

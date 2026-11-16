@@ -6,6 +6,7 @@ class ServingEngine:
     and score metrics."""
 
     def __init__(self, config: MatchConfiguration):
+        """Initializes the serving engine with match rules in `config`."""
         self.config = config
 
     def calculate_serving_state(

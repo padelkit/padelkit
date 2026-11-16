@@ -1,6 +1,6 @@
-# Padel Stroke & Skeletal Animation Library
+# Stroke & Skeletal Animation Library
 
-PadelKit unifies **9D ball aerodynamics** (`BallState.from_shot`) with **3D Mixamo skeletal animations** (`padelkit-animator` `.glb` assets) through a standardized stroke taxonomy and impact-phase synchronization contract (`contact_swing_phase`). {{ className: 'lead' }}
+PadelKit bridges **9D ball aerodynamics** ([`BallState.from_shot()`](/ball-state#from-shot)) with **3D skeletal animations** (both `.glb` Mixamo clips from `padelkit-animator` and baked 17-joint H36M poses inside [`MatchTimeline`](/match-timeline)) via a canonical stroke taxonomy and impact-phase synchronization contract (`contact_swing_phase`). {{ className: 'lead' }}
 
 <Note>
   Looking for an interactive 3D coaching view? Explore the **[PadelKit 3D Stroke Lab](https://padelkit.dev/strokes)** to orbit around the player, scrub frame-by-frame through preparation, impact, and 9D glass rebounds, and inspect live biomechanical cues.
@@ -8,47 +8,31 @@ PadelKit unifies **9D ball aerodynamics** (`BallState.from_shot`) with **3D Mixa
 
 ---
 
-## Stroke Taxonomy & Physics Reference
+## Stroke Taxonomy & Physics Signatures {{ tag: 'guide' }}
 
-Every stroke in a simulated or reconstructed padel rally maps to a canonical `padelkit_animation_id` on `PlayerPose.animation` and a physical launch signature (`velocity`, `topspin_rpm`, `sidespin_rpm`) in `BallState.from_shot()`.
+Every action in a simulated or reconstructed rally maps to an animation label on [`PlayerPose.animation`](/player-pose) and a corresponding physical spin/velocity signature on launch:
 
-<Properties>
-  <Property name="serve" type="SERVE · Underhand Slice">
-    Executed below waist height (`z ≈ 0.85–0.98 m`) after a single floor bounce in the server's box. Typically imparted with carved backspin (`-600` to `-1200 RPM`) and sidespin (`+300` to `+500 RPM`) so the ball stays low (`SLIDING` regime) after rebounding off the receiver's side or back glass.
-  </Property>
-  <Property name="shot_forehand" type="FOREHAND · Groundstroke & Wall Exit">
-    Standard right-side drive or *bajada de pared* struck at `z ≈ 0.75–1.10 m`. Flat or topspin (`+800` to `+1800 RPM`) produces a dipping parabola over the net that kicks forward upon floor contact (`ROLLING` transition).
-  </Property>
-  <Property name="shot_backhand" type="BACKHAND · Groundstroke & Defensive Slice">
-    Left-side groundstroke or defensive backhand slice off the back glass. Uses either flat/topspin (`+500` to `+1400 RPM`) for passing drives or backspin (`-900 RPM`) for low cross-court chiquitas to the opponent's feet.
-  </Property>
-  <Property name="shot_volley" type="VOLLEY · Net Intercept">
-    Compact punch stroke executed close to the net (`y ≈ ±2.5–3.8 m`) with minimal backswing and crisp underspin (`-800` to `-1500 RPM`) to keep the ball skidding deep into the corners.
-  </Property>
-  <Property name="shot_bandeja" type="BANDEJA · Defensive/Tactical Overhead">
-    Signature padel overhead struck at shoulder-to-head height (`z ≈ 1.75–2.10 m`) with a flat-to-open racket face and heavy backspin (`-1800` to `-2500 RPM`). Designed to retain net position by producing a low, slow rebound off the back glass.
-  </Property>
-  <Property name="shot_vibora" type="VIBORA · Aggressive Side-Spin Overhead">
-    Whipped lateral overhead struck with combined underspin (`-1200 RPM`) and heavy sidespin (`±1800` to `±2600 RPM`). After hitting the corner glass, the lateral tangential velocity causes the ball to bite sideways away from the defender.
-  </Property>
-  <Property name="shot_lob" type="LOB · High Tactical Reset">
-    High launch angle (`vz ≈ 8.5–10.5 m/s`, apex `z > 5.5 m`) struck from behind the service line to push the net players back to the baseline without hitting the `4.0 m` back glass on the fly.
-  </Property>
-  <Property name="shot_smash" type="SMASH · Power Flat / Kick X3 / X4">
-    High-point overhead (`z ≈ 2.35–2.75 m`) struck with either flat power (`> 130 km/h`) to bring the ball back to the hitter's side or heavy topspin (`+2600` to `+3400 RPM`) so the ball kicks high off the `3.0 m` back glass and exits over the `3.0 m` side fence (*por 3*).
-  </Property>
-</Properties>
+| Animation ID (`PlayerPose.animation`) | Shot Family | Typical Launch & Height | Spin Profile (`topspin_rpm`, `sidespin_rpm`) & Tactical Purpose |
+| :--- | :--- | :--- | :--- |
+| **`serve`** | Underhand Slice Serve | Struck below waist (`z ≈ 0.85–0.98 m`) after one bounce | Carved backspin (`-600` to `-1200 RPM`) + sidespin (`+300` to `+500 RPM`) to skid low off glass (`SLIDING` regime). |
+| **`shot_forehand`** | Forehand Drive / *Bajada* | Struck at `z ≈ 0.75–1.10 m` | Flat or topspin (`+800` to `+1800 RPM`) producing a dipping arc and forward bounce (`ROLLING` transition). |
+| **`shot_backhand`** | Backhand / Slice | Left-side drive or defensive glass exit | Topspin (`+500` to `+1400 RPM`) for passing shots, or backspin (`-900 RPM`) for low *chiquitas*. |
+| **`shot_volley`** | Net Volley | Compact punch near net (`y ≈ ±2.5–3.8 m`) | Crisp underspin (`-800` to `-1500 RPM`) so the ball stays low into the corners. |
+| **`shot_bandeja`** | *Bandeja* (Defensive Overhead) | Shoulder-to-head height (`z ≈ 1.75–2.10 m`) | Open face + heavy backspin (`-1800` to `-2500 RPM`) to hold net position with a slow rebound off back glass. |
+| **`shot_vibora`** | *Víbora* (Side-Spin Overhead) | Whipped lateral overhead | Underspin (`-1200 RPM`) + strong sidespin (`±1800` to `±2600 RPM`) that kicks sideways out of the corner glass. |
+| **`shot_lob`** | Tactical Lob | High arc (`vz ≈ 8.5–10.5 m/s`, apex `z > 5.5 m`) | Neutral/light spin from the backcourt to force net players behind the service line without flying straight into back glass. |
+| **`shot_smash`** | Smash (*Remate* / *Por 3* / *Por 4*) | High-point overhead (`z ≈ 2.35–2.75 m`) | Flat power (`> 130 km/h`) to bring back over the net, or heavy topspin (`+2600` to `+3400 RPM`) to kick out over `3.0 m` side mesh. |
 
 ---
 
-## MotionBERT Captured Stroke Previews
+## MotionBERT Captured Stroke Previews {{ tag: 'guide' }}
 
 <Row>
   <Col>
 
     Animations in the library are extracted from real padel footage using **padelkit-animator** (`RTMPose` 2D tracking → `MotionBERT` 243-frame 3D lifting → `1.78 m` metric normalization → `Mixamo` 18-bone `.glb` retargeting).
 
-    Each preview card below shows the normalized `Z-up` in-place skeleton (`in_place=True`), the dominant hitting arm & 3D racket trajectory, and the exact **ball contact frame** (`contact_swing_phase`, highlighted by the emerald flash ring and bottom timeline tick).
+    Each preview below shows the normalized `Z-up` in-place skeleton (`in_place=True`), the hitting arm & 3D racket trajectory, and the **ball contact frame** (`contact_swing_phase`), highlighted by the emerald flash ring and bottom timeline marker.
 
     ### 1. Underhand Slice Serve (`forehand_serve.glb`)
     <video
@@ -125,18 +109,18 @@ Every stroke in a simulated or reconstructed padel rally maps to a canonical `pa
 
 ---
 
-## Impact-Phase Synchronization (`contact_swing_phase`)
+## Impact-Phase Synchronization (`contact_swing_phase`) {{ tag: 'guide' }}
 
 <Row>
   <Col>
 
-    When simulating a rally in `MatchTimeline`, the physics engine determines the exact timestamp `t_hit` at which the ball leaves the strings. If a skeletal animation clip were simply triggered at `t_hit`, the player would start their backswing *after* the ball is already in flight.
+    When simulating a rally in [`MatchTimeline`](/match-timeline), the physics engine records the exact timestamp `t_hit` at which the ball leaves the racket strings. If a skeletal clip merely started at `t_hit`, the player would swing *after* the ball was already flying away.
 
-    To align the 3D racket swing with the physical ball launch:
+    To synchronize racket impact with physics ball launch intuitively:
     1. Each `.glb` entry in `manifest.json` stores `contact_swing_phase` (`phi_c = f_contact / (N_frames - 1)` in `[0, 1]`).
-    2. During the **preparation / backswing** window (`t <= t_hit`, where `PlayerPose.swing_phase` rises from `0 -> 1`), `PadelVisualizer` scrubs the `.glb` clip from `0` to `phi_c * T_clip`.
-    3. At the **exact impact frame** (`t = t_hit`, `swing_phase == 1.0`), the skeleton's hand bone (`mixamorig:RightHand`) is guaranteed to be at `f_contact`.
-    4. During the **follow-through** window (`t > t_hit`, where `swing_phase` decays from `1 -> 0`), the clip continues smoothly from `phi_c * T_clip` to `T_clip`.
+    2. During **preparation / backswing** (`t <= t_hit`, where [`PlayerPose.swing_phase`](/player-pose) rises `0 -> 1`), [`PadelVisualizer`](/padel-visualizer) scrubs the clip from `0` to `phi_c * T_clip`.
+    3. At **impact (`t = t_hit`, `swing_phase == 1.0`)**, the hitting wrist/hand (`mixamorig:RightHand` or joint `16: RightWrist` in [`H36M_JOINT_NAMES`](/viz-constants#h36-m-joint-names)) meets the ball exactly at `f_contact`.
+    4. During **follow-through** (`t > t_hit`, `swing_phase` decays `1 -> 0`), playback continues smoothly from `phi_c * T_clip` to the end of the clip.
 
   </Col>
   <Col sticky>

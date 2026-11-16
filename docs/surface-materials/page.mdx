@@ -1,0 +1,121 @@
+# SurfaceMaterials
+
+`SurfaceMaterials` is a frozen dataclass defining the **normal coefficient of restitution (`cor`, bounciness)** and **Coulomb friction (`friction`, spin grip `mu`)** across every court surface, plus metallic fence bounce randomness and net velocity damping. Import via `from padelkit import SurfaceMaterials`. {{ className: 'lead' }}
+
+Notice the critical padel surface contrast: **tempered glass** has high restitution (`0.85`) and low friction (`0.25`), so slice shots slide cleanly (`SLIDING` regime); **concrete walls** have high friction (`0.70`), gripping spin sharply (`ROLLING`); and sandy vs fast curled turf adjust `floor_cor` and `floor_friction`.
+
+---
+
+## Parameters & Fields {{ tag: 'dataclass', label: 'SurfaceMaterials' }}
+
+<Row>
+  <Col>
+
+    All defaults correspond to `SurfaceMaterials.fip_standard()`.
+
+    <Properties>
+      <Property name="glass_cor" type="float">
+        Normal restitution on tempered glass back/side walls (`e` in `(0, 1]`). Defaults to `0.85`.
+      </Property>
+      <Property name="glass_friction" type="float">
+        Coulomb friction `mu` on tempered glass walls (low grip preserves backspin). Defaults to `0.25`.
+      </Property>
+      <Property name="wall_cor" type="float">
+        Normal restitution on concrete/masonry walls (`EnclosureType.WALL`). Defaults to `0.75`.
+      </Property>
+      <Property name="wall_friction" type="float">
+        Coulomb friction `mu` on masonry walls (high grip induces `ROLLING` spin transfer). Defaults to `0.70`.
+      </Property>
+      <Property name="floor_cor" type="float">
+        Normal restitution on artificial turf / court floor. Defaults to `0.75`.
+      </Property>
+      <Property name="floor_friction" type="float">
+        Coulomb friction `mu` on artificial turf / court floor. Defaults to `0.45`.
+      </Property>
+      <Property name="fence_cor" type="float">
+        Normal restitution on galvanized metallic wire mesh. Defaults to `0.45`.
+      </Property>
+      <Property name="fence_friction" type="float">
+        Coulomb friction `mu` on metallic wire mesh. Defaults to `0.50`.
+      </Property>
+      <Property name="fence_randomness" type="float">
+        Standard deviation (radians) of normal-vector angular perturbation on wire-mesh collisions (`0.0` for deterministic specular impacts; e.g. `0.25` for unpredictable mesh deflections). Defaults to `0.0`.
+      </Property>
+      <Property name="net_damping" type="float">
+        Velocity retention factor across net tape/mesh impacts (`ContactRegime.DAMPED`). Defaults to `0.30`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Initialization" tag="dataclass" label="SurfaceMaterials">
+
+    ```python
+    from padelkit import BallPhysicsEngine, SurfaceMaterials
+
+    stochastic_fence = SurfaceMaterials(fence_randomness=0.20)
+    engine = BallPhysicsEngine(surfaces=stochastic_fence)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Court Turf Presets {{ tag: 'classmethod', label: 'fip_standard / fast_indoor / slow_sandy' }}
+
+<Row>
+  <Col>
+
+    Factory presets model real-world turf & silica sand variations:
+    - **`SurfaceMaterials.fip_standard(fence_randomness=0.0)`**: Standard FIP coefficients (`floor_cor=0.75`, `floor_friction=0.45`, `glass_cor=0.85`, optional mesh scatter).
+    - **`SurfaceMaterials.fast_indoor()`**: Modern low-sand curled monofilament carpet (`floor_cor=0.79`, `floor_friction=0.38`, `glass_cor=0.87`) yielding faster, higher bounces.
+    - **`SurfaceMaterials.slow_sandy()`**: Heavy silica-sand outdoor turf (`floor_cor=0.71`, `floor_friction=0.52`) yielding slower bounces and stronger friction grip.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Turf Speed Presets" tag="classmethod" label="fast_indoor / slow_sandy">
+
+    ```python
+    from padelkit import SurfaceMaterials
+
+    fast = SurfaceMaterials.fast_indoor()
+    slow = SurfaceMaterials.slow_sandy()
+    print("Fast indoor:", fast.floor_cor, fast.floor_friction)
+    print("Slow sandy: ", slow.floor_cor, slow.floor_friction)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Serialization (`to_dict` / `from_dict`) {{ tag: 'method', label: 'dict I/O' }}
+
+<Row>
+  <Col>
+
+    Exports all 10 coefficients (`surfaces.to_dict()`) and reconstructs an identical `SurfaceMaterials` instance (`SurfaceMaterials.from_dict(data)`).
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Dictionary Round-Trip" tag="method" label="to_dict / from_dict">
+
+    ```python
+    from padelkit import SurfaceMaterials
+
+    surf = SurfaceMaterials.fast_indoor()
+    assert SurfaceMaterials.from_dict(surf.to_dict()) == surf
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

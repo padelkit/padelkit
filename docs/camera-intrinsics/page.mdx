@@ -1,152 +1,248 @@
 # CameraIntrinsics
 
-`CameraIntrinsics` is an immutable dataclass holding the pinhole intrinsic calibration matrix `K` and sensor dimensions in pixels. {{ className: 'lead' }}
+`CameraIntrinsics` is an immutable dataclass storing the internal pinhole calibration matrix `K` and sensor pixel dimensions (`width_px × height_px`). Import via `from padelkit import CameraIntrinsics`. {{ className: 'lead' }}
+
+Notice that `(0, 0)` in image space sits at the **top-left pixel corner**, with `+u` pointing right and `+v` pointing down.
 
 <Schematic
   name="camera-sensor-projection"
-  alt="CameraIntrinsics Sensor Plane and Calibration Matrix K"
-  caption="1920 × 1080 image sensor coordinate frame (+u, +v), principal point (cx, cy), and projected 3D court landmarks."
+  alt="1080p Sensor Plane Landmark Projection"
+  caption="1920 × 1080 sensor plane showing principal point (cx, cy), calibration matrix K, and projected court landmarks."
 />
 
-## Properties
-
-<Properties>
-  <Property name="width_px" type="int">
-    Horizontal sensor resolution in pixels.
-  </Property>
-  <Property name="height_px" type="int">
-    Vertical sensor resolution in pixels.
-  </Property>
-  <Property name="fx" type="float">
-    Horizontal focal length in pixels.
-  </Property>
-  <Property name="fy" type="float">
-    Vertical focal length in pixels.
-  </Property>
-  <Property name="cx" type="float">
-    Horizontal principal point offset in pixels.
-  </Property>
-  <Property name="cy" type="float">
-    Vertical principal point offset in pixels.
-  </Property>
-  <Property name="skew" type="float">
-    Axis skew coefficient. Defaults to `0.0`.
-  </Property>
-  <Property name="fov_horizontal_deg" type="float">
-    Computed horizontal field of view in degrees.
-  </Property>
-  <Property name="fov_vertical_deg" type="float">
-    Computed vertical field of view in degrees.
-  </Property>
-  <Property name="matrix" type="np.ndarray">
-    The `3x3` upper-triangular intrinsic calibration matrix `K`.
-  </Property>
-  <Property name="inverse_matrix" type="np.ndarray">
-    The analytical `3x3` inverse intrinsic matrix `K^-1`.
-  </Property>
-</Properties>
-
----
-
-## From Field of View {{ tag: 'classmethod', label: 'CameraIntrinsics.from_fov()' }}
+## Parameters & Fields {{ tag: 'dataclass', label: 'CameraIntrinsics' }}
 
 <Row>
   <Col>
 
-    Creates a `CameraIntrinsics` instance from a desired horizontal field of view in degrees, assuming square pixels (`fx == fy`).
-
-    ### Keyword Arguments
+    Validation requires `width_px > 0`, `height_px > 0`, `fx > 0`, and `fy > 0`.
 
     <Properties>
-      <Property name="width_px" type="int" default="1920">
-        Image width in pixels.
+      <Property name="width_px" type="int">
+        Horizontal sensor resolution in pixels (e.g. `1920` for 1080p, `3840` for 4K).
       </Property>
-      <Property name="height_px" type="int" default="1080">
-        Image height in pixels.
+      <Property name="height_px" type="int">
+        Vertical sensor resolution in pixels (e.g. `1080` for 1080p, `2160` for 4K).
       </Property>
-      <Property name="horizontal_fov_deg" type="float" default="80.0">
-        Horizontal field of view in degrees (`[1.0, 179.0)`).
+      <Property name="fx" type="float">
+        Horizontal focal length expressed in pixels. Larger values correspond to narrower zoom lenses.
       </Property>
-      <Property name="cx" type="float | None" optional default="None">
-        Principal point X coordinate (defaults to `width_px / 2`).
+      <Property name="fy" type="float">
+        Vertical focal length expressed in pixels (equals `fx` for square pixels).
       </Property>
-      <Property name="cy" type="float | None" optional default="None">
-        Principal point Y coordinate (defaults to `height_px / 2`).
+      <Property name="cx" type="float">
+        Horizontal optical center (principal point) coordinate in pixels (typically `width_px / 2`).
+      </Property>
+      <Property name="cy" type="float">
+        Vertical optical center (principal point) coordinate in pixels (typically `height_px / 2`).
+      </Property>
+      <Property name="skew" type="float">
+        Axis skew coefficient between sensor axes in pixels. Defaults to `0.0`.
       </Property>
     </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Usage" tag="classmethod" label="from_fov">
+    <CodeGroup title="Initialization" tag="dataclass" label="CameraIntrinsics">
 
     ```python
     from padelkit import CameraIntrinsics
 
-    intr = CameraIntrinsics.from_fov(
+    K = CameraIntrinsics(
         width_px=1920,
         height_px=1080,
-        horizontal_fov_deg=90.0,
+        fx=1200.0,
+        fy=1200.0,
+        cx=960.0,
+        cy=540.0,
     )
+    print(f"Horizontal FOV: {K.fov_horizontal_deg:.1f} deg")
     ```
 
     </CodeGroup>
-
-    ```json {{ title: 'Output' }}
-    CameraIntrinsics(
-      width_px=1920,
-      height_px=1080,
-      fx=960.0,
-      fy=960.0,
-      cx=960.0,
-      cy=540.0,
-      skew=0.0
-    )
-    ```
 
   </Col>
 </Row>
 
 ---
 
-## From Physical Lens & Sensor {{ tag: 'classmethod', label: 'CameraIntrinsics.from_sensor()' }}
+## Properties {{ tag: 'property', label: 'FOV & Calibration Matrices' }}
+
+<Properties>
+  <Property name="aspect_ratio" type="float">
+    Sensor width-to-height ratio (`width_px / height_px`, e.g. `1.777...` for 16:9).
+  </Property>
+  <Property name="fov_horizontal_deg" type="float">
+    Horizontal field of view in degrees (`2 * atan(width_px / (2 * fx))`).
+  </Property>
+  <Property name="fov_vertical_deg" type="float">
+    Vertical field of view in degrees (`2 * atan(height_px / (2 * fy))`).
+  </Property>
+  <Property name="fov_diagonal_deg" type="float">
+    Diagonal field of view across corners in degrees.
+  </Property>
+  <Property name="matrix" type="np.ndarray">
+    Upper-triangular `3x3` calibration matrix `K = [[fx, skew, cx], [0, fy, cy], [0, 0, 1]]`.
+  </Property>
+  <Property name="inverse_matrix" type="np.ndarray">
+    Analytical `3x3` inverse calibration matrix `K^-1`.
+  </Property>
+</Properties>
+
+---
+
+## `from_fov()` {{ tag: 'classmethod', label: 'CameraIntrinsics.from_fov()' }}
 
 <Row>
   <Col>
 
-    Creates a `CameraIntrinsics` instance directly from physical camera specifications (focal length in millimeters and sensor width/height in millimeters).
+    Creates square-pixel intrinsics (`fx == fy`) from a desired horizontal field of view in degrees (`1.0 <= horizontal_fov_deg < 179.0`). Principal point defaults to `(width_px / 2, height_px / 2)`.
 
-    ### Keyword Arguments
-
+    ### Arguments
     <Properties>
-      <Property name="width_px" type="int" default="1920">
-        Image width in pixels.
+      <Property name="width_px" type="int">
+        Horizontal pixel resolution. Defaults to `1920`.
       </Property>
-      <Property name="height_px" type="int" default="1080">
-        Image height in pixels.
+      <Property name="height_px" type="int">
+        Vertical pixel resolution. Defaults to `1080`.
       </Property>
-      <Property name="focal_length_mm" type="float" default="18.0">
-        Physical lens focal length in millimeters.
+      <Property name="horizontal_fov_deg" type="float">
+        Horizontal viewing angle in degrees (`[1.0, 179.0)`). Defaults to `80.0`.
       </Property>
-      <Property name="sensor_width_mm" type="float" default="36.0">
-        Physical sensor width in millimeters (defaults to 36mm full-frame).
+      <Property name="cx" type="float | None">
+        Optional custom horizontal principal point in pixels.
+      </Property>
+      <Property name="cy" type="float | None">
+        Optional custom vertical principal point in pixels.
+      </Property>
+      <Property name="skew" type="float">
+        Sensor axis skew. Defaults to `0.0`.
       </Property>
     </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Usage" tag="classmethod" label="from_sensor">
+    <CodeGroup title="From Field of View" tag="classmethod" label="from_fov">
 
     ```python
     from padelkit import CameraIntrinsics
 
-    intr = CameraIntrinsics.from_sensor(
+    intr = CameraIntrinsics.from_fov(1920, 1080, horizontal_fov_deg=78.0)
+    print(intr.matrix)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `from_sensor()` {{ tag: 'classmethod', label: 'CameraIntrinsics.from_sensor()' }}
+
+<Row>
+  <Col>
+
+    Creates intrinsics from real physical camera lens specifications in millimeters (`focal_length_mm` and `sensor_width_mm`). If `sensor_height_mm` is omitted, it is derived proportionally from `width_px / height_px`.
+
+    ### Arguments
+    <Properties>
+      <Property name="width_px" type="int">
+        Horizontal pixel resolution. Defaults to `1920`.
+      </Property>
+      <Property name="height_px" type="int">
+        Vertical pixel resolution. Defaults to `1080`.
+      </Property>
+      <Property name="focal_length_mm" type="float">
+        Physical lens focal length in millimeters. Defaults to `18.0`.
+      </Property>
+      <Property name="sensor_width_mm" type="float">
+        Physical sensor width in millimeters (`36.0` mm full-frame default).
+      </Property>
+      <Property name="sensor_height_mm" type="float | None">
+        Optional physical sensor height in millimeters.
+      </Property>
+      <Property name="cx" type="float | None">
+        Optional horizontal optical center (defaults to `width_px / 2`).
+      </Property>
+      <Property name="cy" type="float | None">
+        Optional vertical optical center (defaults to `height_px / 2`).
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="From Physical Lens" tag="classmethod" label="from_sensor">
+
+    ```python
+    from padelkit import CameraIntrinsics
+
+    # Full-frame 24mm lens on 1080p output
+    dslr = CameraIntrinsics.from_sensor(
         width_px=1920,
         height_px=1080,
-        focal_length_mm=18.0,
+        focal_length_mm=24.0,
         sensor_width_mm=36.0,
     )
+    print(f"FOV: {dslr.fov_horizontal_deg:.1f} deg")
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `full_hd()` & `uhd_4k()` {{ tag: 'classmethod', label: 'Resolution Presets' }}
+
+<Row>
+  <Col>
+
+    Quick resolution presets wrapping `from_fov()`:
+    - **`CameraIntrinsics.full_hd(horizontal_fov_deg=80.0)`**: `1920 × 1080`.
+    - **`CameraIntrinsics.uhd_4k(horizontal_fov_deg=80.0)`**: `3840 × 2160`.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="1080p & 4K Presets" tag="classmethod" label="full_hd / uhd_4k">
+
+    ```python
+    from padelkit import CameraIntrinsics
+
+    hd = CameraIntrinsics.full_hd(horizontal_fov_deg=78.0)
+    uhd = CameraIntrinsics.uhd_4k(horizontal_fov_deg=78.0)
+    print(hd.width_px, uhd.width_px)  # 1920 3840
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `to_dict()` {{ tag: 'method', label: 'intrinsics.to_dict()' }}
+
+<Row>
+  <Col>
+
+    Exports `width_px`, `height_px`, `fx`, `fy`, `cx`, `cy`, `skew`, `fov_horizontal_deg`, and `fov_vertical_deg` into a plain JSON-compatible dictionary.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Export Intrinsics" tag="method" label="to_dict">
+
+    ```python
+    from padelkit import CameraIntrinsics
+
+    payload = CameraIntrinsics.full_hd().to_dict()
+    print(payload["fov_horizontal_deg"])
     ```
 
     </CodeGroup>

@@ -1,32 +1,26 @@
 # Universal Match Format (.parquet)
 
-PadelKit defines a self-contained, single-file binary format based on **Apache Parquet** (`.parquet` with Zstandard compression) capable of encoding the complete static context, scoring progression, 9D ball aerodynamics, and 3D skeletal dynamics of an entire padel match. {{ className: 'lead' }}
+PadelKit defines a self-contained, single-file binary format built on **Apache Parquet** (`.parquet` with Zstandard compression) so recorded matches, physics simulations, and 3D renderers share one schema without fragile sidecar JSON files. {{ className: 'lead' }}
 
-## Why a Two-Layer Parquet Architecture?
+## Two-Layer Single-File Architecture {{ tag: 'guide' }}
 
-Whether a match is **synthetically simulated** (combining `BallPhysicsEngine` trajectories and `padelkit-animator` `.glb` clips) or **reconstructed from real broadcast cameras** (via `TrackNet`, `RTMPose` + `MotionBERT`, and `Camera`), downstream tools should consume the exact same file contract.
+Whether a match is **synthetically simulated** (via [`BallPhysicsEngine`](/ball-physics-engine) and `padelkit-animator`) or **reconstructed from broadcast cameras** (via `TrackNet`, `RTMPose`/`MotionBERT`, and [`Camera`](/camera)), saving a [`MatchTimeline`](/match-timeline) bundles two layers into one `.parquet` file:
 
-PadelKit's `.parquet` format stores both layers inside a single file with zero sidecar JSONs:
-
-<Properties>
-  <Property name="Layer 1: Static Match Metadata Header" type="padelkit_metadata (JSON in Parquet Schema)">
-    Stored once in the Parquet schema's custom key-value metadata (`b"padelkit_metadata"`). Encodes the full [`Court`](/court) (dimensions, enclosure variant, orientation, turf color, indoor/outdoor setting, door states, [`CourtLocation`](/court-location)), [`EnvironmentConditions`](/physics-parameters) (temperature, humidity, altitude, wind vector, air density, gravity), [`BallProperties`](/physics-parameters), [`SurfaceMaterials`](/physics-parameters), and [`Match`](/match) (teams, players, [`MatchConfiguration`](/match-configuration), and event-sourced `points_history`).
-  </Property>
-  <Property name="Layer 2: 60 FPS Dynamic Frame Table" type="Columnar float32 / int16 / string">
-    Each row represents a timestamped snapshot ([`FrameState`](/frame-state)) containing structured match score columns (`sets_a..points_b`, `server_team`, `point_index`), the 9D ball state (`ball_x..ball_wz`), the 4 players' court root poses (`p1_x..p4_swing`), and optionally the **17-joint H36M 3D skeletal poses** (`p{1..4}_j{0..16}_{x,y,z}`).
-  </Property>
-</Properties>
+| Layer | Storage Location | Contents |
+| :--- | :--- | :--- |
+| **1. Static Metadata Envelope** | Apache Arrow schema metadata key `b"padelkit_metadata"` (UTF-8 JSON) | Schema version, `fps`, `duration_seconds`, `frame_count`, `has_skeletal_poses`, `joint_names` (`H36M_JOINT_NAMES`), plus full serialized [`Court`](/court), [`EnvironmentConditions`](/environment-conditions), [`BallProperties`](/ball-properties), [`SurfaceMaterials`](/surface-materials), [`Match`](/match), and custom `metadata`. |
+| **2. Dynamic Frame Table** | Columnar Parquet rows (`51` base columns, or `255` with 3D skeletons) | One row per [`FrameState`](/frame-state): structured score state (`14` cols), 9D ball state (`9` cols), 4 players' root poses (`28` cols), and optional 17-joint H36M 3D skeletal poses (`204` cols). |
 
 ---
 
-## Saving & Loading a Complete Match Recording
+## Saving & Loading a Complete Match Recording {{ tag: 'guide' }}
 
 <Row>
   <Col>
 
-    [`MatchTimeline.to_parquet()`](/match-timeline#export-to-universal-parquet) serializes both the domain objects attached to the timeline (`court`, `environment`, `ball_properties`, `surface_materials`, `match`) and all frame columns into a compressed `.parquet` file.
+    [`MatchTimeline.to_parquet()`](/match-timeline#to-parquet-and-from-parquet) serializes both the domain objects attached to the timeline (`court`, `environment`, `ball_properties`, `surface_materials`, `match`) and all frame columns into a compressed `.parquet` file.
 
-    When you pass `bake_skeleton=True`, PadelKit automatically evaluates the 17-joint 3D H36M skeleton (`Pelvis` to `RightWrist`) for every player in every frame before writing to disk, making the resulting file 100% self-contained for 3D playback without needing external `.glb` assets.
+    To populate the 17-joint 3D H36M skeletons (`Pelvis` to `RightWrist`) before exporting—making the `.parquet` file 100% self-contained for 3D skeletal playback without external `.glb` files—either call [`timeline.bake_skeletal_poses()`](/match-timeline#bake-skeletal-poses) or pass `bake_skeleton=True` to [`MatchTimeline.demo_rally()`](/match-timeline#demo-rally).
 
   </Col>
   <Col sticky>
@@ -56,7 +50,7 @@ PadelKit's `.parquet` format stores both layers inside a single file with zero s
         turf_color="blue",
         setting=CourtSetting.OUTDOOR,
         location=CourtLocation(
-            club="Wizink Center",
+            club="WiZink Center",
             city="Madrid",
             country="Spain",
             latitude=40.4239,
@@ -78,7 +72,7 @@ PadelKit's `.parquet` format stores both layers inside a single file with zero s
     )
     match.history.add_point(TeamId.A)
 
-    # 2. Generate or record a 60 FPS timeline and bake 3D skeletons
+    # 2. Generate a 60 FPS timeline and bake 17-joint 3D skeletons
     timeline = MatchTimeline.demo_rally(
         court=court,
         environment=env,
@@ -106,47 +100,32 @@ PadelKit's `.parquet` format stores both layers inside a single file with zero s
 
 ---
 
-## Layer 1: `padelkit_metadata` Schema Envelope
+## Layer 1: `padelkit_metadata` Schema Envelope {{ tag: 'schema' }}
 
-When [`MatchTimeline.to_parquet()`](/match-timeline#export-to-universal-parquet) writes a file, it embeds a UTF-8 JSON payload under the `padelkit_metadata` key in the Apache Arrow schema metadata. Calling [`MatchTimeline.from_parquet()`](/match-timeline#load-from-universal-parquet) automatically parses this header and reconstructs all domain objects via their `.from_dict()` classmethods:
+When [`MatchTimeline.to_parquet()`](/match-timeline#to-parquet-and-from-parquet) writes a file, it embeds a JSON object produced by [`build_metadata_envelope()`](/match-timeline#append-and-build-metadata-envelope) under `b"padelkit_metadata"` in the Apache Arrow schema metadata:
 
 <Row>
   <Col>
 
-    <Properties>
-      <Property name="schema_version" type="str" default='"1.0"'>
-        Format specification version for forward compatibility.
-      </Property>
-      <Property name="fps" type="float" default="60.0">
-        Nominal sampling rate in frames per second.
-      </Property>
-      <Property name="has_skeletal_poses" type="bool">
-        Indicates whether the `204` per-frame 3D joint columns (`p1_j0_x` .. `p4_j16_z`) are populated.
-      </Property>
-      <Property name="joint_convention" type="str" default='"H36M_17"'>
-        Joint ordering standard (`H36M_JOINT_NAMES`, 17 joints in root-relative meters).
-      </Property>
-      <Property name="court" type="dict | None">
-        Serialized [`Court.to_dict()`](/court) including [`CourtDimensions`](/court-dimensions), enclosure variant, turf color, indoor/outdoor flag, door states, and [`CourtLocation`](/court-location).
-      </Property>
-      <Property name="environment" type="dict | None">
-        Serialized [`EnvironmentConditions.to_dict()`](/physics-parameters) (`air_density`, `gravity`, `wind_velocity`, `temperature_c`, `relative_humidity`, `altitude_m`).
-      </Property>
-      <Property name="ball_properties" type="dict | None">
-        Serialized [`BallProperties.to_dict()`](/physics-parameters) (`mass`, `radius`, `cor_normal`, `fuzz_factor`, `spin_decay_tau`).
-      </Property>
-      <Property name="surface_materials" type="dict | None">
-        Serialized [`SurfaceMaterials.to_dict()`](/physics-parameters) (`floor_mu`, `floor_cor_scale`, `glass_mu`, `glass_cor_scale`, `mesh_damping`, `net_damping`).
-      </Property>
-      <Property name="match" type="dict | None">
-        Serialized [`Match.to_dict()`](/match) (`date`, `team_a`, `team_b`, `configuration`, `initial_serving_state`, and `points_history`).
-      </Property>
-    </Properties>
+    | JSON Key | Type | Contents |
+    | :--- | :--- | :--- |
+    | **`schema_version`** | `str` | Format version (currently `"1.0.0"`). |
+    | **`fps`** | `float` | Sampling frame rate in frames per second (`60.0` default). |
+    | **`duration_seconds`** | `float` | Timeline span in seconds (`last_t - first_t`). |
+    | **`frame_count`** | `int` | Number of rows (`len(timeline)`). |
+    | **`has_skeletal_poses`** | `bool` | `True` when any `PlayerPose.keypoints_3d` (204 columns) is present. |
+    | **`joint_names`** | `list[str]` | Ordered list of the 17 joint names from [`H36M_JOINT_NAMES`](/viz-constants#h36-m-joint-names). |
+    | **`court`** | `dict` | [`Court.to_dict()`](/court#serialization-to-dict-from-dict) (dimensions, variant, access doors, safety zones, `location`). |
+    | **`environment`** | `dict` | [`EnvironmentConditions.to_dict()`](/environment-conditions#serialization-to-dict-from-dict) (`gravity`, `air_density`, `wind_velocity`, `spin_decay_rate`, `temperature_c`, `relative_humidity`, `altitude_m`). |
+    | **`ball_properties`** | `dict` | [`BallProperties.to_dict()`](/ball-properties#is-fip-compliant-and-serialization) (`mass`, `radius`, `moment_of_inertia`, `fuzz_factor`, `pressure_psi`, `color`, `bounce_restitution_factor`). |
+    | **`surface_materials`** | `dict` | [`SurfaceMaterials.to_dict()`](/surface-materials#serialization-to-dict-from-dict) (`glass_cor`, `glass_friction`, `wall_*`, `floor_*`, `fence_*`, `net_damping`). |
+    | **`match`** | `dict \| None` | [`Match.to_dict()`](/match#serialization-to-dict-from-dict) (`teams`, `config`, `points_history`, `duration_minutes`, `date`, `court`). |
+    | **`metadata`** | `dict` | User-defined custom JSON metadata dictionary. |
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Inspect Parquet Header" tag="metadata" label="pyarrow.parquet">
+    <CodeGroup title="Inspect Parquet Header" tag="schema" label="pyarrow.parquet">
 
     ```python
     import json
@@ -158,8 +137,8 @@ When [`MatchTimeline.to_parquet()`](/match-timeline#export-to-universal-parquet)
     )
 
     print("Schema version:", envelope["schema_version"])
-    print("Joint convention:", envelope["joint_convention"])
-    print("Venue:", envelope["court"]["location"]["venue_name"])
+    print("Joint count:", len(envelope["joint_names"]))
+    print("Club:", envelope["court"]["location"]["club"])
     print("Temp (C):", envelope["environment"]["temperature_c"])
     ```
 
@@ -170,55 +149,44 @@ When [`MatchTimeline.to_parquet()`](/match-timeline#export-to-universal-parquet)
 
 ---
 
-## Layer 2: 60 FPS Columnar Schema
+## Layer 2: Tabular Frame Columns (`51` Base / `255` with Skeletons) {{ tag: 'schema' }}
 
-Every row in the Parquet table represents one [`FrameState`](/frame-state) at timestamp `t`. Numeric kinematic columns are stored as `float32` during `.to_parquet()` export so a full 90-minute match at 60 FPS (`324,000` rows, `239` columns) compresses down to roughly **35–55 MB** with `ZSTD`.
+Every row in the DataFrame/Parquet table corresponds to one [`FrameState`](/frame-state).
 
-### 1. Timing, Events & Structured Match Score (`13` columns)
+### 1. Timing, Events & Structured Match Score (`14` columns)
 
-| Column | Arrow Type | Description |
-| :--- | :--- | :--- |
-| `timestamp` | `float32` | Elapsed time $t$ in seconds from timeline start. |
-| `point_index` | `int32` | 0-based rally/point index in `match.score_history`. |
-| `event` | `string` | Frame event tag (`""`, `"serve"`, `"bounce_floor_sliding"`, `"shot_smash"`, etc.). |
-| `score` | `string` | Human-readable scoreboard label (e.g. `"6-4, 2-1 (30-15)"`). |
-| `sets_a`, `sets_b` | `int16` | Completed sets won by Team A and Team B. |
-| `games_a`, `games_b` | `int16` | Games won in the active set by Team A and Team B. |
-| `points_a`, `points_b` | `string` | Point call in the active game (`"0"`, `"15"`, `"30"`, `"40"`, `"Ad"`, or tiebreak integer). |
-| `server_team` | `string` | Serving team identifier (`"A"` or `"B"`). |
-| `server_player` | `string` | Serving player slot (`"P1"`..`"P4"` or player name). |
-| `in_tiebreak` | `bool` | `True` when the current game is a tiebreak or super-tiebreak. |
-| `is_gold_point` | `bool` | `True` on a deciding deuce point (`40-40` with golden point enabled). |
+| Column | Description |
+| :--- | :--- |
+| `timestamp` | Elapsed time in seconds (`float`) from timeline start. |
+| `point_index` | Chronological rally/point index corresponding to `match.history`. |
+| `score` | Compact formatted scoreboard string (e.g. `"0-0 \| 0-0 \| 15 *-0"`). |
+| `sets_a`, `sets_b` | Completed sets won by Team A and Team B. |
+| `games_a`, `games_b` | Games won in the active set by Team A and Team B. |
+| `points_a`, `points_b` | Active game points (`"0"`, `"15"`, `"30"`, `"40"`, `"AD"`, or tiebreak integer string). |
+| `server_team` | Serving team (`"A"`, `"B"`, or `""` when unset). |
+| `server_player` | Active server name/ID (`""` when unset). |
+| `in_tiebreak` | `True` when inside a tiebreak or super-tiebreak. |
+| `is_gold_point` | `True` on a `40-40` deciding *Punto de Oro*. |
+| `event` | Optional event tag (`""`, `"serve"`, `"bounce_floor"`, `"shot_smash"`, etc.). |
 
 ### 2. 9D Ball State (`9` columns)
 
 | Column Group | Columns | Units & Convention |
 | :--- | :--- | :--- |
-| **3D Position** | `ball_x`, `ball_y`, `ball_z` | Meters (`m`) in `CENTERED` court coordinates ($Z \ge 0$). |
-| **3D Velocity** | `ball_vx`, `ball_vy`, `ball_vz` | Linear velocity (`m/s`). |
-| **3D Spin** | `ball_wx`, `ball_wy`, `ball_wz` | Angular velocity (`rad/s`, right-hand rule). |
+| **3D Position** | `ball_x`, `ball_y`, `ball_z` | Ball center in meters (`CENTERED` court frame, `Z >= 0`). |
+| **3D Velocity** | `ball_vx`, `ball_vy`, `ball_vz` | Linear velocity in `m/s`. |
+| **3D Spin** | `ball_wx`, `ball_wy`, `ball_wz` | Angular velocity in `rad/s` (right-hand rule). |
 
-### 3. Player Root Poses (`24` columns for `i` in `1..4`)
+### 3. Player Root Poses (`28` columns for `i` in `1..4`)
 
-| Column Pattern | Arrow Type | Description |
-| :--- | :--- | :--- |
-| `p{i}_x`, `p{i}_y`, `p{i}_z` | `float32` | Player root floor projection `(x, y, z)` in court meters. |
-| `p{i}_yaw` | `float32` | Heading angle in degrees (`0°` = facing `+Y`, `180°` = facing `-Y`). |
-| `p{i}_anim` | `string` | Semantic action/stroke clip ID (`"idle"`, `"run"`, `"forehand_drive"`, `"forehand_serve"`). |
-| `p{i}_swing` | `float32` | Normalized stroke phase in `[0.0, 1.0]`. |
+| Column Pattern | Description |
+| :--- | :--- |
+| `p{i}_x`, `p{i}_y`, `p{i}_z` | Player root court position in meters (`NaN` XY if player missing). |
+| `p{i}_yaw` | Facing angle in degrees (`0°` = `+Y`, `180°` = `-Y`). |
+| `p{i}_anim` | Active animation/stroke tag (`"idle"`, `"run"`, `"serve"`, `"shot_forehand"`, etc.). |
+| `p{i}_team` | Team assignment string (`"A"` or `"B"`). |
+| `p{i}_swing` | Normalized stroke phase in `[0.0, 1.0]`. |
 
 ### 4. 17-Joint H36M 3D Skeletal Poses (`204` optional columns)
 
-When `include_skeleton=True` (default whenever `PlayerPose.keypoints_3d` is present or after calling [`timeline.bake_skeletal_poses()`](/match-timeline#bake-3d-skeletal-poses)), the table includes `p{1..4}_j{0..16}_{x,y,z}` (`4 players × 17 joints × 3 axes = 204 float32 columns`).
-
-Each joint offset `(dx, dy, dz)` is stored in **root-relative court meters** relative to `(p{i}_x, p{i}_y, p{i}_z)`, so adding `(p{i}_x + dx, p{i}_y + dy, p{i}_z + dz)` yields the exact 3D world coordinate of that joint:
-
-| Joint Index (`j`) | Joint Name (`H36M_JOINT_NAMES[j]`) | Anatomical Landmark |
-| :--- | :--- | :--- |
-| `0` | `Pelvis` | Root hip center |
-| `1`, `2`, `3` | `RightHip`, `RightKnee`, `RightAnkle` | Right leg chain |
-| `4`, `5`, `6` | `LeftHip`, `LeftKnee`, `LeftAnkle` | Left leg chain |
-| `7`, `8` | `Spine`, `Thorax` | Mid-spine and upper chest |
-| `9`, `10` | `Neck`, `Head` | Base of neck and head center |
-| `11`, `12`, `13` | `LeftShoulder`, `LeftElbow`, `LeftWrist` | Non-dominant balance arm |
-| `14`, `15`, `16` | `RightShoulder`, `RightElbow`, `RightWrist` | Dominant racket arm (racket attaches along `15 -> 16`) |
+When `include_skeleton=True` (default in [`to_parquet()`](/match-timeline#to-parquet-and-from-parquet)) and any frame contains `PlayerPose.keypoints_3d`, the table appends `p{1..4}_j{0..16}_{x,y,z}` (`4 players × 17 joints × 3 axes = 204 float32 columns`). Each joint coordinate is stored in **player-local court meters** relative to the pelvis root `(0, 0)`, facing `+Y`; see [`PlayerPose.world_keypoints_3d`](/player-pose#properties) and [`H36M_JOINT_NAMES`](/viz-constants#h36-m-joint-names) for the full anatomical joint table (`0: Pelvis` to `16: RightWrist`).

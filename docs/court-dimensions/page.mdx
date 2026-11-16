@@ -1,6 +1,6 @@
 # CourtDimensions
 
-The `CourtDimensions` dataclass holds the official physical measurements of a padel court. All values are expressed in **meters**. {{ className: 'lead' }}
+The `CourtDimensions` frozen dataclass stores the 11 official physical measurements of a padel court in **meters**. Import via `from padelkit import CourtDimensions`. {{ className: 'lead' }}
 
 <Schematic
   name="court-dimensions"
@@ -8,71 +8,53 @@ The `CourtDimensions` dataclass holds the official physical measurements of a pa
   caption="2D top-down dimension schematic (20.0m × 10.0m, 3.0m service line offset) and 3D side-wall V1/V2 and net height profiles."
 />
 
-## Properties
-
-<Properties>
-  <Property name="length" type="float">
-    Total length of the court in meters.
-  </Property>
-  <Property name="width" type="float">
-    Total width of the court in meters.
-  </Property>
-  <Property name="net_height_center" type="float">
-    Height of the net at its center point in meters.
-  </Property>
-  <Property name="net_height_posts" type="float">
-    Height of the net at the posts in meters.
-  </Property>
-  <Property name="service_line_distance_from_back" type="float">
-    Distance from the back wall to the nearest service line in meters.
-  </Property>
-  <Property name="back_wall_height" type="float">
-    Height of the back walls in meters. Always 4.0 m per FIP regulations.
-  </Property>
-  <Property name="side_wall_height" type="float">
-    Central height of the side enclosures in meters: 3.0 m for `EnclosureVariant.V1`, 4.0 m for `EnclosureVariant.V2`. See [Enclosure Variants](/court-geometry#enclosure-types--regulatory-variants).
-  </Property>
-</Properties>
-
----
-
-## Initialization
+## Parameters & Fields {{ tag: 'dataclass', label: 'CourtDimensions' }}
 
 <Row>
   <Col>
 
-    Creates a new instance of `CourtDimensions`.
-
-    ### Keyword Arguments
+    The first 7 geometric fields define the court's primary envelope and have no dataclass defaults (or use [`CourtDimensions.fip_standard()`](#fip_standard) to populate official numbers automatically), while the 4 FIP marking/clearance fields include official defaults.
 
     <Properties>
       <Property name="length" type="float">
-        Total length of the court.
+        Total interior length of the court along the Y axis in meters (FIP official: `20.0 m ± 0.5%`).
       </Property>
       <Property name="width" type="float">
-        Total width of the court.
+        Total interior width of the court along the X axis in meters (FIP official: `10.0 m ± 0.5%`).
       </Property>
       <Property name="net_height_center" type="float">
-        Height of the net at its center point.
+        Net height at the center strap (`X = 0.0`) in meters (FIP official: `0.88 m ± 0.005 m`).
       </Property>
       <Property name="net_height_posts" type="float">
-        Height of the net at the posts.
+        Net height at the side posts (`X = ±width/2`) in meters (FIP official max: `0.92 m`).
       </Property>
       <Property name="service_line_distance_from_back" type="float">
-        Distance from the back wall to the service line.
+        Distance measured from each back wall inward to its service line in meters (FIP official: `3.0 m`, i.e. `6.95 m` from the net center).
       </Property>
       <Property name="back_wall_height" type="float">
-        Height of the back walls. Always **4.0 m** per FIP regulations, for both enclosure variants.
+        Total height of both back walls (3.0 m solid + 1.0 m mesh) in meters (FIP official: `4.0 m`).
       </Property>
       <Property name="side_wall_height" type="float">
-        Height of the side walls. **3.0 m** for Variant 1, **4.0 m** for Variant 2.
+        Height of the side enclosure across the central `16.0 m` in meters: `3.0 m` for `EnclosureVariant.V1` or `4.0 m` for `EnclosureVariant.V2`.
+      </Property>
+      <Property name="line_width" type="float">
+        Painted width of all service and central lines in meters. Defaults to `0.05` m (`5 cm`).
+      </Property>
+      <Property name="service_line_extension" type="float">
+        Extension of the central service dividing line beyond each service line toward the back wall in meters. Defaults to `0.20` m (`20 cm`).
+      </Property>
+      <Property name="net_post_height" type="float">
+        Maximum structural height of the exterior net posts in meters. Defaults to `1.05` m.
+      </Property>
+      <Property name="free_height" type="float">
+        Minimum obstacle-free overhead clearance above the entire playing floor in meters. Defaults to `6.0` m (or `8.0` m for new constructions).
       </Property>
     </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Instantiation" tag="class" label="CourtDimensions">
+    <CodeGroup title="Initialization" tag="dataclass" label="CourtDimensions">
 
     ```python
     from padelkit import CourtDimensions
@@ -86,142 +68,102 @@ The `CourtDimensions` dataclass holds the official physical measurements of a pa
         back_wall_height=4.0,
         side_wall_height=3.0,
     )
+    print(dims.line_width, dims.free_height)
+    # 0.05 6.0
     ```
 
     </CodeGroup>
 
-    ```json {{ title: 'Output structure' }}
-    CourtDimensions(
-      length=20.0,
-      width=10.0,
-      net_height_center=0.88,
-      net_height_posts=0.92,
-      service_line_distance_from_back=3.0,
-      back_wall_height=4.0,
-      side_wall_height=3.0,
-      line_width=0.05,
-      service_line_extension=0.20,
-      net_post_height=1.05,
-      free_height=6.0
-    )
-    ```
-
   </Col>
 </Row>
 
-
 ---
 
-## Official Markings, Net Posts & Free Height {{ tag: 'fields', label: 'FIP Rules §1 & §3' }}
+## `fip_standard()` {{ tag: 'classmethod', label: 'CourtDimensions.fip_standard()' }}
 
 <Row>
   <Col>
 
-    In addition to enclosure boundaries, `CourtDimensions` tracks the official FIP court markings, net post geometry, and minimum obstacle-free vertical clearance:
+    Creates standard FIP official court dimensions parameterized by lateral enclosure variant (`V1` vs `V2`) and minimum overhead clearance (`6.0 m` existing vs `8.0 m` new construction).
 
+    ### Arguments
     <Properties>
-      <Property name="line_width" type="float" optional default="0.05">
-        Width of painted court lines in meters (`0.05 m` / `5 cm` official standard).
+      <Property name="variant" type="EnclosureVariant">
+        Lateral mesh height variant: `EnclosureVariant.V1` (`3.0 m` central height) or `EnclosureVariant.V2` (`4.0 m` uniform height). Defaults to `EnclosureVariant.V1`.
       </Property>
-      <Property name="service_line_extension" type="float" optional default="0.20">
-        Symmetric protrusion of the central service line past both service lines (`0.20 m` / `20 cm`).
-      </Property>
-      <Property name="net_post_height" type="float" optional default="1.05">
-        Maximum height of the net posts in meters (`1.05 m`), mounted flush with the sideline enclosure without gaps.
-      </Property>
-      <Property name="free_height" type="float" optional default="6.0">
-        Minimum obstacle-free clearance height over the court (`6.0 m` standard; `8.0 m` suggested when `new_construction=True`).
+      <Property name="new_construction" type="bool">
+        When `True`, sets `free_height = 8.0` m instead of the `6.0` m regulatory baseline. Defaults to `False`.
       </Property>
     </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="New Construction Clearance" tag="classmethod" label="new_construction=True">
-
-    ```python
-    from padelkit import CourtDimensions
-
-    dims_existing = CourtDimensions.fip_standard()
-    assert dims_existing.free_height == 6.0
-
-    # New facilities: 8.0 m recommended free vertical height
-    dims_new = CourtDimensions.fip_standard(new_construction=True)
-    assert dims_new.free_height == 8.0
-    assert dims_new.service_line_extension == 0.20
-    assert dims_new.net_post_height == 1.05
-    ```
-
-    </CodeGroup>
-
-  </Col>
-</Row>
-
-
----
-
-## FIP Standard {{ tag: 'classmethod', label: 'CourtDimensions.fip_standard()' }}
-
-<Row>
-  <Col>
-
-    Returns a `CourtDimensions` instance pre-populated with the standard measurements defined by the International Padel Federation (FIP). Defaults to **`EnclosureVariant.V1`** (`side_wall_height=3.0` m in the central 16 m); pass `variant=EnclosureVariant.V2` or call `CourtDimensions.fip_variant_2()` for a uniform `4.0` m lateral enclosure, and set `new_construction=True` for an `8.0` m free height.
-
-  </Col>
-  <Col sticky>
-
-    <CodeGroup title="Usage" tag="classmethod" label="fip_standard">
+    <CodeGroup title="Standard FIP Presets" tag="classmethod" label="fip_standard">
 
     ```python
     from padelkit import CourtDimensions, EnclosureVariant
 
-    dims_v1 = CourtDimensions.fip_standard()
-    dims_v2 = CourtDimensions.fip_standard(variant=EnclosureVariant.V2)
-    # Or shorthand:
-    dims_v2 = CourtDimensions.fip_variant_2(new_construction=True)
+    v1 = CourtDimensions.fip_standard()
+    v2_new = CourtDimensions.fip_standard(
+        variant=EnclosureVariant.V2,
+        new_construction=True,
+    )
+    print(v1.side_wall_height, v1.free_height)      # 3.0 6.0
+    print(v2_new.side_wall_height, v2_new.free_height)  # 4.0 8.0
     ```
 
     </CodeGroup>
-
-    ```json {{ title: 'Output (V1)' }}
-    CourtDimensions(
-      length=20.0,
-      width=10.0,
-      net_height_center=0.88,
-      net_height_posts=0.92,
-      service_line_distance_from_back=3.0,
-      back_wall_height=4.0,
-      side_wall_height=3.0,
-      line_width=0.05,
-      service_line_extension=0.20,
-      net_post_height=1.05,
-      free_height=6.0
-    )
-    ```
 
   </Col>
 </Row>
 
 ---
 
-## Dictionary Serialization {{ tag: 'methods', label: 'to_dict / from_dict' }}
+## `fip_variant_2()` {{ tag: 'classmethod', label: 'CourtDimensions.fip_variant_2()' }}
 
 <Row>
   <Col>
 
+    Convenience factory equivalent to `CourtDimensions.fip_standard(variant=EnclosureVariant.V2, new_construction=...)`, setting a uniform `4.0 m` perimeter height along the full `20.0 m` court length.
+
+    ### Arguments
     <Properties>
-      <Property name="dims.to_dict()" type="dict[str, float]">
-        Serializes all 11 court measurements into a dictionary of floats.
-      </Property>
-      <Property name="CourtDimensions.from_dict(data)" type="CourtDimensions">
-        Classmethod that reconstructs a `CourtDimensions` instance from a dictionary (defaulting any omitted keys to FIP standard values).
+      <Property name="new_construction" type="bool">
+        When `True`, sets `free_height = 8.0` m; otherwise `6.0` m. Defaults to `False`.
       </Property>
     </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Serialize Dimensions" tag="method" label="to_dict / from_dict">
+    <CodeGroup title="Variant 2 Shorthand" tag="classmethod" label="fip_variant_2">
+
+    ```python
+    from padelkit import CourtDimensions
+
+    v2 = CourtDimensions.fip_variant_2()
+    print(v2.side_wall_height)  # 4.0
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Serialization (`to_dict` / `from_dict`) {{ tag: 'method', label: 'dict I/O' }}
+
+<Row>
+  <Col>
+
+    Converts all 11 dimension measurements to a plain JSON-serializable dictionary (`dims.to_dict()`) or reconstructs a `CourtDimensions` dataclass (`CourtDimensions.from_dict(data)`), filling omitted keys from FIP standard defaults.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Dictionary Round-Trip" tag="method" label="to_dict / from_dict">
 
     ```python
     from padelkit import CourtDimensions

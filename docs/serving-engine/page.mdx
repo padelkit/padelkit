@@ -1,0 +1,113 @@
+# ServingEngine
+
+`ServingEngine` is the stateless serving and receiving calculator backing [`MatchScoreHistory`](/match-score-history). Given a [`MatchConfiguration`](/match-configuration) and current set/game/tiebreak counters, it computes the exact [`ServingState`](/serving-state) (active team, serving player, diagonal service box `"right"` / `"left"`, and receiving player). Import via `from padelkit import ServingEngine`. {{ className: 'lead' }}
+
+<Schematic
+  name="serving-rotations"
+  alt="Serving Geometry and 4-Game Rotation Cycle"
+  caption="Diagonal service boxes ('right' Deuce vs 'left' Ad) and deterministic 4-game server rotation computed by ServingEngine."
+/>
+
+## Constructor {{ tag: 'constructor', label: 'ServingEngine' }}
+
+<Row>
+  <Col>
+
+    <Properties>
+      <Property name="config" type="MatchConfiguration">
+        [`MatchConfiguration`](/match-configuration) specifying `starting_server_team` and optional per-set `set_starting_servers` overrides.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Initialization" tag="constructor" label="ServingEngine">
+
+    ```python
+    from padelkit import MatchConfiguration, ServingEngine
+
+    engine = ServingEngine(config=MatchConfiguration())
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `calculate_serving_state()` {{ tag: 'method', label: 'engine.calculate_serving_state()' }}
+
+<Row>
+  <Col>
+
+    Determines who serves, who receives, and which diagonal box is active for the next point in either a regular game or a tiebreak / super-tiebreak.
+
+    ### Arguments
+    <Properties>
+      <Property name="teams" type="dict[TeamId, Team] | None">
+        Pair definitions used to resolve specific `player` and `receiver` instances (`None` leaves them as `None`).
+      </Property>
+      <Property name="points_played" type="int">
+        Number of points already played in the current game or active tiebreak (`0`-based).
+      </Property>
+      <Property name="total_games" type="int">
+        Total completed games played so far across the entire match (governs game-by-game team alternation).
+      </Property>
+      <Property name="current_set" type="int">
+        1-based index of the current set (`1`, `2`, `3`, ...), used to inspect `set_starting_servers`.
+      </Property>
+      <Property name="games_a" type="int">
+        Games won by Team A in the active set.
+      </Property>
+      <Property name="games_b" type="int">
+        Games won by Team B in the active set.
+      </Property>
+      <Property name="in_tiebreak" type="bool">
+        `True` during a standard 7-point tiebreak (enables `1-2-2-2...` tiebreak service rotation).
+      </Property>
+      <Property name="in_super_tiebreak" type="bool">
+        `True` during a 10-point match-deciding super-tiebreak.
+      </Property>
+      <Property name="tiebreak_starter" type="TeamId | None">
+        Team that served the opening point of the active tiebreak (`None` outside tiebreaks).
+      </Property>
+    </Properties>
+
+    ### Returns
+    `ServingState | None` — Active [`ServingState`](/serving-state) (or `None` if `tiebreak_starter` is missing inside a tiebreak).
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Compute Serving State" tag="method" label="calculate_serving_state">
+
+    ```python
+    from padelkit import MatchConfiguration, Player, ServingEngine, Team, TeamId
+
+    teams = {
+        TeamId.A: Team(TeamId.A, Player("Coello", side="right"), Player("Tapia", side="left")),
+        TeamId.B: Team(TeamId.B, Player("Chingotto", side="right"), Player("Galan", side="left")),
+    }
+    engine = ServingEngine(MatchConfiguration())
+
+    state = engine.calculate_serving_state(
+        teams=teams,
+        points_played=1,
+        total_games=0,
+        current_set=1,
+        games_a=0,
+        games_b=0,
+        in_tiebreak=False,
+        in_super_tiebreak=False,
+        tiebreak_starter=None,
+    )
+    print(state.team, state.player.name, "-> to", state.receiver.name, "on", state.court_side)
+    # TeamId.A Coello -> to Galan on left
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

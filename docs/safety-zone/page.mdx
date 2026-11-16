@@ -1,0 +1,130 @@
+# SafetyZone
+
+`SafetyZone` is a frozen dataclass modeling the obstacle-free exterior safety clearance outside one sideline of a [`Court`](/court). Import via `from padelkit import SafetyZone`. {{ className: 'lead' }}
+
+Under official FIP **Rule 16 (*Zona de seguridad y juego exterior*, p. 11)**, allowing players to exit the court through open lateral doorways requires a clear exterior rectangle at least **`2.0 m` wide** outward from the sideline, extending **`4.0 m` on each side of the net (`8.0 m` total)**, with at least **`3.0 m` overhead clearance** and **`>= 0.02 m` (`2 cm`)** shock-absorbing padding around doorway posts and net structures.
+
+---
+
+## Parameters & Fields {{ tag: 'dataclass', label: 'SafetyZone' }}
+
+<Row>
+  <Col>
+
+    All four fields must be non-negative (`>= 0.0`); otherwise construction raises `ValueError`.
+
+    <Properties>
+      <Property name="width" type="float">
+        Obstacle-free lateral clearance width extending outward from the sideline in meters (FIP Rule 16 minimum: `2.0` m). Defaults to `2.0`.
+      </Property>
+      <Property name="half_length" type="float">
+        Obstacle-free clearance length extending along Y to each side of the net in meters (FIP Rule 16 minimum: `4.0` m, making `8.0 m` total centered on `Y = 0`). Defaults to `4.0`.
+      </Property>
+      <Property name="height" type="float">
+        Vertical obstacle-free clearance height over the exterior zone in meters (FIP Rule 16 minimum: `3.0` m). Defaults to `3.0`.
+      </Property>
+      <Property name="doorway_padding_thickness" type="float">
+        Thickness of shock-absorbing protective padding around doorway frames and posts in meters (FIP minimum: `0.02` m / `2 cm`). Defaults to `0.02`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Initialization" tag="dataclass" label="SafetyZone">
+
+    ```python
+    from padelkit import Court, SafetyZone, SideAccess
+
+    court = Court(
+        access_left=SideAccess.fip_dual_access(),
+        access_right=SideAccess.fip_dual_access(),
+        safety_zone_left=SafetyZone(width=2.5, half_length=4.5, height=3.5),
+        safety_zone_right=SafetyZone.fip_standard(),
+    )
+    print("Out-of-court permitted:", court.is_out_of_court_play_allowed())
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `fip_standard()` & `none()` {{ tag: 'classmethod', label: 'Presets' }}
+
+<Row>
+  <Col>
+
+    - **`SafetyZone.fip_standard()`**: Returns the minimum official Rule 16 exterior clearance (`width=2.0`, `half_length=4.0`, `height=3.0`, `doorway_padding_thickness=0.02`).
+    - **`SafetyZone.none()`**: Represents zero exterior clearance (`0.0` across all fields), explicitly disallowing official out-of-court play when passed to a `Court`.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Factory Presets" tag="classmethod" label="fip_standard / none">
+
+    ```python
+    from padelkit import SafetyZone
+
+    print(SafetyZone.fip_standard().is_fip_compliant())  # True
+    print(SafetyZone.none().is_fip_compliant())          # False
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `is_fip_compliant()` {{ tag: 'method', label: 'zone.is_fip_compliant()' }}
+
+<Row>
+  <Col>
+
+    Returns `True` when `width >= 2.0`, `half_length >= 4.0`, `height >= 3.0`, and `doorway_padding_thickness >= 0.02`.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Check Rule 16 Clearance" tag="method" label="is_fip_compliant">
+
+    ```python
+    from padelkit import SafetyZone
+
+    tight_alley = SafetyZone(width=1.4, half_length=4.0, height=3.0)
+    print(tight_alley.is_fip_compliant())  # False (width < 2.0m)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Serialization (`to_dict` / `from_dict`) {{ tag: 'method', label: 'dict I/O' }}
+
+<Row>
+  <Col>
+
+    Serializes (`zone.to_dict()`) and reconstructs (`SafetyZone.from_dict(data)`) exterior safety clearance dimensions cleanly for Parquet metadata headers and JSON configs.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Dictionary Round-Trip" tag="method" label="to_dict / from_dict">
+
+    ```python
+    from padelkit import SafetyZone
+
+    zone = SafetyZone.fip_standard()
+    assert SafetyZone.from_dict(zone.to_dict()) == zone
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

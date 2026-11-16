@@ -20,16 +20,27 @@ class CourtDimensions:
     """
 
     length: float
+    """Interior court length along the Y axis in meters (FIP: `20.0` m)."""
     width: float
+    """Interior court width along the X axis in meters (FIP: `10.0` m)."""
     net_height_center: float
+    """Net height at the center strap (`X = 0`) in meters (FIP: `0.88` m)."""
     net_height_posts: float
+    """Net height at the side posts (`X = ±5.0`) in meters (FIP: `0.92` m)."""
     service_line_distance_from_back: float
+    """Distance from each back wall to its service line in meters (FIP: `3.0` m)."""
     back_wall_height: float
+    """Total height of both back walls (wall + mesh) in meters (FIP: `4.0` m)."""
     side_wall_height: float
+    """Central `16.0` m side enclosure height in meters (`3.0` V1, `4.0` V2)."""
     line_width: float = 0.05
+    """Width of all painted court lines in meters (FIP: `0.05` m)."""
     service_line_extension: float = 0.20
+    """Extension of the center line past each service line in meters (`0.20`)."""
     net_post_height: float = 1.05
+    """Maximum structural height of the net posts in meters (FIP max: `1.05` m)."""
     free_height: float = 6.0
+    """Minimum unobstructed vertical clearance in meters (`6.0` m, or `8.0` m new)."""
 
     @classmethod
     def fip_standard(
@@ -89,7 +100,7 @@ class CourtDimensions:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "CourtDimensions":
-        """Reconstructs a :class:`CourtDimensions` instance from a dictionary."""
+        """Reconstructs a `CourtDimensions` instance from a dictionary."""
         std = cls.fip_standard()
         return cls(
             length=float(data.get("length", std.length)),

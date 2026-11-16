@@ -22,14 +22,14 @@ class PadelVisualizer:
     """Interactive 3D Three.js visualizer and synthetic pass inspector for PadelKit.
 
     Supports three operating modes:
-    1. **Parquet / CSV / Timeline Replay Mode**: Load a :class:`MatchTimeline`,
-       ``.parquet`` or ``.csv`` file via :meth:`from_parquet` / :meth:`from_csv`
+    1. **Parquet / CSV / Timeline Replay Mode**: Load a `MatchTimeline`,
+       `.parquet`, or `.csv` file via `from_parquet` / `from_csv`
        and scrub through the match at any speed or camera angle.
-    2. **Real-Time Live Streaming Mode**: Start a local server with :meth:`serve`
-       and stream :class:`FrameState` updates in real time via :meth:`push_frame`.
+    2. **Real-Time Live Streaming Mode**: Start a local server with `serve`
+       and stream `FrameState` updates in real time via `push_frame`.
     3. **Standalone HTML / Jupyter Notebook Mode**: Export a zero-dependency
-       offline HTML file with :meth:`export_html` (with embedded Three.js by
-       default, or optional CDN loading via ``offline=False``) or render
+       offline HTML file with `export_html` (with embedded Three.js by
+       default, or optional CDN loading via `offline=False`) or render
        directly inside a Jupyter cell.
     """
 
@@ -42,6 +42,21 @@ class PadelVisualizer:
         offline: bool = True,
         ball_properties: BallProperties | None = None,
     ) -> None:
+        """Initializes an interactive 3D Three.js visualizer.
+
+        Args:
+            court: Reference `Court` geometry. Defaults to timeline court or
+                `Court.fip_standard()`.
+            cameras: List of `Camera` presets/calibrated views shown in the HUD.
+                Defaults to 5 standard viewpoints (broadcast, zenith, corner, side).
+            timeline: `MatchTimeline` to replay. Defaults to a physics-simulated
+                `MatchTimeline.demo_rally()`.
+            animation_library_dir: Optional folder containing `manifest.json`
+                and Mixamo `.glb` player animations.
+            offline: If `True`, embeds the Three.js runtime inside exported HTML
+                for zero-network playback; if `False`, loads via CDN import map.
+            ball_properties: Visual ball color/radius settings.
+        """
         self.timeline: MatchTimeline = (
             timeline
             if timeline is not None
@@ -81,7 +96,7 @@ class PadelVisualizer:
         animation_library_dir: str | Path | None = None,
         offline: bool = True,
     ) -> "PadelVisualizer":
-        """Creates a :class:`PadelVisualizer` pre-loaded with a CSV match timeline."""
+        """Creates a `PadelVisualizer` pre-loaded with a CSV match timeline."""
         c = court or Court.fip_standard()
         timeline = MatchTimeline.from_csv(csv_path, court=c)
         return cls(
@@ -101,7 +116,7 @@ class PadelVisualizer:
         animation_library_dir: str | Path | None = None,
         offline: bool = True,
     ) -> "PadelVisualizer":
-        """Creates a :class:`PadelVisualizer` pre-loaded with a Parquet match file."""
+        """Creates a `PadelVisualizer` pre-loaded with a Parquet match file."""
         timeline = MatchTimeline.from_parquet(parquet_path, court=court)
         return cls(
             court=timeline.court,
@@ -112,7 +127,7 @@ class PadelVisualizer:
         )
 
     def add_camera(self, camera: Camera) -> "PadelVisualizer":
-        """Registers an additional :class:`Camera` viewpoint in the 3D scene."""
+        """Registers an additional `Camera` viewpoint in the 3D scene."""
         self.cameras.append(camera)
         return self
 
@@ -274,11 +289,11 @@ class PadelVisualizer:
         """Generates the Three.js HTML application string.
 
         Args:
-            live_stream_url: Optional SSE endpoint URL used by :meth:`serve`.
-            offline: If ``True``, embeds the minified Three.js bundle directly in
+            live_stream_url: Optional SSE endpoint URL used by `serve`.
+            offline: If `True`, embeds the minified Three.js bundle directly in
                 the HTML so it works with zero internet access (including
-                ``file://`` URLs). If ``False``, uses a jsDelivr CDN import map.
-                Defaults to ``self.offline`` (``True``).
+                `file://` URLs). If `False`, uses a jsDelivr CDN import map.
+                Defaults to `self.offline` (`True`).
         """
         use_offline = self.offline if offline is None else bool(offline)
         cfg = self.build_config(live_stream_url=live_stream_url)
@@ -309,7 +324,7 @@ class PadelVisualizer:
     # ------------------------------------------------------------------ #
 
     def push_frame(self, frame: FrameState) -> None:
-        """Broadcasts a :class:`FrameState` in real time to connected browsers."""
+        """Broadcasts a `FrameState` in real time to connected browsers."""
         self.timeline.append(frame)
         payload = json.dumps(frame.to_dict())
         for q in list(self._subscribers):

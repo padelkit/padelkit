@@ -1,0 +1,138 @@
+# Court Enums
+
+Reference catalog of all enumerations exported by `padelkit.court` (for the 17 spatial landmark enum members, see [`CourtLandmark`](/court-landmark)). Every enum inherits from `str` or `int` so enum members serialize cleanly to JSON and Parquet headers. {{ className: 'lead' }}
+
+## `CoordinateSystem` {{ tag: 'enum', label: 'padelkit.court' }}
+
+Defines the origin and axis bounds used when expressing court, camera, and ball coordinates. See [Court Geometry](/court-geometry#coordinate-systems-and-perspective-convention) for a visual diagram.
+
+| Member | Value | Origin `(0, 0, 0)` | Bounds `(X, Y, Z)` in `m` |
+| :--- | :--- | :--- | :--- |
+| `CoordinateSystem.CENTERED` | `"centered"` | Midpoint of the net on the floor (`center`) | `X ∈ [-5, 5]`, `Y ∈ [-10, 10]`, `Z >= 0` |
+| `CoordinateSystem.CORNER_BASED` | `"corner_based"` | Bottom-left corner (`floor_near_left`) | `X ∈ [0, 10]`, `Y ∈ [0, 20]`, `Z >= 0` |
+
+---
+
+## `EnclosureType` {{ tag: 'enum', label: 'padelkit.court' }}
+
+Solid wall construction material. Determines rebound friction and restitution inside [`BallPhysicsEngine`](/ball-physics-engine) and defaults [`SideWallProfile`](#side-wall-profile) when unset (`WALL -> STEPPED`, `GLASS -> UNIFORM`).
+
+| Member | Value | Material & Rebound Behavior |
+| :--- | :--- | :--- |
+| `EnclosureType.GLASS` | `"glass"` | Tempered glass / transparent panels (`glass_cor=0.85`, low `glass_friction=0.25`). |
+| `EnclosureType.WALL` | `"wall"` | Concrete or masonry walls (`wall_cor=0.75`, high `wall_friction=0.70`). |
+
+---
+
+## `EnclosureVariant` {{ tag: 'enum', label: 'padelkit.court' }}
+
+Regulatory FIP enclosure height profile (`int` enum) controlling the top wire-mesh height along the central `16.0 m` of each sideline.
+
+| Member | Value | Perimeter Height (`0–4 m` corners vs. `4–16 m` center) |
+| :--- | :--- | :--- |
+| `EnclosureVariant.V1` | `1` | `4.0 m` in the `2.0 m` end corners, dropping to `3.0 m` across the central `16.0 m`. |
+| `EnclosureVariant.V2` | `2` | Uniform `4.0 m` perimeter height along the full `20.0 m` length. |
+
+---
+
+## `SideWallProfile` {{ tag: 'enum', label: 'padelkit.court' }}
+
+Silhouette of the solid wall/glass panels in the `4.0 m` end zones next to each back wall.
+
+| Member | Value | Solid Wall Shape (`0–4 m` from back wall) |
+| :--- | :--- | :--- |
+| `SideWallProfile.STEPPED` | `"stepped"` | Two stepped panels: `3.0 m high × 2.0 m` followed by `2.0 m high × 2.0 m`. |
+| `SideWallProfile.UNIFORM` | `"uniform"` | Flat continuous panel (*Variant Crystal* / "sin escalón"): `3.0 m high × 4.0 m` long. |
+
+---
+
+## `CourtSurfaceColor` {{ tag: 'enum', label: 'padelkit.court' }}
+
+Artificial turf color palette including standard FIP outdoor/indoor colors (*Suelo*, p. 9) and championship tournament colors. Under FIP regulations, `BLACK` is approved **exclusively** on indoor courts (`CourtSetting.INDOOR`).
+
+| Member | Value | FIP Standard Status |
+| :--- | :--- | :--- |
+| `CourtSurfaceColor.BLUE` | `"blue"` | Official FIP outdoor & indoor |
+| `CourtSurfaceColor.GREEN` | `"green"` | Official FIP outdoor & indoor |
+| `CourtSurfaceColor.TERRACOTTA` | `"terracotta"` | Official FIP outdoor & indoor (*pardo-terroso*) |
+| `CourtSurfaceColor.BLACK` | `"black"` | Official FIP **indoor-only** |
+| `CourtSurfaceColor.PURPLE` | `"purple"` | Custom / Championship palette |
+| `CourtSurfaceColor.RED` | `"red"` | Custom / Championship palette |
+| `CourtSurfaceColor.ORANGE` | `"orange"` | Custom / Championship palette |
+| `CourtSurfaceColor.GRAY` | `"gray"` | Custom / Championship palette |
+| `CourtSurfaceColor.NAVY` | `"navy"` | Custom / Championship palette |
+| `CourtSurfaceColor.TEAL` | `"teal"` | Custom / Championship palette |
+| `CourtSurfaceColor.PINK` | `"pink"` | Custom / Championship palette |
+
+---
+
+## `CourtOrientation` {{ tag: 'enum', label: 'padelkit.court' }}
+
+Compass alignment of the court's `20.0 m` length axis (useful for modeling sun glare in outdoor venues; FIP recommends North–South).
+
+| Member | Value | Meaning |
+| :--- | :--- | :--- |
+| `CourtOrientation.NORTH_SOUTH` | `"north_south"` | Long axis aligned North–South (recommended outdoor alignment). |
+| `CourtOrientation.EAST_WEST` | `"east_west"` | Long axis aligned East–West. |
+
+---
+
+## `DoorState` {{ tag: 'enum', label: 'padelkit.court' }}
+
+Physical open/closed gate status for lateral access doorways (`Court.door_left` and `Court.door_right`).
+
+| Member | Value | Physics & Rendering Effect |
+| :--- | :--- | :--- |
+| `DoorState.OPEN` | `"open"` | Ball passes freely through the doorway `[Y0, Y1] × [0, access.height]`. |
+| `DoorState.CLOSED` | `"closed"` | Doorway behaves as closed metallic wire fence (`SurfaceType.SIDE_FENCE`). |
+
+---
+
+## `CourtSetting` {{ tag: 'enum', label: 'padelkit.court' }}
+
+Roof/venue enclosure environment of the court.
+
+| Member | Value | Meaning |
+| :--- | :--- | :--- |
+| `CourtSetting.INDOOR` | `"indoor"` | Fully enclosed indoor hall (required when using `CourtSurfaceColor.BLACK`). |
+| `CourtSetting.OUTDOOR` | `"outdoor"` | Open-air outdoor court exposed to ambient wind/sunlight. |
+| `CourtSetting.SEMI_COVERED` | `"semi_covered"` | Overhead canopy roof with open lateral ventilation. |
+
+<Row>
+  <Col>
+
+    All court enums can be imported directly from the root `padelkit` package and mixed interchangeably with their underlying string or integer values.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Using Court Enums" tag="enum" label="padelkit.court">
+
+    ```python
+    from padelkit import (
+        CoordinateSystem,
+        Court,
+        CourtSetting,
+        CourtSurfaceColor,
+        DoorState,
+        EnclosureType,
+        EnclosureVariant,
+        SideWallProfile,
+    )
+
+    court = Court(
+        enclosure_type=EnclosureType.GLASS,
+        enclosure_variant=EnclosureVariant.V1,
+        side_wall_profile=SideWallProfile.UNIFORM,
+        turf_color=CourtSurfaceColor.BLACK,
+        setting=CourtSetting.INDOOR,
+        door_left=DoorState.OPEN,
+    )
+    print(court.is_fip_compliant())  # True
+    print(court.point("center", coordinate_system=CoordinateSystem.CORNER_BASED))
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

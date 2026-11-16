@@ -1,0 +1,244 @@
+# SideAccess
+
+`SideAccess` is a frozen dataclass defining the geometry and number of player/ball doorway openings along one lateral sideline (`X = -width/2` or `X = +width/2`) of a [`Court`](/court). Import via `from padelkit import SideAccess`. {{ className: 'lead' }}
+
+Per FIP *Rules of Padel* (*Accesos*, pp. 10–11), openings sit symmetrically around the net post (`Y = 0.0`) and are topped by a wire-mesh lintel up to the top of the perimeter enclosure (`3.0 m` in `V1` or `4.0 m` in `V2`). Both [`BallPhysicsEngine`](/ball-physics-engine) and [`PadelVisualizer`](/padel-visualizer) use `SideAccess` to distinguish passable doorways from upper wire mesh.
+
+<Schematic
+  name="court-side-access"
+  alt="Lateral Access Openings (1 vs 2 vs 0 Doors per Side)"
+  caption="Comparison of 1-door single access (default), 2-door dual access with central pillar (for Rule 16 out-of-court play), and 0-door continuous sideline mesh."
+/>
+
+---
+
+## Parameters & Fields {{ tag: 'dataclass', label: 'SideAccess' }}
+
+<Row>
+  <Col>
+
+    Constructor validation raises `ValueError` if `count` is not in `(0, 1, 2)`, if `width <= 0` or `height <= 0` when `count > 0`, or if `center_pillar_width < 0`.
+
+    <Properties>
+      <Property name="count" type="int">
+        Number of doorway openings centered around the net on that sideline (`0`, `1`, or `2`). Defaults to `1`.
+      </Property>
+      <Property name="width" type="float">
+        Clear opening width of each individual doorway in meters (FIP official: `1.05–2.00 m` for `count=1`, `0.72–1.00 m` for `count=2`). Defaults to `2.0` m.
+      </Property>
+      <Property name="height" type="float">
+        Clear vertical height of each doorway from the floor up to the overhead mesh lintel in meters (FIP official: `2.00–2.20 m`). Defaults to `2.2` m.
+      </Property>
+      <Property name="center_pillar_width" type="float">
+        Width in meters of the structural post at `Y = 0` separating two openings when `count == 2`. Ignored when `count < 2`. Defaults to `0.16` m.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Initialization" tag="dataclass" label="SideAccess">
+
+    ```python
+    from padelkit import SideAccess
+
+    # Default single FIP opening (2.0m x 2.2m)
+    single = SideAccess()
+
+    # Custom recreational club doorway
+    club_door = SideAccess(count=1, width=1.6, height=2.1)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `fip_single_access()` {{ tag: 'classmethod', label: 'SideAccess.fip_single_access()' }}
+
+<Row>
+  <Col>
+
+    Creates a single centered doorway opening (`count=1`, `center_pillar_width=0.0`), defaulting to the maximum FIP single-doorway footprint (`2.00 m × 2.20 m`).
+
+    ### Arguments
+    <Properties>
+      <Property name="width" type="float">
+        Clear doorway width in meters (FIP range: `1.05–2.00`). Defaults to `2.0`.
+      </Property>
+      <Property name="height" type="float">
+        Clear doorway height in meters (FIP range: `2.00–2.20`). Defaults to `2.2`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Single Access Preset" tag="classmethod" label="fip_single_access">
+
+    ```python
+    from padelkit import SideAccess
+
+    access = SideAccess.fip_single_access(width=1.8, height=2.1)
+    print(access.opening_y_intervals())
+    # ((-0.9, 0.9),)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `fip_dual_access()` {{ tag: 'classmethod', label: 'SideAccess.fip_dual_access()' }}
+
+<Row>
+  <Col>
+
+    Creates a dual symmetric doorway configuration (`count=2`), required on **both** sidelines for official FIP Rule 16 out-of-court play. Each opening straddles the central structural pillar around `Y = 0.0`.
+
+    ### Arguments
+    <Properties>
+      <Property name="width" type="float">
+        Width of each opening in meters (FIP range: `0.72–1.00`). Defaults to `1.0`.
+      </Property>
+      <Property name="height" type="float">
+        Height of each opening in meters (FIP range: `2.00–2.20`). Defaults to `2.2`.
+      </Property>
+      <Property name="center_pillar_width" type="float">
+        Width of the central post at `Y = 0` separating both openings in meters. Defaults to `0.16`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Dual Access Preset" tag="classmethod" label="fip_dual_access">
+
+    ```python
+    from padelkit import SideAccess
+
+    dual = SideAccess.fip_dual_access()
+    print(dual.opening_y_intervals())
+    # ((-1.08, -0.08), (0.08, 1.08))
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `no_access()` {{ tag: 'classmethod', label: 'SideAccess.no_access()' }}
+
+<Row>
+  <Col>
+
+    Creates a closed sideline configuration (`count=0`, `width=0.0`, `height=0.0`) with continuous wire mesh and no doorway openings—typical of courts where players only enter from one side.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Closed Sideline" tag="classmethod" label="no_access">
+
+    ```python
+    from padelkit import SideAccess
+
+    closed = SideAccess.no_access()
+    print(closed.opening_y_intervals())  # ()
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `opening_y_intervals()` {{ tag: 'method', label: 'access.opening_y_intervals()' }}
+
+<Row>
+  <Col>
+
+    Computes the sorted open `(y_min, y_max)` spans along the sideline in CENTERED court coordinates (`Y = 0.0` at the net), clamped within `[-half_length, +half_length]`. Returns `()` when `count == 0`.
+
+    ### Arguments
+    <Properties>
+      <Property name="half_length" type="float">
+        Half the court's interior length in meters. Defaults to `10.0`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Query Open Y Spans" tag="method" label="opening_y_intervals">
+
+    ```python
+    from padelkit import SideAccess
+
+    dual = SideAccess.fip_dual_access(width=0.9, center_pillar_width=0.2)
+    print(dual.opening_y_intervals(half_length=10.0))
+    # ((-1.0, -0.1), (0.1, 1.0))
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `is_fip_compliant()` {{ tag: 'method', label: 'access.is_fip_compliant()' }}
+
+<Row>
+  <Col>
+
+    Returns `True` if doorway dimensions comply with official FIP *Accesos* rules: `count == 0` is always locally valid (`Court.has_fip_compliant_access()` checks court-wide requirements), while `count > 0` requires `2.00 <= height <= 2.20` plus `1.05 <= width <= 2.00` (single) or `0.72 <= width <= 1.00` (dual).
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Check Regulatory Bounds" tag="method" label="is_fip_compliant">
+
+    ```python
+    from padelkit import SideAccess
+
+    print(SideAccess.fip_single_access().is_fip_compliant())  # True
+    print(SideAccess(count=1, width=0.9, height=2.1).is_fip_compliant())  # False
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Serialization (`to_dict` / `from_dict`) {{ tag: 'method', label: 'dict I/O' }}
+
+<Row>
+  <Col>
+
+    Serializes (`access.to_dict()`) and reconstructs (`SideAccess.from_dict(data)`) all four doorway geometry fields as plain dictionaries.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Dictionary Round-Trip" tag="method" label="to_dict / from_dict">
+
+    ```python
+    from padelkit import SideAccess
+
+    access = SideAccess.fip_dual_access()
+    assert SideAccess.from_dict(access.to_dict()) == access
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

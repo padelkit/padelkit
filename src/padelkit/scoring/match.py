@@ -23,6 +23,7 @@ class Match:
         set_starting_servers: dict[int, dict[TeamId, Player]] | None = None,
         config: MatchConfiguration | None = None,
     ):
+        """Initializes a padel match with teams, scoring configuration, and metadata."""
         if config is not None:
             self.config = config
         else:
@@ -50,6 +51,7 @@ class Match:
 
     @property
     def teams(self) -> dict[TeamId, Team] | None:
+        """Competing pairs keyed by `TeamId.A` and `TeamId.B`."""
         return self.history.teams
 
     @teams.setter
@@ -58,6 +60,7 @@ class Match:
 
     @property
     def best_of_sets(self) -> int:
+        """Maximum number of sets in the match (e.g. `3` or `5`)."""
         return self.config.best_of_sets
 
     @best_of_sets.setter
@@ -66,6 +69,7 @@ class Match:
 
     @property
     def advantage_method(self) -> str:
+        """Deuce scoring rule (`"advantage"` or `"gold_point"`)."""
         return self.config.advantage_method
 
     @advantage_method.setter
@@ -74,6 +78,7 @@ class Match:
 
     @property
     def set_format(self) -> str:
+        """Games-to-win rule per set (`"standard"` or `"mini"`)."""
         return self.config.set_format
 
     @set_format.setter
@@ -82,6 +87,7 @@ class Match:
 
     @property
     def deciding_set_format(self) -> str:
+        """Final-set resolution rule (`"regular"`, `"tiebreak"`, `"super_tiebreak"`)."""
         return self.config.deciding_set_format
 
     @deciding_set_format.setter
@@ -148,7 +154,7 @@ class Match:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Match":
-        """Reconstructs a :class:`Match` instance from a dictionary."""
+        """Reconstructs a `Match` instance from a dictionary."""
         raw_teams = data.get("teams")
         teams = (
             {TeamId(tid): Team.from_dict(t_data) for tid, t_data in raw_teams.items()}

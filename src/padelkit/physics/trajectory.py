@@ -18,13 +18,21 @@ class BounceEvent:
     """Detailed record of a ball collision and bounce against a court surface."""
 
     timestamp: float
+    """Time of impact since simulation start in seconds."""
     surface: SurfaceType
+    """Court surface hit during the collision (`FLOOR`, `BACK_GLASS`, etc.)."""
     position: tuple[float, float, float]
+    """3D contact center `(x, y, z)` in court meters."""
     velocity_before: tuple[float, float, float]
+    """Pre-impact 3D linear velocity `(vx, vy, vz)` in `m/s`."""
     velocity_after: tuple[float, float, float]
+    """Post-impact 3D linear velocity `(vx, vy, vz)` in `m/s`."""
     angular_velocity_before: tuple[float, float, float]
+    """Pre-impact 3D angular velocity `(wx, wy, wz)` in `rad/s`."""
     angular_velocity_after: tuple[float, float, float]
+    """Post-impact 3D angular velocity `(wx, wy, wz)` in `rad/s`."""
     regime: ContactRegime
+    """Analytical Coulomb contact outcome (`SLIDING`, `ROLLING`, or `DAMPED`)."""
 
     @property
     def speed_before(self) -> float:
@@ -76,6 +84,14 @@ class BallTrajectory:
         bounces: list[BounceEvent] | None = None,
         coordinate_system: CoordinateSystem = CoordinateSystem.CENTERED,
     ) -> None:
+        """Initializes a `BallTrajectory` from sampled 9D kinematic states.
+
+        Args:
+            timestamps: 1D monotonic time array of shape `(N,)` in seconds.
+            states: 2D array of shape `(N, 9)` holding `[x,y,z, vx,vy,vz, wx,wy,wz]`.
+            bounces: Optional chronological list of `BounceEvent` impacts.
+            coordinate_system: Spatial reference frame (`CENTERED` or `CORNER_BASED`).
+        """
         t_arr = np.asarray(timestamps, dtype=np.float64).ravel()
         s_arr = np.asarray(states, dtype=np.float64)
         if s_arr.ndim != 2 or s_arr.shape[1] != 9:
@@ -140,7 +156,7 @@ class BallTrajectory:
         return float(np.max(self.speeds))
 
     def state_at(self, timestamp: float) -> BallState:
-        """Interpolates the 9D :class:`BallState` at an arbitrary ``timestamp``."""
+        """Interpolates the 9D `BallState` at an arbitrary `timestamp`."""
         if timestamp <= self.timestamps[0]:
             return BallState.from_vector(self.states[0])
         if timestamp >= self.timestamps[-1]:
@@ -188,7 +204,7 @@ class BallTrajectory:
         court: Court | None = None,
         fps: float = 60.0,
     ) -> MatchTimeline:
-        """Resamples the trajectory into a :class:`MatchTimeline` for 3D viewing."""
+        """Resamples the trajectory into a `MatchTimeline` for 3D viewing."""
         c = court or Court.fip_standard()
         dt = 1.0 / fps
         t_start = float(self.timestamps[0])

@@ -44,24 +44,33 @@ H36M_JOINT_NAMES: tuple[str, ...] = (
 class PlayerPose:
     """Kinematic pose and 3D skeletal state of a padel player at a single timestamp.
 
-    Coordinates ``(x, y, z)`` are expressed in meters in the centered court
-    coordinate system. ``yaw_deg`` follows the same convention as
-    :class:`CameraExtrinsics` (``0`` faces ``+Y``, ``180`` faces ``-Y``).
+    Coordinates `(x, y, z)` are expressed in meters in the centered court
+    coordinate system. `yaw_deg` follows the same convention as
+    `CameraExtrinsics` (`0` faces `+Y`, `180` faces `-Y`).
 
-    When ``keypoints_3d`` is populated, it stores the 17 H36M 3D joint coordinates
-    ``((jx, jy, jz), ...)`` in the player's local frame (pelvis XY centered at
-    ``(0, 0)``, ``Z`` height above floor ``0.0``, facing ``+Y``).
+    When `keypoints_3d` is populated, it stores the 17 H36M 3D joint coordinates
+    `((jx, jy, jz), ...)` in the player's local frame (pelvis XY centered at
+    `(0, 0)`, `Z` height above floor `0.0`, facing `+Y`).
     """
 
     player_id: str
+    """Unique player slot identifier (`"P1"`, `"P2"`, `"P3"`, or `"P4"`)."""
     x: float
+    """Player court root X coordinate in centered court meters."""
     y: float
+    """Player court root Y coordinate in centered court meters."""
     z: float = 0.0
+    """Vertical floor offset of the player root in meters (typically `0.0`)."""
     yaw_deg: float = 0.0
+    """Facing yaw angle in degrees (`0` faces `+Y`, `180` faces `-Y`, `+90` `+X`)."""
     animation: str = "idle"
+    """Active skeletal clip or action tag (`"idle"`, `"run"`, `"shot_bandeja"`...)."""
     team: str = "A"
+    """Team identifier (`"A"` or `"B"`)."""
     swing_phase: float = 0.0
+    """Normalized stroke animation phase in `[0.0, 1.0]` (impact near `0.55`)."""
     keypoints_3d: tuple[tuple[float, float, float], ...] | None = None
+    """Optional tuple of 17 H36M 3D local joints `((jx, jy, jz), ...)` in meters."""
 
     @property
     def world_keypoints_3d(self) -> tuple[tuple[float, float, float], ...] | None:
@@ -88,7 +97,7 @@ class PlayerPose:
         team: str = "A",
         swing_phase: float = 0.0,
     ) -> PlayerPose:
-        """Constructs a :class:`PlayerPose` from 17 world 3D joints ``(17, 3)``."""
+        """Constructs a `PlayerPose` from 17 world 3D joints `(17, 3)`."""
         arr = np.asarray(world_keypoints_3d, dtype=np.float64)
         if arr.shape != (17, 3):
             raise ValueError(
@@ -158,26 +167,44 @@ class PlayerPose:
 
 @dataclass(frozen=True)
 class FrameState:
-    """Complete 3D state of the court, ball, players, and score at instant ``t``."""
+    """Complete 3D state of the court, ball, players, and score at instant `t`."""
 
     timestamp: float
+    """Elapsed timeline timestamp in seconds (`>= 0.0`)."""
     ball_position: tuple[float, float, float]
+    """3D ball position `(x, y, z)` in centered court meters."""
     ball_velocity: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    """3D ball linear velocity `(vx, vy, vz)` in `m/s`."""
     ball_spin: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    """3D ball angular velocity `(wx, wy, wz)` in `rad/s`."""
     players: dict[str, PlayerPose] = field(default_factory=dict)
+    """Mapping from player ID (`"P1"`-`"P4"`) to `PlayerPose` snapshot."""
     score: str = "0-0 | 0-0"
+    """Compact human-readable scoreboard summary rendered in HUD overlays."""
     event: str | None = None
+    """Optional shot, bounce, or point event tag (e.g. `"bounce_floor"`, `"point"`)."""
     sets_a: int = 0
+    """Completed sets won by Team A (`0` or higher)."""
     sets_b: int = 0
+    """Completed sets won by Team B (`0` or higher)."""
     games_a: int = 0
+    """Games won by Team A in the active set."""
     games_b: int = 0
+    """Games won by Team B in the active set."""
     points_a: str = "0"
+    """Current game score for Team A (`"0"`, `"15"`, `"30"`, `"40"`, `"AD"`, or TB)."""
     points_b: str = "0"
+    """Current game score for Team B (`"0"`, `"15"`, `"30"`, `"40"`, `"AD"`, or TB)."""
     server_team: str | None = None
+    """Team currently serving (`"A"`, `"B"`, or `None`)."""
     server_player: str | None = None
+    """Name or ID of the active server (`None` if unspecified)."""
     point_index: int = 0
+    """1-based or 0-based chronological rally/point index in the match."""
     in_tiebreak: bool = False
+    """`True` if the active frame takes place during a tiebreak game."""
     is_gold_point: bool = False
+    """`True` when the active point is a Golden Point (`Punto de Oro`)."""
 
     @property
     def ball_speed_ms(self) -> float:
@@ -204,7 +231,7 @@ class FrameState:
         server_player: str | None = None,
         golden_point_enabled: bool = False,
     ) -> FrameState:
-        """Returns a copy enriched with structured :class:`MatchScore` fields."""
+        """Returns a copy enriched with structured `MatchScore` fields."""
         srv_team = server_team or (
             match_score.server.team.value if match_score.server is not None else None
         )
@@ -280,7 +307,7 @@ class FrameState:
 
 
 class MatchTimeline:
-    """Time-indexed sequence of :class:`FrameState` snapshots and match metadata.
+    """Time-indexed sequence of `FrameState` snapshots and match metadata.
 
     Supports lossless serialization to and from **Apache Parquet** (`.parquet`),
     CSV files, and Pandas DataFrames so camera-tracked matches, batch physics
@@ -302,6 +329,18 @@ class MatchTimeline:
         match: Match | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> None:
+        """Initializes a `MatchTimeline` container.
+
+        Args:
+            frames: Ordered list of `FrameState` snapshots. Defaults to empty list.
+            fps: Sampling frame rate in frames per second (must be `> 0.0`).
+            court: Reference `Court` geometry (falls back to `match.court` or FIP).
+            environment: Atmospheric `EnvironmentConditions` used in the match.
+            ball_properties: `BallProperties` metadata for visualization/replay.
+            surface_materials: `SurfaceMaterials` physical coefficients.
+            match: Optional `Match` entity linking players, config, and score history.
+            metadata: Arbitrary JSON-serializable metadata dictionary.
+        """
         if fps <= 0.0:
             raise ValueError("fps must be strictly positive.")
         self.frames: list[FrameState] = list(frames) if frames else []
@@ -341,7 +380,7 @@ class MatchTimeline:
         return False
 
     def append(self, frame: FrameState) -> None:
-        """Appends a :class:`FrameState` snapshot to the timeline."""
+        """Appends a `FrameState` snapshot to the timeline."""
         self.frames.append(frame)
 
     def build_metadata_envelope(self) -> dict[str, Any]:
@@ -369,10 +408,10 @@ class MatchTimeline:
         self,
         kinematics_dir: str | Path | None = None,
     ) -> MatchTimeline:
-        """Bakes 17-joint 3D H36M skeletal poses into every :class:`PlayerPose`.
+        """Bakes 17-joint 3D H36M skeletal poses into every `PlayerPose`.
 
-        If ``kinematics_dir`` is provided (e.g. ``data/kinematics_3d``),
-        real MotionBERT ``*_X3D_norm.npy`` clips are sampled and synchronized at
+        If `kinematics_dir` is provided (e.g. `data/kinematics_3d`),
+        real MotionBERT `*_X3D_norm.npy` clips are sampled and synchronized at
         ball impact; otherwise smooth biomechanical 17-joint poses are synthesized
         for every player action (`idle`, `run`, `serve`, `shot_forehand`,
         `shot_backhand`, `shot_volley`, `shot_bandeja`, `shot_vibora`, `shot_lob`,
@@ -462,7 +501,7 @@ class MatchTimeline:
     # ------------------------------------------------------------------ #
 
     def to_dataframe(self, include_skeleton: bool = True) -> pd.DataFrame:
-        """Exports the timeline into a tabular :class:`pandas.DataFrame`."""
+        """Exports the timeline into a tabular `pandas.DataFrame`."""
         export_skels = include_skeleton and self.has_skeletal_poses
         rows: list[dict[str, Any]] = []
         for f in self.frames:
@@ -570,7 +609,7 @@ class MatchTimeline:
         match: Match | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> MatchTimeline:
-        """Reconstructs a :class:`MatchTimeline` from a Pandas DataFrame."""
+        """Reconstructs a `MatchTimeline` from a Pandas DataFrame."""
         required = {"timestamp", "ball_x", "ball_y", "ball_z"}
         missing = required - set(df.columns)
         if missing:
@@ -692,7 +731,7 @@ class MatchTimeline:
         path: str | Path,
         court: Court | None = None,
     ) -> MatchTimeline:
-        """Loads a :class:`MatchTimeline` from a CSV file on disk."""
+        """Loads a `MatchTimeline` from a CSV file on disk."""
         df = pd.read_csv(path)
         return cls.from_dataframe(df, court=court)
 
@@ -702,7 +741,7 @@ class MatchTimeline:
         path: str | Path,
         court: Court | None = None,
     ) -> MatchTimeline:
-        """Loads a :class:`MatchTimeline` and embedded metadata from a Parquet file."""
+        """Loads a `MatchTimeline` and embedded metadata from a Parquet file."""
         table = pq.read_table(path)
         schema_meta = table.schema.metadata or {}
         raw_meta = schema_meta.get(cls.PARQUET_METADATA_KEY)
@@ -774,7 +813,7 @@ class MatchTimeline:
         match: Match | None = None,
         bake_skeleton: bool = False,
     ) -> MatchTimeline:
-        """Generates a 3D padel rally simulated with :class:`BallPhysicsEngine`."""
+        """Generates a 3D padel rally simulated with `BallPhysicsEngine`."""
         from ..physics.engine import BallPhysicsEngine
         from ..physics.models import BallState
 

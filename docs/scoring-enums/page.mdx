@@ -1,0 +1,35 @@
+# Scoring Enums
+
+Reference catalog for enumerations exported by `padelkit.scoring`. Import via `from padelkit import TeamId`. {{ className: 'lead' }}
+
+## `TeamId` {{ tag: 'enum', label: 'padelkit.scoring' }}
+
+Identifies the two competing pairs in a match (`"A"` vs `"B"`). Inherits from `(str, Enum)` so members work directly as dictionary keys, point history entries in [`MatchScoreHistory`](/match-score-history), and JSON values.
+
+| Member | Value | Meaning |
+| :--- | :--- | :--- |
+| `TeamId.A` | `"A"` | First competing pair (occupies `"near"` court end when `MatchScore.side_changes` is even). |
+| `TeamId.B` | `"B"` | Second competing pair (occupies `"far"` court end when `MatchScore.side_changes` is even). |
+
+<Row>
+  <Col>
+
+    Pass `TeamId.A` or `TeamId.B` directly when indexing `teams`, configuring `starting_server_team`, or recording points in [`Match`](/match).
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Using TeamId" tag="enum" label="TeamId">
+
+    ```python
+    from padelkit import Match, TeamId
+
+    match = Match(starting_server_team=TeamId.B)
+    score = match.history.add_point(TeamId.A)
+    print(TeamId.A.value, score.points_A)  # A 15
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

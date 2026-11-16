@@ -18,14 +18,18 @@ class Camera:
     """Complete projective camera model with intrinsics, extrinsics, and distortion.
 
     All 3D world coordinates follow the PadelKit court coordinate system
-    (by default :attr:`CoordinateSystem.CENTERED`, where ``(0, 0, 0)`` is at
+    (by default `CoordinateSystem.CENTERED`, where `(0, 0, 0)` is at
     the midpoint of the net on the court floor).
     """
 
     intrinsics: CameraIntrinsics
+    """Pinhole sensor resolution, focal lengths (`fx`, `fy`), and optical center."""
     extrinsics: CameraExtrinsics
+    """6-DoF world position and orientation of the camera."""
     distortion: CameraDistortion = field(default_factory=CameraDistortion.none)
+    """Optical lens distortion model (Brown-Conrady, Fisheye, or none)."""
     name: str = "camera"
+    """Human-readable identifier or preset name for this camera."""
 
     # ------------------------------------------------------------------ #
     # Presets & Factory Classmethods
@@ -128,7 +132,7 @@ class Camera:
         height_px: int = 1080,
         distortion: CameraDistortion | None = None,
     ) -> "Camera":
-        """Creates a :class:`Camera` from a named :class:`CameraPreset`."""
+        """Creates a `Camera` from a named `CameraPreset`."""
         preset_enum = (
             preset if isinstance(preset, CameraPreset) else CameraPreset(preset)
         )
@@ -263,33 +267,32 @@ class Camera:
         distortion: CameraDistortion | None = None,
         name: str = "calibrated",
     ) -> "Camera":
-        """Calibrates a 3D :class:`Camera` from 2D pixel landmarks on a video frame.
+        """Calibrates a 3D `Camera` from 2D pixel landmarks on a video frame.
 
-        Accepts any dictionary of at least 4 :class:`CourtLandmark` names (or enum
-        members) mapped to their observed ``(u, v)`` pixel coordinates, such as
-        the 4 court floor corners ``floor_near_left``, ``floor_near_right``,
-        ``floor_far_right``, ``floor_far_left``.
+        Accepts any dictionary of at least 4 `CourtLandmark` names (or enum
+        members) mapped to their observed `(u, v)` pixel coordinates, such as
+        the 4 court floor corners `floor_near_left`, `floor_near_right`,
+        `floor_far_right`, `floor_far_left`.
 
-        If ``intrinsics`` is omitted, focal length is automatically estimated from
+        If `intrinsics` is omitted, focal length is automatically estimated from
         the court geometry perspective vanishing points and refined jointly with
         the 6-DoF camera pose via damped Gauss-Newton (Levenberg-Marquardt)
         reprojection minimization.
 
         Args:
-            landmarks_2d: Mapping of at least 4 landmark identifiers to ``(u, v)``
+            landmarks_2d: Mapping of at least 4 landmark identifiers to `(u, v)`
                 pixel coordinates.
-            court: Reference :class:`Court` instance. Defaults to
-                :meth:`Court.fip_standard`.
-            intrinsics: Optional known :class:`CameraIntrinsics`. If ``None``,
+            court: Reference `Court` instance. Defaults to `Court.fip_standard()`.
+            intrinsics: Optional known `CameraIntrinsics`. If `None`,
                 focal length is estimated assuming square pixels and centered
-                principal point ``(width_px / 2, height_px / 2)``.
-            width_px: Sensor width in pixels (used when ``intrinsics`` is ``None``).
-            height_px: Sensor height in pixels (used when ``intrinsics`` is ``None``).
-            distortion: Optional :class:`CameraDistortion` model.
+                principal point `(width_px / 2, height_px / 2)`.
+            width_px: Sensor width in pixels (used when `intrinsics` is `None`).
+            height_px: Sensor height in pixels (used when `intrinsics` is `None`).
+            distortion: Optional `CameraDistortion` model.
             name: Identifier for the calibrated camera.
 
         Returns:
-            Calibrated :class:`Camera` instance.
+            Calibrated `Camera` instance.
         """
         c = court or Court.fip_standard()
         dist_cfg = distortion or CameraDistortion.none()
@@ -482,13 +485,13 @@ class Camera:
         """Transforms 3D world point(s) into the camera coordinate frame.
 
         Args:
-            points_3d: A 3D point ``(X, Y, Z)`` or an array of shape ``(..., 3)``.
+            points_3d: A 3D point `(X, Y, Z)` or an array of shape `(..., 3)`.
             coordinate_system: Reference frame of the input points.
-            court: Optional :class:`Court` used when converting from ``CORNER_BASED``.
+            court: Optional `Court` used when converting from `CORNER_BASED`.
 
         Returns:
-            NumPy array of the same shape ``(..., 3)`` in camera coordinates
-            ``(X_cam, Y_cam, Z_cam)``.
+            NumPy array of the same shape `(..., 3)` in camera coordinates
+            `(X_cam, Y_cam, Z_cam)`.
         """
         pts = self._to_centered_array(points_3d, coordinate_system, court)
         if pts.shape[-1] != 3:
@@ -505,17 +508,17 @@ class Camera:
         """Projects an array of 3D world points ``(N, 3)`` onto 2D image pixels.
 
         Args:
-            points_3d: Sequence or NumPy array of shape ``(N, 3)``.
-            coordinate_system: Coordinate system of ``points_3d``.
-            court: Optional :class:`Court` instance for ``CORNER_BASED`` conversion.
+            points_3d: Sequence or NumPy array of shape `(N, 3)`.
+            coordinate_system: Coordinate system of `points_3d`.
+            court: Optional `Court` instance for `CORNER_BASED` conversion.
 
         Returns:
-            A tuple ``(uv_pixels, visible_mask)`` where:
-            - ``uv_pixels`` has shape ``(N, 2)`` containing ``(u, v)`` coordinates
-              (``np.nan`` for points behind the camera).
-            - ``visible_mask`` is a boolean array of shape ``(N,)`` that is ``True``
-              when the point is in front of the camera (``Z_cam > 1e-6``) and falls
-              within ``[0, width_px) x [0, height_px)``.
+            A tuple `(uv_pixels, visible_mask)` where:
+            - `uv_pixels` has shape `(N, 2)` containing `(u, v)` coordinates
+              (`np.nan` for points behind the camera).
+            - `visible_mask` is a boolean array of shape `(N,)` that is `True`
+              when the point is in front of the camera (`Z_cam > 1e-6`) and falls
+              within `[0, width_px) x [0, height_px)`.
         """
         pts_cam = self.world_to_camera(points_3d, coordinate_system, court)
         single_input = pts_cam.ndim == 1
@@ -561,15 +564,15 @@ class Camera:
         """Projects a single 3D world point ``(X, Y, Z)`` to 2D pixel ``(u, v)``.
 
         Args:
-            point_3d: 3D world coordinates ``(X, Y, Z)`` in meters.
-            coordinate_system: Reference frame of ``point_3d``.
-            court: Optional :class:`Court` when using ``CORNER_BASED``.
-            clip_to_sensor: If ``True``, returns ``None`` when the projected pixel
-                falls outside ``[0, width_px] x [0, height_px]``.
+            point_3d: 3D world coordinates `(X, Y, Z)` in meters.
+            coordinate_system: Reference frame of `point_3d`.
+            court: Optional `Court` when using `CORNER_BASED`.
+            clip_to_sensor: If `True`, returns `None` when the projected pixel
+                falls outside `[0, width_px] x [0, height_px]`.
 
         Returns:
-            ``(u, v)`` pixel coordinates, or ``None`` if the point lies behind
-            the camera (or outside sensor bounds when ``clip_to_sensor=True``).
+            `(u, v)` pixel coordinates, or `None` if the point lies behind
+            the camera (or outside sensor bounds when `clip_to_sensor=True`).
         """
         uv, visible = self.project_points([point_3d], coordinate_system, court)
         if np.isnan(uv[0, 0]):
@@ -586,14 +589,13 @@ class Camera:
         """Projects all 17 standardized 3D court landmarks onto the image plane.
 
         Args:
-            court: The :class:`Court` instance to project. Defaults to
-                :meth:`Court.fip_standard`.
-            only_visible: If ``True``, landmarks that project outside the image
+            court: The `Court` instance to project. Defaults to `Court.fip_standard()`.
+            only_visible: If `True`, landmarks that project outside the image
                 sensor bounds are omitted from the returned dictionary.
 
         Returns:
-            Dictionary mapping each :class:`CourtLandmark` string name to its
-            ``(u, v)`` pixel coordinate (or ``None`` if behind the camera).
+            Dictionary mapping each `CourtLandmark` string name to its
+            `(u, v)` pixel coordinate (or `None` if behind the camera).
         """
         c = court or Court.fip_standard()
         lm_3d = c.landmarks_3d(coordinate_system=CoordinateSystem.CENTERED)

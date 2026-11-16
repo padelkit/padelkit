@@ -1,97 +1,63 @@
 # Player
 
-The `Player` dataclass holds individual player metadata. {{ className: 'lead' }}
+`Player` is a dataclass representing an individual padel player, including optional receiving half preference (`"left"` / backhand vs `"right"` / drive) and nationality metadata. Import via `from padelkit import Player`. {{ className: 'lead' }}
 
-## Properties
-
-<Properties>
-  <Property name="name" type="str">
-    The name of the player.
-  </Property>
-  <Property name="side" type="Literal['left', 'right'] | None" optional>
-    The preferred side the player plays on.
-  </Property>
-  <Property name="nationality" type="str | None" optional>
-    The nationality of the player.
-  </Property>
-</Properties>
+Two `Player` objects are paired into a [`Team`](/team). When `side` is set, [`ServingEngine`](/serving-engine) uses it to determine automatically which opponent receives serves into the `"right"` (deuce) vs `"left"` (ad) service box.
 
 ---
 
-## Initialization
+## Parameters & Fields {{ tag: 'dataclass', label: 'Player' }}
 
 <Row>
   <Col>
 
-    Creates a new instance of a `Player`.
-
-    ### Keyword Arguments
-
     <Properties>
       <Property name="name" type="str">
-        The name of the player.
+        Display name of the player (e.g. `"Arturo Coello"`). Must be unique across teammates and opposing pairs within a match.
       </Property>
-      <Property name="side" type="Literal['left', 'right'] | None" optional>
-        The preferred side the player plays on.
+      <Property name="side" type='Literal["left", "right"] | None'>
+        Receiving side of the court occupied by this player (`"right"` / drive side vs `"left"` / revés side, viewed from near side facing net). Defaults to `None` (`player1` covers right, `player2` covers left).
       </Property>
-      <Property name="nationality" type="str | None" optional>
-        The nationality of the player.
+      <Property name="nationality" type="str | None">
+        Optional country name or ISO code (`"ES"`, `"AR"`, etc.). Defaults to `None`.
       </Property>
     </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Instantiation" tag="class" label="Player">
+    <CodeGroup title="Initialization" tag="dataclass" label="Player">
 
     ```python
     from padelkit import Player
 
-    player = Player(
-        name="Alejandro Galán",
-        side="left",
-        nationality="ESP"
-    )
+    player = Player(name="Agustín Tapia", side="left", nationality="AR")
+    print(player.name, "| side:", player.side)
     ```
 
     </CodeGroup>
-
-    ```json {{ title: 'Output structure' }}
-    Player(
-      name='Alejandro Galán',
-      side='left',
-      nationality='ESP'
-    )
-    ```
 
   </Col>
 </Row>
 
 ---
 
-## Dictionary Serialization {{ tag: 'methods', label: 'to_dict / from_dict' }}
+## Serialization (`to_dict` / `from_dict`) {{ tag: 'method', label: 'dict I/O' }}
 
 <Row>
   <Col>
 
-    <Properties>
-      <Property name="player.to_dict()" type="dict[str, Any]">
-        Serializes the player (`name`, `side`, `nationality`) into a JSON-compatible dictionary.
-      </Property>
-      <Property name="Player.from_dict(data)" type="Player">
-        Classmethod that reconstructs a `Player` instance from a dictionary.
-      </Property>
-    </Properties>
+    Serializes (`player.to_dict()`) and reconstructs (`Player.from_dict(data)`) player attributes into plain dictionaries for Parquet match metadata envelopes.
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Serialize Player" tag="method" label="to_dict / from_dict">
+    <CodeGroup title="Dictionary Round-Trip" tag="method" label="to_dict / from_dict">
 
     ```python
     from padelkit import Player
 
-    p = Player(name="Alejandro Galán", side="left", nationality="ESP")
+    p = Player(name="F. Chingotto", side="right", nationality="AR")
     assert Player.from_dict(p.to_dict()) == p
     ```
 
@@ -99,4 +65,3 @@ The `Player` dataclass holds individual player metadata. {{ className: 'lead' }}
 
   </Col>
 </Row>
-

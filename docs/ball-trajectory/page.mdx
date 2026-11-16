@@ -1,0 +1,184 @@
+# BallTrajectory
+
+`BallTrajectory` stores a time-sampled 9D ball trajectory produced by [`BallPhysicsEngine.simulate()`](/ball-physics-engine#simulate) together with every recorded [`BounceEvent`](/bounce-event), providing vectorized kinematic slices, arbitrary-time linear interpolation, Pandas/CSV export, and direct conversion into a 3D [`MatchTimeline`](/match-timeline). Import via `from padelkit import BallTrajectory`. {{ className: 'lead' }}
+
+---
+
+## Constructor {{ tag: 'constructor', label: 'BallTrajectory' }}
+
+<Row>
+  <Col>
+
+    Calling `len(trajectory)` returns the number of sampled time steps `N`.
+
+    <Properties>
+      <Property name="timestamps" type="np.ndarray">
+        Monotonic 1D time array of shape `(N,)` in seconds (`0.0` start).
+      </Property>
+      <Property name="states" type="np.ndarray">
+        2D array of shape `(N, 9)` holding `[x, y, z, vx, vy, vz, wx, wy, wz]` at every timestamp.
+      </Property>
+      <Property name="bounces" type="list[BounceEvent] | None">
+        Optional chronological list of [`BounceEvent`](/bounce-event) impacts recorded during simulation. Defaults to `None` (empty list).
+      </Property>
+      <Property name="coordinate_system" type="CoordinateSystem">
+        Reference coordinate frame (`CENTERED` or `CORNER_BASED`). Defaults to `CoordinateSystem.CENTERED`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="From Physics Simulation" tag="constructor" label="BallTrajectory">
+
+    ```python
+    from padelkit import BallPhysicsEngine, BallState
+
+    traj = BallPhysicsEngine().simulate(
+        BallState.from_shot((0.0, -6.0, 1.5), (0.0, 18.0, 3.0), topspin_rpm=1200.0),
+        duration_s=2.0,
+    )
+    print(f"Samples: {len(traj)} | Bounces: {len(traj.bounces)}")
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Properties {{ tag: 'property', label: 'Kinematics & Summary Metrics' }}
+
+<Properties>
+  <Property name="positions" type="np.ndarray">
+    3D position slice `states[:, 0:3]` of shape `(N, 3)` in meters.
+  </Property>
+  <Property name="velocities" type="np.ndarray">
+    3D linear velocity slice `states[:, 3:6]` of shape `(N, 3)` in `m/s`.
+  </Property>
+  <Property name="angular_velocities" type="np.ndarray">
+    3D angular velocity slice `states[:, 6:9]` of shape `(N, 3)` in `rad/s`.
+  </Property>
+  <Property name="speeds" type="np.ndarray">
+    1D array of linear speed magnitudes `(N,)` in `m/s`.
+  </Property>
+  <Property name="spin_rpms" type="np.ndarray">
+    1D array of total spin rates `(N,)` in revolutions per minute (`RPM`).
+  </Property>
+  <Property name="duration_seconds" type="float">
+    Total simulated span in seconds (`timestamps[-1] - timestamps[0]`, or `0.0` if fewer than 2 samples).
+  </Property>
+  <Property name="max_height" type="float">
+    Apex height `max(z)` reached across the entire trajectory in meters.
+  </Property>
+  <Property name="max_speed" type="float">
+    Peak linear speed reached along the trajectory in `m/s`.
+  </Property>
+</Properties>
+
+---
+
+## `state_at()` {{ tag: 'method', label: 'trajectory.state_at()' }}
+
+<Row>
+  <Col>
+
+    Linearly interpolates the 9D state vector between adjacent samples and returns a [`BallState`](/ball-state) at an arbitrary `timestamp` (clamped at endpoints if outside `[timestamps[0], timestamps[-1]]`).
+
+    ### Arguments
+    <Properties>
+      <Property name="timestamp" type="float">
+        Query time in seconds.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Sample Arbitrary Timestamp" tag="method" label="state_at">
+
+    ```python
+    from padelkit import BallPhysicsEngine, BallState
+
+    traj = BallPhysicsEngine().simulate(
+        BallState.from_shot((0.0, -5.0, 2.0), (0.0, 15.0, 1.0)),
+        duration_s=1.5,
+    )
+    mid_state = traj.state_at(0.5)
+    print("Ball Z @ 0.5s:", round(mid_state.position[2], 3))
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `to_dataframe()` & `to_csv()` {{ tag: 'method', label: 'Tabular Export' }}
+
+<Row>
+  <Col>
+
+    - **`to_dataframe()`**: Returns a `pandas.DataFrame` with columns `timestamp`, `x`, `y`, `z`, `vx`, `vy`, `vz`, `wx`, `wy`, `wz`, `speed_ms`, and `spin_rpm`.
+    - **`to_csv(path)`**: Creates parent directories if needed, exports the DataFrame to CSV, and returns the resolved `Path`.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Export DataFrame & CSV" tag="method" label="to_dataframe / to_csv">
+
+    ```python
+    from padelkit import BallPhysicsEngine, BallState
+
+    traj = BallPhysicsEngine().simulate(BallState.from_shot((0, -4, 2), (0, 12, 1)))
+    df = traj.to_dataframe()
+    print(df.head(3))
+    traj.to_csv("shot_trajectory.csv")
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `to_timeline()` {{ tag: 'method', label: 'trajectory.to_timeline()' }}
+
+<Row>
+  <Col>
+
+    Resamples the physics trajectory (`dt = 1/240 s` typically) onto a fixed video frame rate (`fps = 60.0` default) and labels impact frames so you can pass it directly to [`PadelVisualizer`](/padel-visualizer) or save it to `.parquet`.
+
+    ### Arguments
+    <Properties>
+      <Property name="court" type="Court | None">
+        Optional `Court` attached to the returned timeline. Defaults to `Court.fip_standard()`.
+      </Property>
+      <Property name="fps" type="float">
+        Target resampling frame rate in Hz. Defaults to `60.0`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Visualize Any Shot in 3D" tag="method" label="to_timeline">
+
+    ```python
+    from padelkit import BallPhysicsEngine, BallState, PadelVisualizer
+
+    traj = BallPhysicsEngine().simulate(
+        BallState.from_shot((-2.0, -3.0, 2.2), (2.5, 16.0, -2.0), topspin_rpm=-1800),
+        duration_s=2.5,
+    )
+    timeline = traj.to_timeline(fps=60.0)
+    PadelVisualizer(timeline=timeline).export_html("bandeja_3d.html")
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

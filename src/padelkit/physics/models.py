@@ -13,22 +13,31 @@ class BallProperties:
     """Physical and aerodynamic parameters of a regulation padel ball.
 
     Attributes:
-        mass: Ball mass in kilograms (FIP regulation: ``0.056`` to ``0.0594`` kg).
-        radius: Ball radius in meters (FIP regulation: ``0.03175`` to ``0.03385`` m).
-        moment_of_inertia: Rotational inertia ``I`` in ``kg·m²``
-            (approx. ``0.55 * mass * radius²`` for a hollow rubber core).
-        fuzz_factor: Felt wear / fluffiness factor in ``[0.0, 1.0]``. Scales the
-            base aerodynamic drag coefficient from ``0.50`` (new) to ``0.65`` (worn).
-        pressure_psi: Internal gas pressure in PSI (regulation: ``10.0`` to ``11.0``).
+        mass: Ball mass in kilograms (FIP regulation: `0.056` to `0.0594` kg).
+        radius: Ball radius in meters (FIP regulation: `0.03175` to `0.03385` m).
+        moment_of_inertia: Rotational inertia `I` in `kg·m²`
+            (approx. `0.55 * mass * radius²` for a hollow rubber core).
+        fuzz_factor: Felt wear / fluffiness factor in `[0.0, 1.0]`. Scales the
+            base aerodynamic drag coefficient from `0.50` (new) to `0.65` (worn).
+        pressure_psi: Internal gas pressure in PSI (regulation: `10.0` to `11.0`).
+        color: Official `BallColor` or custom tournament ball color string.
+        bounce_restitution_factor: Multiplier applied to baseline surface COR.
     """
 
     mass: float = 0.058
+    """Ball mass in kilograms (FIP regulation: `0.056-0.0594` kg)."""
     radius: float = 0.033
+    """Outer ball radius in meters (FIP regulation: `0.03175-0.03385` m)."""
     moment_of_inertia: float = 3.47e-5
+    """Rotational inertia `I` in `kg·m²` (`~0.55 * mass * radius²`)."""
     fuzz_factor: float = 0.0
+    """Felt wear/fluffiness factor in `[0.0, 1.0]` (scales drag `0.50-0.65`)."""
     pressure_psi: float = 11.0
+    """Internal gas pressure in PSI (FIP regulation: `10.0-11.0` PSI)."""
     color: BallColor | str = BallColor.YELLOW
+    """Official `BallColor` or custom hex/color string (`YELLOW` default)."""
     bounce_restitution_factor: float = 1.0
+    """COR scaling multiplier (`1.0` sea level, `< 1.0` high-altitude/depressurized)."""
 
     def __post_init__(self) -> None:
         if self.mass <= 0.0 or self.radius <= 0.0 or self.moment_of_inertia <= 0.0:
@@ -151,7 +160,7 @@ class BallProperties:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "BallProperties":
-        """Reconstructs a :class:`BallProperties` instance from a dictionary."""
+        """Reconstructs a `BallProperties` instance from a dictionary."""
         std = cls.fip_standard()
         raw_color = data.get("color", std.effective_color)
         try:
@@ -189,12 +198,19 @@ class EnvironmentConditions:
     """
 
     gravity: float = 9.81
+    """Downward gravitational acceleration magnitude in `m/s²` (along `-Z`)."""
     air_density: float = 1.18
+    """Ambient air density `rho` in `kg/m³` (`~1.18` typical indoor)."""
     wind_velocity: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    """Constant 3D ambient wind velocity `(wx, wy, wz)` in `m/s`."""
     spin_decay_rate: float = 0.001
+    """Exponential angular-velocity decay rate `k_spin` in `1/s` during flight."""
     temperature_c: float | None = None
+    """Optional ambient air temperature in degrees Celsius (`from_atmosphere`)."""
     relative_humidity: float | None = None
+    """Optional relative humidity fraction in `[0.0, 1.0]`."""
     altitude_m: float | None = None
+    """Optional venue altitude above sea level in meters."""
 
     def __post_init__(self) -> None:
         if self.gravity < 0.0 or self.air_density < 0.0:
@@ -260,7 +276,7 @@ class EnvironmentConditions:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "EnvironmentConditions":
-        """Reconstructs an :class:`EnvironmentConditions` instance from a dictionary."""
+        """Reconstructs an `EnvironmentConditions` instance from a dictionary."""
         std = cls.standard()
         wv = data.get("wind_velocity", std.wind_velocity)
         return cls(
@@ -307,15 +323,25 @@ class SurfaceMaterials:
     """
 
     glass_cor: float = 0.85
+    """Normal coefficient of restitution (COR) on tempered glass walls (`0.85`)."""
     glass_friction: float = 0.25
+    """Coulomb sliding friction coefficient `mu` on tempered glass (`0.25`)."""
     wall_cor: float = 0.75
+    """Normal coefficient of restitution (COR) on concrete/masonry walls (`0.75`)."""
     wall_friction: float = 0.70
+    """Coulomb sliding friction coefficient `mu` on masonry walls (`0.70`)."""
     floor_cor: float = 0.75
+    """Normal coefficient of restitution (COR) on artificial turf floor (`0.75`)."""
     floor_friction: float = 0.45
+    """Coulomb sliding friction coefficient `mu` on artificial turf floor (`0.45`)."""
     fence_cor: float = 0.45
+    """Normal coefficient of restitution (COR) on metallic wire mesh (`0.45`)."""
     fence_friction: float = 0.50
+    """Coulomb friction coefficient `mu` on metallic wire mesh (`0.50`)."""
     fence_randomness: float = 0.0
+    """Angular normal-perturbation std dev (rad) on wire-mesh impacts (`0.0` exact)."""
     net_damping: float = 0.30
+    """Velocity retention factor across net tape/mesh collisions (`0.30`)."""
 
     @classmethod
     def fip_standard(cls, fence_randomness: float = 0.0) -> "SurfaceMaterials":
@@ -349,7 +375,7 @@ class SurfaceMaterials:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "SurfaceMaterials":
-        """Reconstructs a :class:`SurfaceMaterials` instance from a dictionary."""
+        """Reconstructs a `SurfaceMaterials` instance from a dictionary."""
         std = cls.fip_standard()
         return cls(
             glass_cor=float(data.get("glass_cor", std.glass_cor)),
@@ -374,8 +400,11 @@ class BallState:
     """
 
     position: tuple[float, float, float] = (0.0, 0.0, 1.0)
+    """3D center-of-mass coordinates `(x, y, z)` in court meters."""
     velocity: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    """3D linear velocity vector `(vx, vy, vz)` in `m/s`."""
     angular_velocity: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    """3D angular velocity (spin) vector `(wx, wy, wz)` in `rad/s`."""
 
     def __post_init__(self) -> None:
         if (
@@ -389,7 +418,7 @@ class BallState:
 
     @classmethod
     def from_vector(cls, vec: np.ndarray | Sequence[float]) -> "BallState":
-        """Constructs a :class:`BallState` from a 6D or 9D state vector."""
+        """Constructs a `BallState` from a 6D or 9D state vector."""
         arr = np.asarray(vec, dtype=np.float64).ravel()
         if arr.size == 6:
             return cls(
@@ -413,7 +442,7 @@ class BallState:
         topspin_rpm: float = 0.0,
         sidespin_rpm: float = 0.0,
     ) -> "BallState":
-        """Creates a :class:`BallState` using intuitive RPM spin parameters.
+        """Creates a `BallState` using intuitive RPM spin parameters.
 
         Args:
             position: Initial 3D ball position ``(x, y, z)`` in meters.

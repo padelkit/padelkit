@@ -1,0 +1,72 @@
+# Physics Enums
+
+Reference catalog of enumerations exported by `padelkit.physics`: [`BallColor`](#ball-color), [`SurfaceType`](#surface-type), and [`ContactRegime`](#contact-regime). All three inherit from `(str, Enum)` for clean JSON/DataFrame serialization. {{ className: 'lead' }}
+
+## `BallColor` {{ tag: 'enum', label: 'padelkit.physics' }}
+
+Official FIP and tournament padel ball felt colors (*La Pelota*, p. 12), passed to [`BallProperties`](/ball-properties).
+
+| Member | Value | FIP Standard Status |
+| :--- | :--- | :--- |
+| `BallColor.YELLOW` | `"yellow"` | Classic FIP official (`strict_colors=True`) |
+| `BallColor.WHITE` | `"white"` | Classic FIP official (`strict_colors=True`) |
+| `BallColor.ORANGE` | `"orange"` | Tournament high-visibility FIP approved |
+| `BallColor.MAGENTA` | `"magenta"` | Tournament high-visibility FIP approved |
+| `BallColor.GREEN` | `"green"` | Custom high-contrast palette |
+| `BallColor.PINK` | `"pink"` | Custom high-contrast palette |
+| `BallColor.BLUE` | `"blue"` | Custom high-contrast palette |
+| `BallColor.BLACK` | `"black"` | Custom high-contrast palette |
+
+---
+
+## `SurfaceType` {{ tag: 'enum', label: 'padelkit.physics' }}
+
+Identifies which physical surface of the court a [`BounceEvent`](/bounce-event) struck.
+
+| Member | Value | Court Element |
+| :--- | :--- | :--- |
+| `SurfaceType.FLOOR` | `"floor"` | Artificial turf / court playing floor (`Z = 0`) |
+| `SurfaceType.BACK_GLASS` | `"back_glass"` | Near or far `3.0 m` tempered glass back wall (`EnclosureType.GLASS`) |
+| `SurfaceType.SIDE_GLASS` | `"side_glass"` | Left or right solid tempered glass corner panel |
+| `SurfaceType.BACK_WALL` | `"back_wall"` | Near or far `3.0 m` concrete/masonry back wall (`EnclosureType.WALL`) |
+| `SurfaceType.SIDE_WALL` | `"side_wall"` | Left or right solid concrete/masonry side panel |
+| `SurfaceType.BACK_FENCE` | `"back_fence"` | Upper `1.0 m` (`Z = 3.0–4.0 m`) metallic wire mesh above back walls |
+| `SurfaceType.SIDE_FENCE` | `"side_fence"` | Metallic wire mesh along sidelines, doorway lintels, or `DoorState.CLOSED` gates |
+| `SurfaceType.NET` | `"net"` | Center court net (`Y = 0`, `0.88–0.92 m` catenary top profile) |
+| `SurfaceType.CEILING` | `"ceiling"` | Optional indoor venue ceiling when `Court.ceiling_height` is set |
+
+---
+
+## `ContactRegime` {{ tag: 'enum', label: 'padelkit.physics' }}
+
+Analytical tangential contact friction regime resolved during impact in [`BallPhysicsEngine`](/ball-physics-engine) and recorded on every [`BounceEvent`](/bounce-event).
+
+| Member | Value | Physical Behavior |
+| :--- | :--- | :--- |
+| `ContactRegime.SLIDING` | `"sliding"` | Tangential slip velocity exceeds Coulomb friction impulse limit (`mu * \|J_n\|`); ball skids throughout contact (common on low-friction tempered glass). |
+| `ContactRegime.ROLLING` | `"rolling"` | Surface friction arrests slip before separation; ball grips cleanly and converts spin into linear kick (common on turf and masonry walls). |
+| `ContactRegime.DAMPED` | `"damped"` | Inelastic energy-absorbing contact on the tensioned net mesh. |
+
+<Row>
+  <Col>
+
+    All three enums import cleanly from the top-level `padelkit` package and compare natively with strings.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Using Physics Enums" tag="enum" label="padelkit.physics">
+
+    ```python
+    from padelkit import BallColor, BallProperties, ContactRegime, SurfaceType
+
+    ball = BallProperties.fip_standard(color=BallColor.ORANGE)
+    print(ball.effective_color)           # orange
+    print(SurfaceType.FLOOR.value)        # floor
+    print(ContactRegime.SLIDING.value)    # sliding
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

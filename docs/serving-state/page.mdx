@@ -1,111 +1,75 @@
 # ServingState
 
-The `ServingState` dataclass encapsulates the serving team, player, receiver, and court side for the upcoming/next point in the match. It is exposed through the `server` property of the [`MatchScore`](/match-score). {{ className: 'lead' }}
+`ServingState` is a frozen dataclass capturing who is serving, who is returning, and which diagonal service box is active on the current point. Attached automatically to `MatchScore.server` by [`ServingEngine`](/serving-engine). Import via `from padelkit import ServingState`. {{ className: 'lead' }}
 
 <Schematic
   name="serving-rotations"
   alt="Serving Geometry and 4-Game Rotation Cycle"
-  caption="Deuce ('right') and Ad ('left') diagonal serving boxes and the 4-game server/receiver rotation state machine."
+  caption="Diagonal service boxes ('right' Deuce vs 'left' Ad) and 4-game server rotation tracked in ServingState."
 />
 
-## Properties
-
-<Properties>
-  <Property name="team" type="TeamId">
-    The [`TeamId`](/team) about to serve the upcoming/next point (`TeamId.A` or `TeamId.B`).
-  </Property>
-  <Property name="player" type="Player | None">
-    The specific [`Player`](/player) about to serve the upcoming/next point, or `None` if player details are not configured.
-  </Property>
-  <Property name="receiver" type="Player | None">
-    The specific [`Player`](/player) about to receive the upcoming/next serve, or `None` if team details are not configured.
-  </Property>
-  <Property name="court_side" type="'left' | 'right' | None">
-    The side of the court from which the serve is executed (`"left"` or `"right"`), or `None`.
-  </Property>
-</Properties>
-
----
-
-## Initialization
+## Parameters & Fields {{ tag: 'dataclass', label: 'ServingState' }}
 
 <Row>
   <Col>
 
-    Creates a new instance of a `ServingState`.
-
-    ### Keyword Arguments
-
     <Properties>
       <Property name="team" type="TeamId">
-        The [`TeamId`](/team) about to serve the upcoming/next point (`TeamId.A` or `TeamId.B`).
+        Team currently serving (`TeamId.A` or `TeamId.B`).
       </Property>
-      <Property name="player" type="Player | None" optional default="None">
-        The specific [`Player`](/player) about to serve the upcoming/next point, or `None` if player details are not configured.
+      <Property name="player" type="Player | None">
+        Specific [`Player`](/player) delivering the serve (`None` when `MatchScoreHistory` runs without `teams`). Defaults to `None`.
       </Property>
-      <Property name="receiver" type="Player | None" optional default="None">
-        The specific [`Player`](/player) about to receive the upcoming/next serve, or `None` if player details are not configured.
+      <Property name="receiver" type="Player | None">
+        Opposing [`Player`](/player) diagonally returning the serve based on `Player.side` (`None` when `teams` omitted). Defaults to `None`.
       </Property>
-      <Property name="court_side" type="'left' | 'right' | None" optional default="None">
-        The side of the court from which the serve is executed (`"left"` or `"right"`), or `None`.
+      <Property name="court_side" type='Literal["left", "right"] | None'>
+        Active service box diagonal: `"right"` (deuce court on even points `0`, `30`) or `"left"` (ad court on odd points `15`, `40`). Defaults to `None`.
       </Property>
     </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Instantiation" tag="class" label="ServingState">
+    <CodeGroup title="Inspect MatchScore.server" tag="dataclass" label="ServingState">
 
     ```python
-    from padelkit import ServingState, TeamId, Player
+    from padelkit import Match, TeamId
 
-    server_state = ServingState(
-        team=TeamId.A,
-        player=Player(name="A. Galán"),
-        receiver=Player(name="F. Belasteguín"),
-        court_side="right"
-    )
+    match = Match()
+    score = match.history.add_point(TeamId.A)  # now at 15-0 (odd point -> left box)
+    print(score.server.team, score.server.player.name, score.server.court_side)
+    # TeamId.A Player 1 left
     ```
 
     </CodeGroup>
-
-    ```json {{ title: 'Output structure' }}
-    ServingState(
-      team=<TeamId.A: 'A'>,
-      player=Player(name='A. Galán', ...),
-      receiver=Player(name='F. Belasteguín', ...),
-      court_side='right'
-    )
-    ```
 
   </Col>
 </Row>
 
 ---
 
-## Dictionary Serialization {{ tag: 'methods', label: 'to_dict / from_dict' }}
+## Serialization (`to_dict` / `from_dict`) {{ tag: 'method', label: 'dict I/O' }}
 
 <Row>
   <Col>
 
-    <Properties>
-      <Property name="serving_state.to_dict()" type="dict[str, Any]">
-        Serializes the serving state (`team`, `player`, `receiver`, `court_side`) into a JSON-compatible dictionary.
-      </Property>
-      <Property name="ServingState.from_dict(data)" type="ServingState">
-        Classmethod that reconstructs a `ServingState` instance from a dictionary.
-      </Property>
-    </Properties>
+    Exports `team`, `player`, `receiver`, and `court_side` (`state.to_dict()`) and restores an identical `ServingState` (`ServingState.from_dict(data)`).
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Serialize ServingState" tag="method" label="to_dict / from_dict">
+    <CodeGroup title="Dictionary Round-Trip" tag="method" label="to_dict / from_dict">
 
     ```python
     from padelkit import Player, ServingState, TeamId
 
-    state = ServingState(team=TeamId.A, player=Player("Galán"), court_side="right")
+    state = ServingState(
+        team=TeamId.A,
+        player=Player("Coello"),
+        receiver=Player("Galan"),
+        court_side="right",
+    )
     assert ServingState.from_dict(state.to_dict()) == state
     ```
 

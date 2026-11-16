@@ -1,114 +1,85 @@
 # Team
 
-The `Team` dataclass groups two players together and specifies team-level attributes. {{ className: 'lead' }}
+`Team` is a dataclass grouping two distinct [`Player`](/player) instances under a pair identifier (`TeamId.A` or `TeamId.B`), tactical serving formation, and optional pair name. Import via `from padelkit import Team`. {{ className: 'lead' }}
 
-## Properties
-
-<Properties>
-  <Property name="id" type="TeamId">
-    Identifier for the team (`TeamId.A` or `TeamId.B`).
-  </Property>
-  <Property name="player1" type="Player">
-    The first [`Player`](/player).
-  </Property>
-  <Property name="player2" type="Player">
-    The second [`Player`](/player).
-  </Property>
-  <Property name="serve_formation" type="Literal['standard', 'australian']" default="standard">
-    The serve formation used by the team.
-  </Property>
-  <Property name="name" type="str | None" optional>
-    An optional custom name for the team (e.g., "The Pros"). If omitted, the team will be displayed as "Player1 / Player2".
-  </Property>
-</Properties>
+`__post_init__` raises `ValueError` if `player1` and `player2` are equal or share the exact same `name`.
 
 ---
 
-## Initialization
+## Parameters & Fields {{ tag: 'dataclass', label: 'Team' }}
 
 <Row>
   <Col>
 
-    Creates a new instance of a `Team`.
-
-    *Note: Both players in a team must be unique and have different, unique names. Instantiating a team with duplicate players or names will raise a `ValueError`.*
-
-    ### Keyword Arguments
-
     <Properties>
       <Property name="id" type="TeamId">
-        Identifier for the team (`TeamId.A` or `TeamId.B`).
+        Team slot identifier (`TeamId.A` or `TeamId.B`). See [`TeamId`](/scoring-enums#team-id).
       </Property>
       <Property name="player1" type="Player">
-        The first [`Player`](/player).
+        First player of the pair (serves first in a set unless overridden by `set_starting_servers`).
       </Property>
       <Property name="player2" type="Player">
-        The second [`Player`](/player).
+        Second player of the pair (must have a unique `name` distinct from `player1`).
       </Property>
-      <Property name="serve_formation" type="Literal['standard', 'australian']" default="standard">
-        The serve formation used by the team.
+      <Property name="serve_formation" type='Literal["standard", "australian"]'>
+        Tactical serving formation (`"standard"` side-switching vs `"australian"` fixed court halves). Defaults to `"standard"`.
       </Property>
-      <Property name="name" type="str | None" optional>
-        An optional custom name for the team (e.g., "The Pros"). If omitted, the team will be displayed as "Player1 / Player2".
+      <Property name="name" type="str | None">
+        Optional custom pair label (e.g. `"Golden Duo"`). Defaults to `None` (`display_name` falls back to `"player1 / player2"`).
       </Property>
     </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Instantiation" tag="class" label="Team">
+    <CodeGroup title="Initialization" tag="dataclass" label="Team">
 
     ```python
-    from padelkit import Team, TeamId, Player
+    from padelkit import Player, Team, TeamId
 
-    team = Team(
+    team_a = Team(
         id=TeamId.A,
-        player1=Player(name="A. Galán"),
-        player2=Player(name="J. Lebrón"),
-        serve_formation="australian"
+        player1=Player("A. Coello", side="right", nationality="ES"),
+        player2=Player("A. Tapia", side="left", nationality="AR"),
+        serve_formation="australian",
     )
+    print(team_a.display_name)
+    # A. Coello / A. Tapia
     ```
 
     </CodeGroup>
-
-    ```json {{ title: 'Output structure' }}
-    Team(
-      id=<TeamId.A: 1>,
-      player1=Player(name='A. Galán', ...),
-      player2=Player(name='J. Lebrón', ...),
-      serve_formation='australian',
-      name=None
-    )
-    ```
 
   </Col>
 </Row>
 
 ---
 
-## Dictionary Serialization {{ tag: 'methods', label: 'to_dict / from_dict' }}
+## Properties {{ tag: 'property', label: 'Display Name' }}
+
+<Properties>
+  <Property name="display_name" type="str">
+    Returns `name` if specified, otherwise automatically formats `f"{player1.name} / {player2.name}"`.
+  </Property>
+</Properties>
+
+---
+
+## Serialization (`to_dict` / `from_dict`) {{ tag: 'method', label: 'dict I/O' }}
 
 <Row>
   <Col>
 
-    <Properties>
-      <Property name="team.to_dict()" type="dict[str, Any]">
-        Serializes the team (`id`, `player1`, `player2`, `serve_formation`, `name`) into a JSON-compatible dictionary.
-      </Property>
-      <Property name="Team.from_dict(data)" type="Team">
-        Classmethod that reconstructs a `Team` instance from a dictionary.
-      </Property>
-    </Properties>
+    Exports `id`, `player1`, `player2`, `serve_formation`, and `name` into a JSON-friendly dictionary (`team.to_dict()`) and restores an identical `Team` instance (`Team.from_dict(data)`).
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Serialize Team" tag="method" label="to_dict / from_dict">
+    <CodeGroup title="Dictionary Round-Trip" tag="method" label="to_dict / from_dict">
 
     ```python
     from padelkit import Player, Team, TeamId
 
-    team = Team(id=TeamId.A, player1=Player("Coello"), player2=Player("Tapia"))
+    team = Team(TeamId.B, Player("A. Galan"), Player("F. Chingotto"))
     assert Team.from_dict(team.to_dict()) == team
     ```
 
@@ -116,4 +87,3 @@ The `Team` dataclass groups two players together and specifies team-level attrib
 
   </Col>
 </Row>
-

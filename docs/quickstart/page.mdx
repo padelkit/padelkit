@@ -1,38 +1,70 @@
 # Quickstart
 
-This guide will get you up and running with PadelKit. You'll learn how to install the package and start using the Court Geometry, Camera Projection, 9D Ball Physics, 3D Visualization, and Scoring modules. {{ className: 'lead' }}
+Get up and running with **PadelKit** in a few minutes. This guide walks through installation and gives you copy-pasteable examples for each of the five core modules: `court`, `camera`, `physics`, `scoring`, and `viz`. {{ className: 'lead' }}
 
-## Installation
+## Installation {{ tag: 'guide' }}
 
-To install PadelKit, simply use `pip` or `uv`:
+PadelKit requires **Python 3.10 or higher** and ships with lightweight scientific dependencies (`numpy`, `pandas`, `pyarrow`) plus a `py.typed` marker for full IDE type hints and hover tooltips. Install it with `pip` or `uv`:
 
-```bash
+<CodeGroup title="Install PadelKit">
+
+```bash {{ title: 'pip' }}
 pip install padelkit
 ```
 
-## Basic Usage
-
-Once installed, you can easily import the necessary classes to map a court, project 3D points to a camera, simulate 9D ball trajectories with spin, visualize rallies in 3D, or track a match score.
-
-### Working with Court Geometry
-
-You can instantiate a standard FIP padel court and query for 2D or 3D landmark coordinates:
-
-```python
-from padelkit import Court
-
-# Instantiate a standard 20x10 court
-court = Court.fip_standard()
-
-# Get the coordinates of the center of the net
-net_center = court.point("center")
-print(f"Net center: {net_center}")
-# Output: Net center: (0.0, 0.0)
+```bash {{ title: 'uv' }}
+uv add padelkit
 ```
 
-### Simulating 9D Ball Aerodynamics & Bounces
+</CodeGroup>
 
-You can simulate realistic 3D trajectories with topspin/backspin, air drag, Spindt Magnus lift, and multi-surface rebounds:
+If you also plan to run headless photorealistic Blender rendering (`bpy >= 4.0`), install the optional extra `pip install "padelkit[blender]"`.
+
+---
+
+## Core Modules in 60 Seconds
+
+Every PadelKit submodule shares a unified metric world coordinate system: `(0.0, 0.0, 0.0)` sits on the floor at the center of the net, `X` runs left-to-right across the `10.0 m` width, `Y` runs near-to-far along the `20.0 m` length, and `Z` points upward in meters.
+
+### 1. Court Geometry (`padelkit.court`)
+
+Instantiate a regulation FIP `20 m × 10 m` court and query 2D or 3D landmark positions in meters. See [Court Geometry](/court-geometry) or the [`Court`](/court) API reference.
+
+```python
+from padelkit import Court, CourtLandmark
+
+court = Court.fip_standard()
+
+# Query by enum or string value
+net_center = court.point(CourtLandmark.CENTER)
+far_right_3d = court.landmarks_3d()["wall_top_far_right"]
+
+print("Net center:", net_center)
+print("Far right wall top:", far_right_3d)
+# Net center: (0.0, 0.0)
+# Far right wall top: (5.0, 10.0, 4.0)
+```
+
+### 2. Camera Calibration & Projection (`padelkit.camera`)
+
+Load a broadcast camera preset or calibrate one from 4+ pixel landmarks in a video frame, then project 3D coordinates onto 2D pixels or ray-cast pixels back onto the floor (`Z = 0.0`). See [Camera System & 3D Projection](/camera-system) or [`Camera`](/camera).
+
+```python
+from padelkit import Camera, Court
+
+court = Court.fip_standard()
+cam = Camera.broadcast_near(court=court)
+
+landmarks_px = cam.project_court_landmarks(court=court)
+floor_xyz = cam.project_pixel_to_plane(landmarks_px["center"], plane_z=0.0)
+
+print("Center pixel (u, v):", tuple(round(v, 2) for v in landmarks_px["center"]))
+print("Reprojected floor (X, Y, Z):", tuple(round(v, 4) for v in floor_xyz))
+```
+
+### 3. 9D Ball Aerodynamics & Bounces (`padelkit.physics`)
+
+Simulate realistic ball trajectories including topspin/backspin, felt drag, Spindt Magnus lift, and rebounds off turf, glass, masonry, wire fence, or net. See [Ball Aerodynamics & Contact Physics](/ball-physics) or [`BallPhysicsEngine`](/ball-physics-engine).
 
 ```python
 from padelkit import BallPhysicsEngine, BallState
@@ -43,39 +75,55 @@ shot = BallState.from_shot(
     velocity=(3.5, 16.0, -2.5),
     topspin_rpm=-1800.0,
 )
-trajectory = engine.simulate(shot, duration=2.5)
-print(f"Bounces: {[b.surface.value for b in trajectory.bounces]}")
+trajectory = engine.simulate(shot, duration_s=2.5)
+print("Bounces:", [(round(b.timestamp, 2), b.surface.value) for b in trajectory.bounces])
 ```
 
-### Tracking Match Score
+### 4. Event-Sourced Match Scoring (`padelkit.scoring`)
 
-You can use the scoring module to track a match's state using the event-sourcing architecture:
+Record points sequentially using [`Match`](/match) and [`TeamId`](/scoring-enums#team-id). Because scores are recomputed from the ordered list of point winners, you can edit or fix any historical point without corrupting sets, tiebreaks, or FIP server rotations. See [Scoring System](/scoring-system).
 
 ```python
 from padelkit import Match, TeamId
 
-# Initialize a new match wrapper
-match = Match()
-
-# Team A wins the first point
+match = Match(advantage_method="gold_point")
+# Team A wins the first two points, then correct point 1 to Team B
 match.history.add_point(TeamId.A)
-
-# You can easily undo a point in case of a mistake
-match.history.undo_point()
+match.history.add_point(TeamId.A)
+match.history.modify_point(1, TeamId.B)
 
 # Print the cleanly formatted current state
 print(match.history.get_current_score())
 ```
 
+### 5. 3D Visualization & Parquet Replay (`padelkit.viz`)
+
+Generate a physics-driven demo rally (or load real tracking data), bake 17-joint H36M 3D poses, save everything to a self-contained `.parquet` file, and export a zero-dependency interactive Three.js HTML viewer. See [3D Visualization & Replay Studio](/visualization-3d) or [`PadelVisualizer`](/padel-visualizer).
+
+```python
+from padelkit import MatchTimeline, PadelVisualizer
+
+timeline = MatchTimeline.demo_rally(fps=60.0, bake_skeleton=True)
+timeline.to_parquet("rally.parquet")
+
+viz = PadelVisualizer.from_parquet("rally.parquet")
+viz.export_html("padel_studio.html")
+```
+
+---
+
 ## Next steps
 
-Now that you have a basic understanding of PadelKit, you can dive deeper into the specific API documentation for each module.
+Read the conceptual guides to build intuition around coordinates, physics, and match formats, or browse the **API** sections in the sidebar for every class, field, and method.
 
-<div className="not-prose mt-6 flex gap-3">
+<div className="not-prose mt-6 flex flex-wrap gap-3">
   <Button href="/court-geometry" arrow="right">
-    <>Court Geometry</>
+    <>Court Geometry Guide</>
   </Button>
-  <Button href="/scoring-system" variant="outline">
-    <>Scoring System</>
+  <Button href="/ball-physics" variant="outline">
+    <>9D Physics Guide</>
+  </Button>
+  <Button href="/match-format" variant="outline">
+    <>Match Parquet Format</>
   </Button>
 </div>

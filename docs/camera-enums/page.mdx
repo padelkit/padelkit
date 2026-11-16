@@ -1,0 +1,55 @@
+# Camera Enums
+
+Reference catalog of enumerations exported by `padelkit.camera`: [`CameraPreset`](#camera-preset) and [`DistortionModel`](#distortion-model). Both inherit from `(str, Enum)` for seamless string serialization and equality checks. {{ className: 'lead' }}
+
+## `CameraPreset` {{ tag: 'enum', label: 'padelkit.camera' }}
+
+Nine standard venue camera viewpoints around a regulation padel court, passed to [`Camera.from_preset()`](/camera#venue-camera-presets) and used automatically as the default viewports in [`PadelVisualizer`](/padel-visualizer). All presets assume [`CoordinateSystem.CENTERED`](/court-enums#coordinate-system) (`NEAR = -Y`, `FAR = +Y`, left/right from near side looking at the net).
+
+| Member | Value | Placement & Optical Purpose |
+| :--- | :--- | :--- |
+| `CameraPreset.BROADCAST_NEAR` | `"broadcast_near"` | Standard elevated TV camera behind the NEAR back wall (`5.8 m` high, `3.8 m` back). |
+| `CameraPreset.BROADCAST_FAR` | `"broadcast_far"` | Opposite-end TV broadcast camera behind the FAR back wall (`+Y`). |
+| `CameraPreset.OVERHEAD_ZENITH` | `"overhead_zenith"` | Top-down tactical zenith view directly above center net (`14.5 m` high, `+Y` up). |
+| `CameraPreset.CORNER_NEAR_LEFT` | `"corner_near_left"` | Elevated wide-angle corner cam outside near-left back corner (`4.4 m` high). |
+| `CameraPreset.CORNER_NEAR_RIGHT` | `"corner_near_right"` | Elevated wide-angle corner cam outside near-right back corner. |
+| `CameraPreset.CORNER_FAR_LEFT` | `"corner_far_left"` | Elevated wide-angle corner cam outside far-left back corner. |
+| `CameraPreset.CORNER_FAR_RIGHT` | `"corner_far_right"` | Elevated wide-angle corner cam outside far-right back corner. |
+| `CameraPreset.SIDE_NET_LEFT` | `"side_net_left"` | Lateral net-line camera outside the left sideline (`4.5 m` out, `3.2 m` high). |
+| `CameraPreset.SIDE_NET_RIGHT` | `"side_net_right"` | Lateral net-line camera outside the right sideline (`4.5 m` out, `3.2 m` high). |
+
+---
+
+## `DistortionModel` {{ tag: 'enum', label: 'padelkit.camera' }}
+
+Optical lens distortion mathematical models supported by [`CameraDistortion`](/camera-distortion).
+
+| Member | Value | Parameterization & Typical Lens |
+| :--- | :--- | :--- |
+| `DistortionModel.NONE` | `"none"` | Ideal rectilinear pinhole lens (identity mapping, zero distortion). |
+| `DistortionModel.BROWN_CONRADY` | `"brown_conrady"` | OpenCV 5-parameter radial `(k1, k2, k3)` + tangential `(p1, p2)` model for broadcast/CCTV optics. |
+| `DistortionModel.FISHEYE` | `"fisheye"` | Kannala-Brandt equidistant model `(k1, k2, k3, k4)` matching `cv2.fisheye` for ultra-wide action cams. |
+
+<Row>
+  <Col>
+
+    Import enums directly from `padelkit` to select presets or distortion models safely with full IDE autocomplete.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Using Camera Enums" tag="enum" label="padelkit.camera">
+
+    ```python
+    from padelkit import Camera, CameraDistortion, CameraPreset, DistortionModel
+
+    lens = CameraDistortion(model=DistortionModel.BROWN_CONRADY, k1=-0.12)
+    cam = Camera.from_preset(CameraPreset.CORNER_NEAR_LEFT, distortion=lens)
+    print(cam.name, cam.distortion.model.value)
+    # corner_near_left brown_conrady
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

@@ -1,6 +1,6 @@
 # Camera
 
-`Camera` is the primary projective camera model in PadelKit. It combines [`CameraIntrinsics`](/camera-intrinsics), [`CameraExtrinsics`](/camera-extrinsics), and [`CameraDistortion`](/camera-distortion) to project 3D world coordinates onto 2D image sensors and unproject 2D pixel detections back into 3D rays and court planes. {{ className: 'lead' }}
+`Camera` is the unified projective camera model in PadelKit. It combines [`CameraIntrinsics`](/camera-intrinsics) (sensor & focal length), [`CameraExtrinsics`](/camera-extrinsics) (6-DoF position & orientation), and [`CameraDistortion`](/camera-distortion) (optical lens distortion) to calibrate cameras from video landmarks, project 3D points into image pixels, and unproject pixels back onto 3D court planes. Import via `from padelkit import Camera`. {{ className: 'lead' }}
 
 <Schematic
   name="camera-frustum-3d"
@@ -8,81 +8,101 @@
   caption="Projective Camera model showing the broadcast_near viewing frustum, optical axis ray, and built-in court camera presets."
 />
 
-## Properties
+## Parameters & Fields {{ tag: 'dataclass', label: 'Camera' }}
+
+<Row>
+  <Col>
+
+    `Camera` is an immutable (`frozen=True`) dataclass composed of the three projective sub-models plus an optional human-readable name.
+
+    <Properties>
+      <Property name="intrinsics" type="CameraIntrinsics">
+        Sensor dimensions, focal lengths `(fx, fy)`, principal point `(cx, cy)`, and skew. See [`CameraIntrinsics`](/camera-intrinsics).
+      </Property>
+      <Property name="extrinsics" type="CameraExtrinsics">
+        6-DoF world position and OpenCV rotation matrix `R` in court coordinates. See [`CameraExtrinsics`](/camera-extrinsics).
+      </Property>
+      <Property name="distortion" type="CameraDistortion">
+        Optical lens distortion model. Defaults to `CameraDistortion.none()` (pinhole). See [`CameraDistortion`](/camera-distortion).
+      </Property>
+      <Property name="name" type="str">
+        Identifier string or preset name (e.g. `"broadcast_near"`, `"calibrated"`). Defaults to `"camera"`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Initialization" tag="dataclass" label="Camera">
+
+    ```python
+    from padelkit import Camera, CameraDistortion, CameraExtrinsics, CameraIntrinsics
+
+    cam = Camera(
+        intrinsics=CameraIntrinsics.full_hd(horizontal_fov_deg=78.0),
+        extrinsics=CameraExtrinsics.from_look_at(
+            position=(0.0, -13.8, 5.8),
+            target=(0.0, -0.5, 0.5),
+        ),
+        distortion=CameraDistortion.none(),
+        name="custom_broadcast",
+    )
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Properties {{ tag: 'property', label: 'Homographies' }}
 
 <Properties>
-  <Property name="intrinsics" type="CameraIntrinsics">
-    The internal sensor and focal length parameters. See [`CameraIntrinsics`](/camera-intrinsics).
-  </Property>
-  <Property name="extrinsics" type="CameraExtrinsics">
-    The 3D position and rotation pose of the camera. See [`CameraExtrinsics`](/camera-extrinsics).
-  </Property>
-  <Property name="distortion" type="CameraDistortion">
-    The optical lens distortion configuration. Defaults to `CameraDistortion.none()`. See [`CameraDistortion`](/camera-distortion).
-  </Property>
-  <Property name="name" type="str">
-    Identifier string for the camera (e.g., `"broadcast_near"`).
-  </Property>
   <Property name="floor_homography" type="np.ndarray">
-    Analytical `3x3` homography matrix mapping centered court floor coordinates `(X, Y, 1)` in meters to `(u, v, 1)` image pixels.
+    Analytical `3x3` projective homography mapping centered floor points `(X, Y, 1)` in meters (`Z = 0`) to `(u, v, 1)` pixels under the pinhole model (`s * [u, v, 1]^T = H @ [X, Y, 1]^T`).
   </Property>
   <Property name="inverse_floor_homography" type="np.ndarray">
-    Analytical `3x3` inverse homography mapping `(u, v, 1)` image pixels directly to `(X, Y, 1)` court floor coordinates in meters.
+    Analytical `3x3` inverse homography mapping pixel homogeneous coordinates `(u, v, 1)` directly to `(X, Y, 1)` court floor meters. Note: for strongly distorted lenses, prefer [`project_pixel_to_plane()`](#project-pixel-to-plane) which removes distortion first.
   </Property>
 </Properties>
 
 ---
 
-## Calibrate from 2D Video Landmarks {{ tag: 'classmethod', label: 'Camera.from_landmarks()' }}
+## Venue Camera Presets {{ tag: 'classmethod', label: 'Camera Presets' }}
 
 <Row>
   <Col>
 
-    Calibrates a complete 3D `Camera` (`CameraIntrinsics` + 6-DoF `CameraExtrinsics`) directly from 4 or more 2D [`CourtLandmark`](/court-landmark) pixel coordinates observed in a video frame.
-
-    If `intrinsics` is omitted, `Camera.from_landmarks()` automatically estimates the focal length from the court's perspective vanishing points and jointly refines focal length and 6-DoF camera pose via Levenberg-Marquardt reprojection minimization.
-
-    ### Arguments
+    PadelKit includes quick factory constructors for standard TV and corner venue placements:
 
     <Properties>
-      <Property name="landmarks_2d" type="Mapping[str | CourtLandmark, Sequence[float]]">
-        Dictionary mapping at least 4 landmark names (e.g., `"floor_near_left"`, `"floor_near_right"`, `"floor_far_right"`, `"floor_far_left"`, or 3D wall corners `"wall_top_far_left"`) to their `(u, v)` pixel coordinates.
+      <Property name="broadcast_near(court=None, height_m=5.8, distance_from_back_m=3.8, target_y_m=-0.5, horizontal_fov_deg=78.0, width_px=1920, height_px=1080, distortion=None)" type="Camera">
+        Standard elevated TV broadcast camera positioned behind the NEAR back wall (`-Y`).
       </Property>
-      <Property name="court" type="Court | None" optional default="None">
-        Reference [`Court`](/court) instance. Defaults to `Court.fip_standard()`.
+      <Property name="broadcast_far(court=None, height_m=5.8, distance_from_back_m=3.8, target_y_m=0.5, horizontal_fov_deg=78.0, width_px=1920, height_px=1080, distortion=None)" type="Camera">
+        Opposite-end TV broadcast camera positioned behind the FAR back wall (`+Y`).
       </Property>
-      <Property name="intrinsics" type="CameraIntrinsics | None" optional default="None">
-        Optional known [`CameraIntrinsics`](/camera-intrinsics). If `None`, focal length is estimated automatically.
+      <Property name="overhead_zenith(height_m=14.5, horizontal_fov_deg=82.0, width_px=1920, height_px=1080, distortion=None)" type="Camera">
+        Top-down tactical camera looking vertically down at `(0, 0, 0)` with court `+Y` aligned upward in the image.
       </Property>
-      <Property name="width_px" type="int" optional default="1920">
-        Video frame width in pixels (used when `intrinsics` is `None`).
-      </Property>
-      <Property name="height_px" type="int" optional default="1080">
-        Video frame height in pixels (used when `intrinsics` is `None`).
+      <Property name="from_preset(preset, court=None, width_px=1920, height_px=1080, distortion=None)" type="Camera">
+        Builds any of the 9 [`CameraPreset`](/camera-enums#camera-preset) positions (`broadcast_*`, `overhead_zenith`, `corner_*`, `side_net_*`).
       </Property>
     </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Calibrate from 4 Corners" tag="classmethod" label="from_landmarks">
+    <CodeGroup title="Create from Preset" tag="classmethod" label="Camera.from_preset">
 
     ```python
-    from padelkit import Camera, Court
+    from padelkit import Camera, CameraPreset, Court
 
     court = Court.fip_standard()
-
-    # 4 court floor corners labeled on a 1920x1080 broadcast video
-    corners_px = {
-        "floor_near_left":  (228.5, 924.1),
-        "floor_near_right": (1691.5, 924.1),
-        "floor_far_right":  (1274.2, 342.8),
-        "floor_far_left":   (645.8, 342.8),
-    }
-
-    cam = Camera.from_landmarks(corners_px, court=court)
-    rmse = cam.reprojection_error(corners_px, court=court)
-    print(f"Position: {cam.extrinsics.position} | RMSE: {rmse:.4f} px")
+    near_cam = Camera.broadcast_near(court=court)
+    corner_cam = Camera.from_preset(CameraPreset.CORNER_NEAR_LEFT, court=court)
+    zenith_cam = Camera.overhead_zenith(height_m=15.0)
     ```
 
     </CodeGroup>
@@ -92,147 +112,110 @@
 
 ---
 
-## Preset Initialization {{ tag: 'classmethod', label: 'Camera.from_preset()' }}
+## `from_landmarks()` {{ tag: 'classmethod', label: 'Camera.from_landmarks()' }}
 
 <Row>
   <Col>
 
-    Creates a `Camera` from any standardized [`CameraPreset`](#camerapreset) around a regulation padel court, or via dedicated shortcuts such as `Camera.broadcast_near()`, `Camera.broadcast_far()`, and `Camera.overhead_zenith()`.
+    Calibrates a complete 3D `Camera` (`CameraIntrinsics` + 6-DoF `CameraExtrinsics`) directly from **4 or more** labeled [`CourtLandmark`](/court-landmark) pixel coordinates observed in a video frame.
+
+    If `intrinsics` is omitted, focal length is estimated from floor vanishing points via Zhang constraints and refined jointly with 6-DoF pose through damped Gauss-Newton (Levenberg-Marquardt) reprojection error minimization. Including elevated wall points (`wall_top_*` at `Z = 4.0 m`) alongside floor corners noticeably sharpens 3D vertical calibration.
 
     ### Arguments
-
     <Properties>
-      <Property name="preset" type="CameraPreset | str">
-        The preset identifier (e.g., `CameraPreset.BROADCAST_NEAR`, `"overhead_zenith"`, `"corner_near_left"`).
+      <Property name="landmarks_2d" type="Mapping[str | CourtLandmark, Sequence[float]]">
+        Dictionary mapping at least 4 landmark identifiers (enum members or string values) to observed `(u, v)` pixel pairs.
       </Property>
-      <Property name="court" type="Court | None" optional default="None">
-        Optional [`Court`](/court) instance used to compute wall offsets. Defaults to `Court.fip_standard()`.
+      <Property name="court" type="Court | None">
+        Reference court geometry for 3D world points. Defaults to `Court.fip_standard()`.
       </Property>
-      <Property name="width_px" type="int" optional default="1920">
-        Image width in pixels.
+      <Property name="intrinsics" type="CameraIntrinsics | None">
+        Optional known camera intrinsics. When `None`, estimates focal length automatically assuming square pixels centered at `(width_px / 2, height_px / 2)`.
       </Property>
-      <Property name="height_px" type="int" optional default="1080">
-        Image height in pixels.
+      <Property name="width_px" type="int">
+        Image width in pixels (used when `intrinsics` is `None`). Defaults to `1920`.
       </Property>
-      <Property name="distortion" type="CameraDistortion | None" optional default="None">
-        Optional lens distortion model.
+      <Property name="height_px" type="int">
+        Image height in pixels (used when `intrinsics` is `None`). Defaults to `1080`.
       </Property>
-    </Properties>
-
-  </Col>
-  <Col sticky>
-
-    <CodeGroup title="Presets" tag="classmethod" label="from_preset">
-
-    ```python
-    from padelkit import Camera, CameraPreset
-
-    # Standard broadcast view behind the near glass wall
-    cam_broadcast = Camera.broadcast_near()
-
-    # Overhead zenith tactical camera (14.5m above the net)
-    cam_zenith = Camera.overhead_zenith()
-
-    # High corner action-camera view
-    cam_corner = Camera.from_preset(CameraPreset.CORNER_NEAR_LEFT)
-    ```
-
-    </CodeGroup>
-
-  </Col>
-</Row>
-
----
-
-## Project a 3D point {{ tag: 'method', label: 'camera.world_to_image()' }}
-
-<Row>
-  <Col>
-
-    Projects a single 3D world point `(X, Y, Z)` (in meters) onto `(u, v)` pixel coordinates, applying lens distortion automatically. Returns `None` if the point lies behind the camera (`Z_cam <= 0`).
-
-    ### Arguments
-
-    <Properties>
-      <Property name="point_3d" type="tuple[float, float, float] | Sequence[float]">
-        The 3D point `(X, Y, Z)` in meters.
+      <Property name="distortion" type="CameraDistortion | None">
+        Optional known optical lens distortion model removed before calibration. Defaults to `None` (pinhole).
       </Property>
-      <Property name="coordinate_system" type="CoordinateSystem" optional default="CoordinateSystem.CENTERED">
-        Reference frame of `point_3d` (`CENTERED` or `CORNER_BASED`).
-      </Property>
-      <Property name="clip_to_sensor" type="bool" optional default="False">
-        If `True`, returns `None` when `(u, v)` falls outside `[0, width_px] x [0, height_px]`.
-      </Property>
-    </Properties>
-
-  </Col>
-  <Col sticky>
-
-    <CodeGroup title="Usage" tag="method" label="world_to_image">
-
-    ```python
-    from padelkit import Camera
-
-    cam = Camera.broadcast_near()
-    uv = cam.world_to_image((0.0, 0.0, 0.88))
-    ```
-
-    </CodeGroup>
-
-    ```json {{ title: 'Output' }}
-    (960.0, 521.48)
-    ```
-
-  </Col>
-</Row>
-
----
-
-## Vectorized 3D Batch Projection {{ tag: 'method', label: 'camera.project_points()' }}
-
-<Row>
-  <Col>
-
-    Vectorized NumPy projection of an array of `(N, 3)` 3D points. Returns `(uv_pixels, visible_mask)`.
-
-    ### Arguments
-
-    <Properties>
-      <Property name="points_3d" type="np.ndarray | Sequence[Sequence[float]]">
-        Array of 3D points with shape `(N, 3)`.
-      </Property>
-      <Property name="coordinate_system" type="CoordinateSystem" optional default="CoordinateSystem.CENTERED">
-        Reference frame of `points_3d`.
+      <Property name="name" type="str">
+        Identifier assigned to the calibrated camera. Defaults to `"calibrated"`.
       </Property>
     </Properties>
 
     ### Returns
-
     <Properties>
-      <Property name="uv_pixels" type="np.ndarray">
-        Float64 array of shape `(N, 2)` containing `(u, v)` pixel coordinates.
-      </Property>
-      <Property name="visible_mask" type="np.ndarray">
-        Boolean array of shape `(N,)` indicating points in front of the camera and inside the sensor frame.
+      <Property name="camera" type="Camera">
+        Calibrated `Camera` ready for 3D↔2D projection and reconstruction.
       </Property>
     </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Usage" tag="method" label="project_points">
+    <CodeGroup title="Calibrate from Video Pixels" tag="classmethod" label="from_landmarks">
+
+    ```python
+    from padelkit import Camera
+
+    observed_pixels = {
+        "floor_near_left":   (294.2, 875.1),
+        "floor_near_right":  (1625.8, 875.1),
+        "floor_far_right":   (1284.5, 422.9),
+        "floor_far_left":    (635.5, 422.9),
+        "wall_top_far_left": (612.0, 218.4),
+    }
+
+    cam = Camera.from_landmarks(
+        observed_pixels,
+        width_px=1920,
+        height_px=1080,
+    )
+    print(f"Estimated fx: {cam.intrinsics.fx:.1f}px")
+    print(f"Position (m): {cam.extrinsics.position}")
+    print(f"RMSE (px):    {cam.reprojection_error(observed_pixels):.3f}")
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `compute_homography()` {{ tag: 'classmethod', label: 'Camera.compute_homography()' }}
+
+<Row>
+  <Col>
+
+    Static helper computing the normalized Direct Linear Transform (DLT) `3x3` planar homography `H` mapping `(N, 2)` source points to `(N, 2)` destination points (`s * [u, v, 1]^T = H @ [x, y, 1]^T`, `N >= 4`).
+
+    ### Arguments
+    <Properties>
+      <Property name="src_points_2d" type="np.ndarray | Sequence[Sequence[float]]">
+        Source 2D points of shape `(N, 2)` with `N >= 4`.
+      </Property>
+      <Property name="dst_points_2d" type="np.ndarray | Sequence[Sequence[float]]">
+        Destination 2D points of shape `(N, 2)` matching `src_points_2d`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Planar Homography" tag="classmethod" label="compute_homography">
 
     ```python
     import numpy as np
     from padelkit import Camera
 
-    cam = Camera.broadcast_near()
-    trajectory_3d = np.array([
-        [0.0, -5.0, 1.2],
-        [0.0,  0.0, 1.8],
-        [0.0,  5.0, 0.5],
-    ])
-    uv, visible = cam.project_points(trajectory_3d)
+    src = np.array([[-5, -10], [5, -10], [5, 10], [-5, 10]], dtype=float)
+    dst = np.array([[294, 875], [1626, 875], [1285, 423], [635, 423]], dtype=float)
+    h_mat = Camera.compute_homography(src, dst)
+    print(h_mat.shape)  # (3, 3)
     ```
 
     </CodeGroup>
@@ -242,72 +225,316 @@
 
 ---
 
-## Project 17 Court Landmarks {{ tag: 'method', label: 'camera.project_court_landmarks()' }}
+## `reprojection_error()` {{ tag: 'method', label: 'camera.reprojection_error()' }}
 
 <Row>
   <Col>
 
-    Projects all 17 standardized 3D [`CourtLandmark`](/court-landmark) positions onto the camera's 2D image sensor.
-
-    ### Keyword Arguments
-
-    <Properties>
-      <Property name="court" type="Court | None" optional default="None">
-        The [`Court`](/court) instance to project. Defaults to `Court.fip_standard()`.
-      </Property>
-      <Property name="only_visible" type="bool" optional default="False">
-        If `True`, omits landmarks that fall outside the image frame.
-      </Property>
-    </Properties>
-
-  </Col>
-  <Col sticky>
-
-    <CodeGroup title="Usage" tag="method" label="project_court_landmarks">
-
-    ```python
-    from padelkit import Camera, Court
-
-    court = Court.fip_standard()
-    cam = Camera.broadcast_near(court=court)
-    landmarks_2d = cam.project_court_landmarks(court=court)
-    ```
-
-    </CodeGroup>
-
-  </Col>
-</Row>
-
----
-
-## Unproject Pixel to 3D Plane {{ tag: 'method', label: 'camera.project_pixel_to_plane()' }}
-
-<Row>
-  <Col>
-
-    Removes lens distortion from a 2D pixel `(u, v)`, casts a 3D ray from the camera center, and computes its exact intersection `(X, Y, plane_z)` with any horizontal plane `Z = plane_z` (such as the court floor `Z = 0.0`).
+    Computes the root-mean-square error (**RMSE**, in pixels) between observed 2D landmark pixels and this camera's 3D projections (`float("inf")` if any landmark lies behind the camera). Useful to verify calibration quality (values `< 2.0 px` on 1080p footage typically indicate accurate 6-DoF alignment).
 
     ### Arguments
-
     <Properties>
-      <Property name="pixel_2d" type="tuple[float, float] | Sequence[float]">
-        The `(u, v)` pixel coordinate in the image.
+      <Property name="landmarks_2d" type="Mapping[str | CourtLandmark, Sequence[float]]">
+        Observed ground-truth landmark pixel dictionary.
       </Property>
-      <Property name="plane_z" type="float" optional default="0.0">
-        Height `Z` (in meters) of the horizontal intersection plane.
+      <Property name="court" type="Court | None">
+        Optional court geometry. Defaults to `Court.fip_standard()`.
       </Property>
     </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Usage" tag="method" label="project_pixel_to_plane">
+    <CodeGroup title="Check Calibration RMSE" tag="method" label="reprojection_error">
 
     ```python
     from padelkit import Camera
 
     cam = Camera.broadcast_near()
-    floor_xyz = cam.project_pixel_to_plane((960.0, 567.42), plane_z=0.0)
+    px = cam.project_court_landmarks()
+    print("Round-trip RMSE:", cam.reprojection_error(px))  # 0.0
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `world_to_camera()` {{ tag: 'method', label: 'camera.world_to_camera()' }}
+
+<Row>
+  <Col>
+
+    Transforms a single 3D world point `(3,)` or array `(..., 3)` from court meters into the OpenCV camera coordinate frame `(X_cam, Y_cam, Z_cam)`, where `Z_cam > 0` lies in front of the lens.
+
+    ### Arguments
+    <Properties>
+      <Property name="points_3d" type="np.ndarray | Sequence[Any]">
+        Single 3D point or `(..., 3)` array in world meters.
+      </Property>
+      <Property name="coordinate_system" type="CoordinateSystem">
+        Reference frame of input points (`CENTERED` default or `CORNER_BASED`).
+      </Property>
+      <Property name="court" type="Court | None">
+        Optional court dimensions used when converting from `CORNER_BASED`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="World to Camera Space" tag="method" label="world_to_camera">
+
+    ```python
+    from padelkit import Camera
+
+    cam = Camera.broadcast_near()
+    p_cam = cam.world_to_camera([0.0, 0.0, 0.88])
+    print("Depth Z_cam (m):", round(float(p_cam[2]), 2))
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `project_points()` {{ tag: 'method', label: 'camera.project_points()' }}
+
+<Row>
+  <Col>
+
+    Vectorized NumPy projection transforming `(N, 3)` 3D court coordinates (for example, an entire simulated ball trajectory) onto `(N, 2)` sensor pixel coordinates in a single call, honoring radial and fisheye lens distortion.
+
+    ### Arguments
+    <Properties>
+      <Property name="points_3d" type="np.ndarray | Sequence[Sequence[float]]">
+        Array-like of shape `(N, 3)` containing `(X, Y, Z)` world points in meters.
+      </Property>
+      <Property name="coordinate_system" type="CoordinateSystem">
+        Reference frame of `points_3d` (`CENTERED` default).
+      </Property>
+      <Property name="court" type="Court | None">
+        Optional `Court` used when converting from `CORNER_BASED`.
+      </Property>
+    </Properties>
+
+    ### Returns
+    <Properties>
+      <Property name="uv_pixels" type="np.ndarray">
+        `float64` array of shape `(N, 2)` holding `(u, v)` pixels (`np.nan` for points behind the camera).
+      </Property>
+      <Property name="visible_mask" type="np.ndarray">
+        Boolean array of shape `(N,)` that is `True` when `Z_cam > 1e-6` and pixel falls within `[0, width_px] × [0, height_px]`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Vectorized Trajectory Projection" tag="method" label="project_points">
+
+    ```python
+    from padelkit import BallPhysicsEngine, BallState, Camera
+
+    traj = BallPhysicsEngine().simulate(
+        BallState.from_shot((0.0, -5.0, 1.2), (1.0, 12.0, 3.0)),
+        duration_s=1.0,
+    )
+    cam = Camera.broadcast_near()
+    uv_pixels, visible_mask = cam.project_points(traj.positions)
+    print("Visible points:", int(visible_mask.sum()), "/", len(uv_pixels))
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `world_to_image()` {{ tag: 'method', label: 'camera.world_to_image()' }}
+
+<Row>
+  <Col>
+
+    Projects a single 3D world point `(X, Y, Z)` into a 2D pixel tuple `(u, v)`.
+
+    ### Arguments
+    <Properties>
+      <Property name="point_3d" type="tuple[float, float, float] | Sequence[float]">
+        3D coordinates `(X, Y, Z)` in court meters.
+      </Property>
+      <Property name="coordinate_system" type="CoordinateSystem">
+        Reference frame of `point_3d`. Defaults to `CoordinateSystem.CENTERED`.
+      </Property>
+      <Property name="court" type="Court | None">
+        Optional `Court` when using `CORNER_BASED`.
+      </Property>
+      <Property name="clip_to_sensor" type="bool">
+        If `True`, returns `None` when the projected pixel lies outside `[0, width_px] × [0, height_px]`. Defaults to `False`.
+      </Property>
+    </Properties>
+
+    ### Returns
+    `tuple[float, float] | None` — Pixel `(u, v)` or `None` if behind the camera (or clipped out of frame).
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Project Single Point" tag="method" label="world_to_image">
+
+    ```python
+    from padelkit import Camera
+
+    cam = Camera.broadcast_near()
+    net_top_px = cam.world_to_image((0.0, 0.0, 0.88), clip_to_sensor=True)
+    print(net_top_px)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `project_court_landmarks()` {{ tag: 'method', label: 'camera.project_court_landmarks()' }}
+
+<Row>
+  <Col>
+
+    Projects all 17 standardized 3D [`CourtLandmark`](/court-landmark) points onto the camera image plane.
+
+    ### Arguments
+    <Properties>
+      <Property name="court" type="Court | None">
+        Court geometry to project. Defaults to `Court.fip_standard()`.
+      </Property>
+      <Property name="only_visible" type="bool">
+        When `True`, omits landmarks outside the image bounds `[0, width_px] × [0, height_px]`. Defaults to `False`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Project 17 Landmarks" tag="method" label="project_court_landmarks">
+
+    ```python
+    from padelkit import Camera, Court
+
+    cam = Camera.from_preset("corner_near_left")
+    visible_pts = cam.project_court_landmarks(Court.fip_standard(), only_visible=True)
+    print("Visible landmarks:", len(visible_pts))
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `image_to_ray()` {{ tag: 'method', label: 'camera.image_to_ray()' }}
+
+<Row>
+  <Col>
+
+    Unprojects a 2D pixel `(u, v)` into a 3D world ray `(origin, direction)` after inverting any optical lens distortion, suitable for multi-camera triangulation or custom 3D intersections.
+
+    ### Arguments
+    <Properties>
+      <Property name="pixel_2d" type="tuple[float, float] | Sequence[float]">
+        2D image coordinates `(u, v)` in pixels.
+      </Property>
+    </Properties>
+
+    ### Returns
+    `tuple[tuple[float, float, float], tuple[float, float, float]]` — Camera center `origin` and unit 3D ray `direction` vector in court meters.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Cast 3D Pixel Ray" tag="method" label="image_to_ray">
+
+    ```python
+    from padelkit import Camera
+
+    cam = Camera.broadcast_near()
+    origin, direction = cam.image_to_ray((960.0, 540.0))
+    print("Ray origin:", origin)
+    print("Ray direction:", tuple(round(d, 3) for d in direction))
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `project_pixel_to_plane()` {{ tag: 'method', label: 'camera.project_pixel_to_plane()' }}
+
+<Row>
+  <Col>
+
+    Intersects the unprojected 3D ray from `(u, v)` with any horizontal court height plane `Z = plane_z` (by default `plane_z = 0.0` for the court floor). Returns `None` if the ray is parallel to or points away from the plane.
+
+    ### Arguments
+    <Properties>
+      <Property name="pixel_2d" type="tuple[float, float] | Sequence[float]">
+        2D image pixel `(u, v)`.
+      </Property>
+      <Property name="plane_z" type="float">
+        Target horizontal plane height in meters (`0.0` floor, `0.88` net center height). Defaults to `0.0`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Pixel to Court Floor" tag="method" label="project_pixel_to_plane">
+
+    ```python
+    from padelkit import Camera
+
+    cam = Camera.broadcast_near()
+    u, v = cam.world_to_image((2.5, 4.0, 0.0))
+    print(cam.project_pixel_to_plane((u, v), plane_z=0.0))
+    # (2.5, 4.0, 0.0)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `frustum_corners_world()` & `to_dict()` {{ tag: 'method', label: 'Frustum & Export' }}
+
+<Row>
+  <Col>
+
+    - **`frustum_corners_world(near_m=0.5, far_m=25.0)`**: Computes the 3D world corners (`{"near": [...], "far": [...]}`) of the camera viewing frustum pyramid between `near_m` and `far_m` along the optical axis.
+    - **`to_dict()`**: Serializes `name`, `intrinsics`, `extrinsics`, and `distortion` into a JSON-compatible dictionary.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Frustum & Dict" tag="method" label="frustum_corners_world">
+
+    ```python
+    from padelkit import Camera
+
+    cam = Camera.broadcast_near()
+    frustum = cam.frustum_corners_world(near_m=1.0, far_m=30.0)
+    print("Near plane corners:", len(frustum["near"]))  # 4
+    payload = cam.to_dict()
     ```
 
     </CodeGroup>

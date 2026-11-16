@@ -1,53 +1,122 @@
 # MatchScoreHistory
 
-`MatchScoreHistory` is the event-sourcing engine that drives the score calculation. It maintains a chronological record of points and recalculates the game state efficiently. {{ className: 'lead' }}
+`MatchScoreHistory` is the core **Event Sourcing engine** for padel scoring. Rather than storing mutable counters, it appends every won point (`TeamId.A` or `TeamId.B`) to an internal chronological ledger and deterministically recalculates the full [`MatchScore`](/match-score) snapshot on demand. Import via `from padelkit import MatchScoreHistory`. {{ className: 'lead' }}
 
-## Properties
+Class constant `POINTS_SEQUENCE = [0, 15, 30, 40]` defines standard game progression.
+
+---
+
+## Constructor {{ tag: 'constructor', label: 'MatchScoreHistory' }}
+
+<Row>
+  <Col>
+
+    Accepts either a pre-built [`MatchConfiguration`](/match-configuration) (`config`) or individual format keyword arguments, plus an optional `teams` dictionary.
+
+    <Properties>
+      <Property name="teams" type="dict[TeamId, Team] | None">
+        Optional competing pairs keyed by `TeamId.A` and `TeamId.B`. Validated to ensure matching `team.id` keys and unique player names across both pairs. Defaults to `None`.
+      </Property>
+      <Property name="best_of_sets" type="int">
+        Total maximum sets (positive odd integer). Defaults to `3`.
+      </Property>
+      <Property name="advantage_method" type="str">
+        `"advantage"` (default) or `"gold_point"`.
+      </Property>
+      <Property name="set_format" type="str">
+        `"standard"` (6 games, default) or `"mini"` (4 games).
+      </Property>
+      <Property name="deciding_set_format" type="str">
+        `"regular"` (default), `"tiebreak"`, or `"super_tiebreak"`.
+      </Property>
+      <Property name="starting_server_team" type="TeamId">
+        Team serving Game 1 of Set 1 (`TeamId.A` default or `TeamId.B`).
+      </Property>
+      <Property name="set_starting_servers" type="dict[int, dict[TeamId, Player]] | None">
+        Optional per-set opening server overrides. Defaults to `None`.
+      </Property>
+      <Property name="config" type="MatchConfiguration | None">
+        Optional pre-built [`MatchConfiguration`](/match-configuration) overriding individual format flags. Defaults to `None`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Initialization" tag="constructor" label="MatchScoreHistory">
+
+    ```python
+    from padelkit import MatchScoreHistory, TeamId
+
+    history = MatchScoreHistory(
+        best_of_sets=3,
+        advantage_method="gold_point",
+        starting_server_team=TeamId.A,
+    )
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Properties {{ tag: 'property', label: 'Teams & Rule Proxies' }}
+
+All format properties validate changes immediately against team membership and [`MatchConfiguration`](/match-configuration):
 
 <Properties>
   <Property name="teams" type="dict[TeamId, Team] | None">
-    The teams assigned to this match history, if any.
+    Read/write team dictionary (`TeamId.A` / `TeamId.B`), verifying distinct player names and `set_starting_servers` membership on assignment.
+  </Property>
+  <Property name="best_of_sets" type="int">
+    Read/write proxy to `config.best_of_sets`.
+  </Property>
+  <Property name="advantage_method" type="str">
+    Read/write proxy to `config.advantage_method`.
+  </Property>
+  <Property name="set_format" type="str">
+    Read/write proxy to `config.set_format`.
+  </Property>
+  <Property name="deciding_set_format" type="str">
+    Read/write proxy to `config.deciding_set_format`.
   </Property>
   <Property name="starting_server_team" type="TeamId">
-    The team configured to start serving first in the match.
+    Read/write proxy to `config.starting_server_team`.
   </Property>
   <Property name="set_starting_servers" type="dict[int, dict[TeamId, Player]]">
-    A dictionary mapping 1-based set indexes (e.g., `1`, `2`, `3`) to each team's chosen initial server for that set.
+    Read/write proxy to `config.set_starting_servers`.
   </Property>
 </Properties>
 
 ---
 
-## Initialization
+## `add_point()` {{ tag: 'method', label: 'history.add_point()' }}
 
 <Row>
   <Col>
 
-    Creates a new instance of `MatchScoreHistory`.
+    Appends the winner of the next point (`TeamId.A` or `TeamId.B`) to the point history, replays state progression, and returns the updated [`MatchScore`](/match-score). Points added after the match is already won are ignored during score evaluation.
 
-    ### Keyword Arguments
-
+    ### Arguments
     <Properties>
-      <Property name="teams" type="dict[TeamId, Team] | None" optional>
-        An optional dictionary mapping a `TeamId` to a `Team` object.
-      </Property>
-      <Property name="starting_server_team" type="TeamId" optional default="TeamId.A">
-        The team that starts serving first in the match.
-      </Property>
-      <Property name="set_starting_servers" type="dict[int, dict[TeamId, Player]] | None" optional default="None">
-        A dictionary mapping a 1-based set index (e.g., `1`, `2`, `3`) to a nested dictionary mapping `TeamId` to the `Player` chosen to start serving for that team in that set.
+      <Property name="team" type="TeamId">
+        Team that won the point (`TeamId.A` or `TeamId.B`).
       </Property>
     </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Instantiation" tag="class" label="MatchScoreHistory">
+    <CodeGroup title="Record Points" tag="method" label="add_point">
 
     ```python
     from padelkit import MatchScoreHistory, TeamId
 
-    history = MatchScoreHistory()
+    h = MatchScoreHistory()
+    score = h.add_point(TeamId.A)
+    print(score.points_A, "-", score.points_B)  # 15 - 0
     ```
 
     </CodeGroup>
@@ -55,176 +124,109 @@
   </Col>
 </Row>
 
-
 ---
 
-## Adding Points {{ tag: 'method', label: 'history.add_point()' }}
+## `modify_point()` {{ tag: 'method', label: 'history.modify_point()' }}
 
 <Row>
   <Col>
 
-    Adds a point won by a specific team to the history and returns the new recalculated score.
+    Overwrites the winner of a previously recorded point at 0-based `index` and immediately recomputes the entire match score, server sequence, tiebreaks, and side changes from scratch.
 
-    ### Required arguments
-
-    <Properties>
-      <Property name="team" type="TeamId">
-        The team that won the point (`TeamId.A` or `TeamId.B`).
-      </Property>
-    </Properties>
-
-    ### Returns
-
-    <Properties>
-      <Property name="MatchScore" type="MatchScore">
-        The new recalculated match state.
-      </Property>
-    </Properties>
-
-  </Col>
-  <Col sticky>
-
-    <CodeGroup title="Usage" tag="method" label="add_point">
-
-    ```python
-    history.add_point(TeamId.A)
-    ```
-
-    </CodeGroup>
-
-    ```text {{ title: 'Output structure' }}
-    TEAM A |   | 0 | 15
-    TEAM B |   | 0 |  0
-    ```
-
-  </Col>
-</Row>
-
----
-
-## Modifying Points {{ tag: 'method', label: 'history.modify_point()' }}
-
-<Row>
-  <Col>
-
-    Corrects a mistake by overwriting a point at a specific index in the history, triggering an instant recalculation of the entire match state.
-
-    ### Required arguments
-
+    ### Arguments
     <Properties>
       <Property name="index" type="int">
-        The 0-based index of the point in history to modify.
+        0-based chronological index of the point to correct (`0 <= index < total_points`). Raises `IndexError` if out of range.
       </Property>
       <Property name="team" type="TeamId">
-        The correct team that won the point.
-      </Property>
-    </Properties>
-
-    ### Returns
-
-    <Properties>
-      <Property name="MatchScore" type="MatchScore">
-        The new recalculated match state.
+        Corrected winning team (`TeamId.A` or `TeamId.B`).
       </Property>
     </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Usage" tag="method" label="modify_point">
+    <CodeGroup title="Correct Historical Point" tag="method" label="modify_point">
 
     ```python
-    # Overwrite the first point to be won by Team B
-    history.modify_point(0, TeamId.B)
+    from padelkit import MatchScoreHistory, TeamId
+
+    h = MatchScoreHistory()
+    h.add_point(TeamId.A)
+    h.add_point(TeamId.A)  # typo: actually won by Team B
+    corrected = h.modify_point(1, TeamId.B)
+    print(corrected.points_A, "-", corrected.points_B)  # 15 - 15
     ```
 
     </CodeGroup>
-
-    ```text {{ title: 'Output structure' }}
-    TEAM A |   | 0 |  0
-    TEAM B |   | 0 | 15  *
-    ```
 
   </Col>
 </Row>
 
 ---
 
-## Retrieving Score {{ tag: 'method', label: 'history.get_current_score()' }}
+## `get_current_score()` {{ tag: 'method', label: 'history.get_current_score()' }}
 
 <Row>
   <Col>
 
-    Iterates over the entire point history to compute the score up to the latest point.
-
-    ### Returns
-
-    <Properties>
-      <Property name="MatchScore" type="MatchScore">
-        The current recalculated match state.
-      </Property>
-    </Properties>
+    Replays the event ledger from start to finish and returns the active immutable [`MatchScore`](/match-score) snapshot without mutating history.
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Usage" tag="method" label="get_current_score">
+    <CodeGroup title="Read Current Snapshot" tag="method" label="get_current_score">
 
     ```python
-    score = history.get_current_score()
-    print(score)
+    from padelkit import MatchScoreHistory, TeamId
+
+    h = MatchScoreHistory()
+    h.add_point(TeamId.B)
+    snap = h.get_current_score()
+    print(snap)
     ```
 
     </CodeGroup>
-
-    ```text {{ title: 'Output structure' }}
-    TEAM A |   | 0 |  0
-    TEAM B |   | 0 | 15  *
-    ```
 
   </Col>
 </Row>
 
 ---
 
-## Setting Set Starting Servers {{ tag: 'method', label: 'history.set_set_starting_server()' }}
+## `set_set_starting_server()` {{ tag: 'method', label: 'history.set_set_starting_server()' }}
 
 <Row>
   <Col>
 
-    Configures the starting server player for a specific team in a specific set.
+    Designates which player on `team_id` serves first when `team_id` begins serving in set `set_index` (1-indexed). Raises `ValueError` if `teams` is configured and `player` does not belong to `teams[team_id]`.
 
-    *Note: The configured `player` must belong to the specified team. If the player is not a member of that team, a `ValueError` will be raised.*
-
-    ### Required arguments
-
+    ### Arguments
     <Properties>
       <Property name="set_index" type="int">
-        The 1-based index of the set (e.g., `1` for the first set, `2` for the second set).
+        1-based set number (`1`, `2`, `3`, ...).
       </Property>
       <Property name="team_id" type="TeamId">
-        The team identifying (`TeamId.A` or `TeamId.B`).
+        Team identifier (`TeamId.A` or `TeamId.B`).
       </Property>
       <Property name="player" type="Player">
-        The [`Player`](/player) chosen to serve first for the team in that set.
+        Starting server belonging to `teams[team_id]`.
       </Property>
     </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Usage" tag="method" label="set_set_starting_server">
+    <CodeGroup title="Assign Set Opener" tag="method" label="set_set_starting_server">
 
     ```python
-    from padelkit import Player, TeamId
+    from padelkit import MatchScoreHistory, Player, Team, TeamId
 
-    player = Player("Juan Lebrón")
-    # Set server for Set 1
-    history.set_set_starting_server(set_index=1, team_id=TeamId.A, player=player)
+    p1, p2 = Player("Coello"), Player("Tapia")
+    h = MatchScoreHistory(teams={TeamId.A: Team(TeamId.A, p1, p2)})
+    h.set_set_starting_server(1, TeamId.A, p2)
     ```
 
     </CodeGroup>
 
   </Col>
 </Row>
-

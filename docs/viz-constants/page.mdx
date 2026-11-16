@@ -1,0 +1,54 @@
+# Visualization Constants
+
+Reference catalog for constants exported by `padelkit.viz`. Import via `from padelkit import H36M_JOINT_NAMES`. {{ className: 'lead' }}
+
+## `H36M_JOINT_NAMES` {{ tag: 'constant', label: 'padelkit.viz' }}
+
+Immutable `tuple[str, ...]` of length `17` defining the canonical **Human3.6M (`H36M`)** skeletal joint order used across [`PlayerPose.keypoints_3d`](/player-pose), [`MatchTimeline`](/match-timeline) Parquet columns (`p{1..4}_j{0..16}_{x,y,z}`), MotionBERT lifting, and `PadelVisualizer` skeletal rig rendering.
+
+In the Three.js studio, the player's padel racket attaches to the dominant forearm vector (`15: RightElbow -> 16: RightWrist`).
+
+| Index (`j`) | Constant Name (`H36M_JOINT_NAMES[j]`) | Parent Joint | Anatomical Landmark |
+| :--- | :--- | :--- | :--- |
+| `0` | `"Pelvis"` | *(Root)* | Center of pelvis / hip root |
+| `1` | `"RightHip"` | `0` (`Pelvis`) | Right hip joint |
+| `2` | `"RightKnee"` | `1` (`RightHip`) | Right knee joint |
+| `3` | `"RightAnkle"` | `2` (`RightKnee`) | Right ankle joint |
+| `4` | `"LeftHip"` | `0` (`Pelvis`) | Left hip joint |
+| `5` | `"LeftKnee"` | `4` (`LeftHip`) | Left knee joint |
+| `6` | `"LeftAnkle"` | `5` (`LeftKnee`) | Left ankle joint |
+| `7` | `"Spine"` | `0` (`Pelvis`) | Mid-lumbar spine |
+| `8` | `"Thorax"` | `7` (`Spine`) | Upper chest / thorax |
+| `9` | `"Neck"` | `8` (`Thorax`) | Base of neck |
+| `10` | `"Head"` | `9` (`Neck`) | Head center |
+| `11` | `"LeftShoulder"` | `8` (`Thorax`) | Left shoulder joint |
+| `12` | `"LeftElbow"` | `11` (`LeftShoulder`) | Left elbow joint |
+| `13` | `"LeftWrist"` | `12` (`LeftElbow`) | Left wrist joint |
+| `14` | `"RightShoulder"` | `8` (`Thorax`) | Right shoulder joint |
+| `15` | `"RightElbow"` | `14` (`RightShoulder`) | Right elbow joint |
+| `16` | `"RightWrist"` | `15` (`RightElbow`) | Right wrist joint (dominant racket socket) |
+
+<Row>
+  <Col>
+
+    Use `H36M_JOINT_NAMES.index(...)` when extracting specific anatomical landmarks from `PlayerPose.keypoints_3d` or `PlayerPose.world_keypoints_3d`.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Inspect H36M Joints" tag="constant" label="H36M_JOINT_NAMES">
+
+    ```python
+    from padelkit import H36M_JOINT_NAMES, MatchTimeline
+
+    wrist_idx = H36M_JOINT_NAMES.index("RightWrist")
+    tl = MatchTimeline.demo_rally(bake_skeleton=True)
+
+    p1_world = tl.frames[0].players["P1"].world_keypoints_3d
+    print(f"P1 RightWrist (idx {wrist_idx}):", p1_world[wrist_idx])
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

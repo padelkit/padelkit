@@ -6,259 +6,344 @@
   "pages": {
     "/": {
       "title": "PadelKit Docs",
-      "description": "Learn everything there is to know about the PadelKit library and integrate it into your Python applications."
+      "description": "Learn everything about the PadelKit library and integrate 3D court geometry, camera calibration, 9D physics, scoring, and visualization into your Python workflows."
     },
     "/quickstart": {
       "title": "Quickstart",
-      "description": "Learn how to install and use PadelKit in minutes."
-    },
-    "/scoring-system": {
-      "title": "Scoring System",
-      "description": "Learn how the padel scoring system works, including concepts like event sourcing."
+      "description": "Install PadelKit and run practical examples across court geometry, camera projection, 9D physics, scoring, and 3D visualization."
     },
     "/court-geometry": {
       "title": "Court Geometry",
-      "description": "Understand coordinate systems, enclosure variants, and the 17-point landmark model."
+      "description": "Understand FIP court dimensions, CENTERED vs CORNER_BASED coordinate frames, enclosure variants, lateral doors, and Rule 16 safety clearances."
     },
     "/camera-system": {
       "title": "Camera System & 3D Projection",
-      "description": "Learn how to configure projective cameras, lens distortion, and 3D-to-2D landmark projections.",
-      "min": "0.1.0"
-    },
-    "/visualization-3d": {
-      "title": "3D Visualization & Replay Studio",
-      "description": "Interactive Three.js 3D court visualizer, CSV match replay, live streaming, and synthetic CV passes.",
-      "icon": "ShapesIcon",
-      "min": "0.1.0"
-    },
-    "/stroke-library": {
-      "title": "Stroke & Animation Library",
-      "description": "Padel stroke taxonomy, 9D spin/velocity signatures, MotionBERT 3D skeletal animations, and GLB playback in PadelVisualizer.",
-      "icon": "BoltIcon",
-      "min": "0.1.0"
-    },
-    "/match-format": {
-      "title": "Universal Match Format (.parquet)",
-      "description": "Single-file Apache Parquet specification combining static court/environment/match metadata with 60 FPS 9D ball and 17-joint 3D skeletal dynamics.",
-      "icon": "ShapesIcon",
-      "min": "0.1.0"
-    },
-    "/match-timeline": {
-      "title": "MatchTimeline",
-      "description": "API reference for MatchTimeline, 3D skeletal pose baking, and Parquet/CSV/DataFrame serialization.",
-      "icon": "ShapesIcon",
-      "min": "0.1.0"
-    },
-    "/frame-state": {
-      "title": "FrameState & PlayerPose",
-      "description": "API reference for FrameState, PlayerPose, and the 17-joint H36M 3D skeletal pose convention.",
-      "icon": "UserIcon",
-      "min": "0.1.0"
-    },
-    "/padel-visualizer": {
-      "title": "PadelVisualizer",
-      "description": "API reference for the interactive Three.js 3D court studio, Parquet/CSV loader, and real-time SSE streamer.",
-      "icon": "ViewfinderCircleIcon",
+      "description": "Understand World, OpenCV Camera, OpenGL, and Image Sensor coordinate frames, lens distortion, and landmark-based camera calibration.",
       "min": "0.1.0"
     },
     "/ball-physics": {
       "title": "Ball Aerodynamics & Contact Physics",
-      "description": "Learn how the 9D aerodynamic model (Drag, Spindt Magnus lift) and Coulomb Sliding/Rolling rebound physics work.",
+      "description": "Learn the 9D state model, quadratic felt drag, Spindt Magnus spin lift, and analytical Sliding vs Rolling rebound mechanics.",
       "icon": "BoltIcon",
       "min": "0.1.0"
     },
-    "/ball-physics-engine": {
-      "title": "BallPhysicsEngine",
-      "description": "API reference for the 9D RK4 ball physics simulator and vectorized batch trajectory engine.",
+    "/visualization-3d": {
+      "title": "3D Visualization & Replay Studio",
+      "description": "Explore PadelVisualizer operating modes: Parquet/CSV replay, real-time SSE streaming, standalone offline HTML, and CV inspection passes.",
+      "icon": "ShapesIcon",
+      "min": "0.1.0"
+    },
+    "/stroke-library": {
+      "title": "Stroke & Skeletal Animation Library",
+      "description": "Standardized padel stroke taxonomy, 9D launch spin profiles, MotionBERT skeletal normalization, and contact_swing_phase synchronization.",
       "icon": "BoltIcon",
       "min": "0.1.0"
     },
-    "/ball-state": {
-      "title": "BallState & BallTrajectory",
-      "description": "API reference for BallState, BallTrajectory, BounceEvent, SurfaceType, and ContactRegime.",
-      "icon": "PaperAirplaneIcon",
-      "min": "0.1.0"
+    "/scoring-system": {
+      "title": "Scoring System",
+      "description": "Learn event-sourced scoring, Advantage vs Punto de Oro, tiebreak server rotations, and automatic FIP Rule 5 court end changes."
     },
-    "/physics-parameters": {
-      "title": "Physics Parameters",
-      "description": "API reference for BallProperties, EnvironmentConditions, and SurfaceMaterials dataclasses.",
-      "icon": "CogIcon",
+    "/match-format": {
+      "title": "Universal Match Format (.parquet)",
+      "description": "Two-layer single-file Apache Parquet specification combining static venue/match JSON metadata with 51/255 columnar dynamic frame data.",
+      "icon": "DocumentIcon",
       "min": "0.1.0"
-    },
-    "/court-dimensions": {
-      "title": "CourtDimensions",
-      "description": "API reference for the CourtDimensions dataclass."
     },
     "/court": {
       "title": "Court",
-      "description": "API reference for the main court geometry class.",
-      "icon": "UserIcon"
+      "description": "API reference for the Court dataclass, 2D/3D landmarks, panel decomposition, doorways, and FIP compliance validation.",
+      "icon": "ShapesIcon"
     },
-    "/court-landmark": {
-      "title": "CourtLandmark",
-      "description": "API reference for the CourtLandmark enum, including all 17 standard court positions and their coordinates.",
-      "icon": "ViewfinderCircleIcon"
+    "/court-dimensions": {
+      "title": "CourtDimensions",
+      "description": "API reference for all 11 official FIP court measurements, markings, net heights, and free clearance presets.",
+      "icon": "ClipboardIcon"
     },
     "/court-location": {
       "title": "CourtLocation",
-      "description": "API reference for the CourtLocation dataclass."
+      "description": "API reference for optional venue club, city, country, and WGS84 GPS coordinate metadata."
+    },
+    "/side-access": {
+      "title": "SideAccess",
+      "description": "API reference for lateral doorway count, clear opening dimensions, Y-intervals, and FIP single/dual access presets.",
+      "icon": "ChevronRightLeftIcon",
+      "min": "0.1.0"
+    },
+    "/safety-zone": {
+      "title": "SafetyZone",
+      "description": "API reference for Rule 16 exterior out-of-court obstacle-free clearance volume and frame padding.",
+      "icon": "CheckIcon",
+      "min": "0.1.0"
+    },
+    "/side-enclosure-panel": {
+      "title": "SideEnclosurePanel",
+      "description": "API reference for rectangular full-sideline wall, glass, wire mesh, lintel, and closed gate panels.",
+      "min": "0.1.0"
+    },
+    "/side-enclosure-segment": {
+      "title": "SideEnclosureSegment",
+      "description": "API reference for longitudinal half-side wall/mesh segments measured inward from the back wall.",
+      "min": "0.1.0"
+    },
+    "/court-landmark": {
+      "title": "CourtLandmark",
+      "description": "API reference for the 17 standardized court reference points (13 floor markings + 4 elevated wall corners).",
+      "icon": "ViewfinderCircleIcon"
+    },
+    "/court-enums": {
+      "title": "Court Enums",
+      "description": "Reference for CoordinateSystem, EnclosureType, EnclosureVariant, SideWallProfile, CourtSurfaceColor, CourtOrientation, DoorState, and CourtSetting.",
+      "min": "0.1.0"
     },
     "/camera": {
       "title": "Camera",
-      "description": "API reference for the projective Camera class and court presets.",
+      "description": "API reference for the projective Camera class, venue presets, DLT/LM landmark calibration, and 3D-2D ray casting.",
       "icon": "ViewfinderCircleIcon",
       "min": "0.1.0"
     },
     "/camera-intrinsics": {
       "title": "CameraIntrinsics",
-      "description": "API reference for the CameraIntrinsics calibration matrix dataclass.",
+      "description": "API reference for image sensor resolution, focal lengths, optical center, FOV properties, and calibration matrix K.",
       "icon": "CogIcon",
       "min": "0.1.0"
     },
     "/camera-extrinsics": {
       "title": "CameraExtrinsics",
-      "description": "API reference for the CameraExtrinsics 6-DoF pose dataclass.",
+      "description": "API reference for 6-DoF camera world pose, look-at/Euler/RT constructors, and OpenCV/OpenGL transform matrices.",
       "icon": "MapPinIcon",
       "min": "0.1.0"
     },
     "/camera-distortion": {
       "title": "CameraDistortion",
-      "description": "API reference for Brown-Conrady and Fisheye lens distortion models.",
+      "description": "API reference for Pinhole, Brown-Conrady, and Kannala-Brandt Fisheye forward distortion and iterative undistortion.",
       "icon": "ViewfinderCircleIcon",
+      "min": "0.1.0"
+    },
+    "/camera-enums": {
+      "title": "Camera Enums",
+      "description": "Reference for CameraPreset venue viewpoints and DistortionModel optical formulations.",
+      "min": "0.1.0"
+    },
+    "/ball-physics-engine": {
+      "title": "BallPhysicsEngine",
+      "description": "API reference for the 9D RK4 aerodynamics integrator, analytical collision solver, single simulate(), and batch simulate_batch().",
+      "icon": "BoltIcon",
+      "min": "0.1.0"
+    },
+    "/ball-state": {
+      "title": "BallState",
+      "description": "API reference for instantaneous 9D kinematic ball state, from_shot() spin decomposition, speed, and RPM helpers.",
+      "icon": "PaperAirplaneIcon",
+      "min": "0.1.0"
+    },
+    "/ball-trajectory": {
+      "title": "BallTrajectory",
+      "description": "API reference for simulated 9D trajectory series, timestamp interpolation, analytics, CSV/DataFrame export, and to_timeline().",
+      "icon": "ListIcon",
+      "min": "0.1.0"
+    },
+    "/bounce-event": {
+      "title": "BounceEvent",
+      "description": "API reference for pre/post-impact velocity, angular spin, surface, and contact regime bounce records.",
+      "min": "0.1.0"
+    },
+    "/ball-properties": {
+      "title": "BallProperties",
+      "description": "API reference for regulation padel ball mass, radius, inertia, felt fuzz_factor, pressure, FIP colors, and presets.",
+      "icon": "CogIcon",
+      "min": "0.1.0"
+    },
+    "/environment-conditions": {
+      "title": "EnvironmentConditions",
+      "description": "API reference for gravity, ambient air density, wind vector, spin decay rate, and Tetens barometric atmosphere presets.",
+      "min": "0.1.0"
+    },
+    "/surface-materials": {
+      "title": "SurfaceMaterials",
+      "description": "API reference for restitution (COR), friction, wire-fence randomness, and net damping across all court surfaces.",
+      "min": "0.1.0"
+    },
+    "/physics-enums": {
+      "title": "Physics Enums",
+      "description": "Reference for BallColor, SurfaceType, and ContactRegime enumerations.",
       "min": "0.1.0"
     },
     "/match": {
       "title": "Match",
-      "description": "API reference for the Match class, which manages metadata and completion conditions.",
+      "description": "API reference for the top-level Match aggregate wrapping teams, rules, score history, court, and winner completion status.",
       "icon": "TrophyIcon"
     },
-    "/match-score-history": {
-      "title": "MatchScoreHistory",
-      "description": "API reference for tracking points through event sourcing.",
-      "icon": "ChatBubbleIcon"
+    "/match-configuration": {
+      "title": "MatchConfiguration",
+      "description": "API reference for validated match format rules: best_of_sets, advantage vs gold_point, set formats, and deciding sets.",
+      "icon": "CogIcon"
     },
     "/match-score": {
       "title": "MatchScore",
-      "description": "API reference for the immutable snapshot of a match's current score.",
+      "description": "API reference for immutable score snapshots including points, games, sets, active server, and FIP Rule 5 side changes.",
+      "icon": "ChatBubbleIcon"
+    },
+    "/match-score-history": {
+      "title": "MatchScoreHistory",
+      "description": "API reference for the event-sourced point ledger supporting add_point(), modify_point(), and deterministic score replay.",
       "icon": "ChatBubbleIcon"
     },
     "/team": {
       "title": "Team",
-      "description": "API reference for the Team dataclass.",
+      "description": "API reference for competing doubles pairs, serve formations, and display labels.",
       "icon": "UsersIcon"
     },
     "/player": {
       "title": "Player",
-      "description": "API reference for the Player dataclass.",
+      "description": "API reference for individual padel players, receiving court side preferences, and nationality metadata.",
       "icon": "UserNoCircleIcon"
     },
     "/serving-state": {
       "title": "ServingState",
-      "description": "API reference for the ServingState dataclass representing server state.",
+      "description": "API reference for point-level active server, receiver, and diagonal service box state.",
       "icon": "UserIcon"
     },
-    "/match-configuration": {
-      "title": "MatchConfiguration",
-      "description": "API reference for the MatchConfiguration dataclass representing match configuration parameters.",
-      "icon": "CogIcon"
+    "/serving-engine": {
+      "title": "ServingEngine",
+      "description": "API reference for the stateless doubles and tiebreak server/receiver rotation calculator.",
+      "icon": "UserGroupIcon"
+    },
+    "/scoring-enums": {
+      "title": "Scoring Enums",
+      "description": "Reference for TeamId pair identifiers (A and B)."
+    },
+    "/padel-visualizer": {
+      "title": "PadelVisualizer",
+      "description": "API reference for the interactive Three.js 3D court studio, Parquet/CSV replay, offline HTML export, and live SSE streaming.",
+      "icon": "ViewfinderCircleIcon",
+      "min": "0.1.0"
+    },
+    "/match-timeline": {
+      "title": "MatchTimeline",
+      "description": "API reference for temporal 60 FPS timelines, physics demo rallies, H36M skeletal baking, and Parquet/CSV/DataFrame I/O.",
+      "icon": "ShapesIcon",
+      "min": "0.1.0"
+    },
+    "/frame-state": {
+      "title": "FrameState",
+      "description": "API reference for single-timestamp ball kinematics, 4-player poses, event tags, and scoreboard state.",
+      "icon": "TagIcon",
+      "min": "0.1.0"
+    },
+    "/player-pose": {
+      "title": "PlayerPose",
+      "description": "API reference for player court root pose, yaw heading, stroke animation phase, and 17 H36M 3D skeletal keypoints.",
+      "icon": "UserIcon",
+      "min": "0.1.0"
+    },
+    "/viz-constants": {
+      "title": "Visualization Constants",
+      "description": "Reference for the canonical 17-joint H36M_JOINT_NAMES skeletal landmark ordering.",
+      "min": "0.1.0"
     }
   },
   "navigation": [
     {
-      "title": "Guides",
+      "title": "Getting Started",
       "links": [
         "/",
         "/quickstart",
-        "/scoring-system",
+        "/match-format"
+      ]
+    },
+    {
+      "title": "Guides",
+      "links": [
         "/court-geometry",
         "/camera-system",
         "/ball-physics",
         "/visualization-3d",
         "/stroke-library",
-        "/match-format"
+        "/scoring-system"
       ]
     },
     {
-      "title": "Timeline & Visualization",
-      "links": [
-        "/match-timeline",
-        "/frame-state",
-        "/padel-visualizer"
-      ]
-    },
-    {
-      "title": "Court model",
+      "title": "API: Court",
       "links": [
         "/court",
         "/court-dimensions",
+        "/court-location",
+        "/side-access",
+        "/safety-zone",
+        "/side-enclosure-panel",
+        "/side-enclosure-segment",
         "/court-landmark",
-        "/court-location"
+        "/court-enums"
       ]
     },
     {
-      "title": "Camera & Vision",
+      "title": "API: Camera",
       "links": [
         "/camera",
         "/camera-intrinsics",
         "/camera-extrinsics",
-        "/camera-distortion"
+        "/camera-distortion",
+        "/camera-enums"
       ]
     },
     {
-      "title": "Physics & Dynamics",
+      "title": "API: Physics",
       "links": [
         "/ball-physics-engine",
         "/ball-state",
-        "/physics-parameters"
+        "/ball-trajectory",
+        "/bounce-event",
+        "/ball-properties",
+        "/environment-conditions",
+        "/surface-materials",
+        "/physics-enums"
       ]
     },
     {
-      "title": "Match model",
+      "title": "API: Scoring",
       "links": [
         "/match",
         "/match-configuration",
         "/match-score",
-        "/match-score-history"
+        "/match-score-history",
+        "/team",
+        "/player",
+        "/serving-state",
+        "/serving-engine",
+        "/scoring-enums"
       ]
     },
     {
-      "title": "Core entities",
+      "title": "API: Visualization",
       "links": [
-        "/player",
-        "/serving-state",
-        "/team"
+        "/padel-visualizer",
+        "/match-timeline",
+        "/frame-state",
+        "/player-pose",
+        "/viz-constants"
       ]
     }
   ],
   "intro_cards": {
     "guides": [
       "/quickstart",
-      "/scoring-system",
       "/court-geometry",
       "/camera-system",
       "/ball-physics",
       "/visualization-3d",
+      "/scoring-system",
       "/stroke-library",
       "/match-format"
     ],
     "resources": [
-      "/match-timeline",
-      "/frame-state",
-      "/padel-visualizer",
-      "/court-landmark",
+      "/court",
+      "/court-dimensions",
       "/camera",
       "/ball-physics-engine",
       "/ball-state",
-      "/physics-parameters",
-      "/visualization-3d",
       "/match",
-      "/team",
-      "/player",
-      "/court-dimensions",
-      "/court",
-      "/match-score",
-      "/serving-state",
-      "/match-configuration"
+      "/match-timeline",
+      "/padel-visualizer"
     ]
   }
 }

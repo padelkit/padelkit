@@ -1,0 +1,58 @@
+# SideEnclosurePanel
+
+`SideEnclosurePanel` is an immutable dataclass representing a single rectangular wall, glass, or metallic wire-mesh panel along a full court sideline (`[-length/2, +length/2]` in CENTERED coordinates). Import via `from padelkit import SideEnclosurePanel`. {{ className: 'lead' }}
+
+Unlike [`SideEnclosureSegment`](/side-enclosure-segment) (which summarizes a half-side profile from one back wall), `SideEnclosurePanel` instances returned by [`Court.side_enclosure_panels()`](/court#side-enclosure-panels) describe the exact vertical and longitudinal bounds of every glass block, masonry panel, overhead wire-mesh lintel (`z_start = access.height`), and closed door gate (`DoorState.CLOSED`) across all `20.0 m`.
+
+---
+
+## Parameters & Fields {{ tag: 'dataclass', label: 'SideEnclosurePanel' }}
+
+<Row>
+  <Col>
+
+    All spatial coordinates are expressed in meters using [`CoordinateSystem.CENTERED`](/court-enums#coordinate-system) (floor at `Z = 0.0`, net at `Y = 0.0`).
+
+    <Properties>
+      <Property name="y_start" type="float">
+        Starting longitudinal Y coordinate along the sideline in CENTERED court meters (`-10.0` at near back wall).
+      </Property>
+      <Property name="y_end" type="float">
+        Ending longitudinal Y coordinate along the sideline in CENTERED court meters (`+10.0` at far back wall).
+      </Property>
+      <Property name="z_start" type="float">
+        Bottom elevation of the rectangular panel above the court floor in meters (`0.0` for ground-level walls, `access.height` for overhead doorway lintels).
+      </Property>
+      <Property name="z_end" type="float">
+        Top elevation of the rectangular panel above the court floor in meters (`2.0`, `3.0`, or `4.0`).
+      </Property>
+      <Property name="is_solid" type="bool">
+        `True` for tempered glass or concrete/masonry rebound walls (`SIDE_GLASS` / `SIDE_WALL`); `False` for metallic wire mesh (`SIDE_FENCE`, overhead doorway lintels, or closed gates).
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Inspect Generated Panels" tag="dataclass" label="SideEnclosurePanel">
+
+    ```python
+    from padelkit import Court, DoorState, SideAccess
+
+    court = Court(
+        access_left=SideAccess.fip_dual_access(),
+        door_left=DoorState.OPEN,
+    )
+
+    for panel in court.side_enclosure_panels("left"):
+        kind = "SOLID" if panel.is_solid else "MESH"
+        print(
+            f"{kind:5s} | Y=[{panel.y_start:5.2f}, {panel.y_end:5.2f}]m "
+            f"| Z=[{panel.z_start:.1f}, {panel.z_end:.1f}]m"
+        )
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

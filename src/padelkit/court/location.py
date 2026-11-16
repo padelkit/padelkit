@@ -11,11 +11,17 @@ class CourtLocation:
     """
 
     club: str | None = None
+    """Name of the sports club or venue."""
     city: str | None = None
+    """City where the venue is located."""
     address: str | None = None
+    """Street address of the venue."""
     country: str | None = None
+    """Country name or ISO code."""
     latitude: float | None = None
+    """WGS84 decimal latitude in degrees (`[-90.0, 90.0]`)."""
     longitude: float | None = None
+    """WGS84 decimal longitude in degrees (`[-180.0, 180.0]`)."""
 
     def to_dict(self) -> dict[str, Any]:
         """Serializes the court location to a dictionary."""
@@ -30,7 +36,7 @@ class CourtLocation:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "CourtLocation":
-        """Reconstructs a :class:`CourtLocation` instance from a dictionary."""
+        """Reconstructs a `CourtLocation` instance from a dictionary."""
         return cls(
             club=data.get("club"),
             city=data.get("city"),

@@ -1,0 +1,64 @@
+# SideEnclosureSegment
+
+`SideEnclosureSegment` is an immutable dataclass describing one longitudinal span along a **half-side** enclosure measured inward from the back wall corner (`0.0 m`) toward the net (`10.0 m`). Import via `from padelkit import SideEnclosureSegment`. {{ className: 'lead' }}
+
+Instances are returned by [`Court.side_enclosure_segments()`](/court#side-enclosure-segments) to summarize wall vs. mesh heights along the perimeter (e.g. `0–2 m`: `3 m` solid + `1 m` mesh; `2–4 m`: `2 m` or `3 m` solid + overhead mesh; `4–9 m`: `0 m` solid + `3 m`/`4 m` pure mesh). For the full-length `[−10, +10] m` panel breakdown including doorway lintels and closed gates, see [`SideEnclosurePanel`](/side-enclosure-panel).
+
+---
+
+## Parameters & Fields {{ tag: 'dataclass', label: 'SideEnclosureSegment' }}
+
+<Row>
+  <Col>
+
+    All measurements are expressed in meters relative to the nearest back wall (`y_start_from_back = 0.0` at the corner).
+
+    <Properties>
+      <Property name="y_start_from_back" type="float">
+        Distance inward from the nearest back wall where this segment begins, in meters (`>= 0.0`).
+      </Property>
+      <Property name="y_end_from_back" type="float">
+        Distance inward from the nearest back wall where this segment ends, in meters.
+      </Property>
+      <Property name="solid_height" type="float">
+        Height of the solid tempered glass or masonry wall section in meters (`0.0` in pure wire-mesh zones).
+      </Property>
+      <Property name="total_height" type="float">
+        Overall enclosure height (solid wall + overhead wire mesh) in meters (`3.0` or `4.0`).
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Initialization & Segments" tag="dataclass" label="SideEnclosureSegment">
+
+    ```python
+    from padelkit import Court, EnclosureType
+
+    wall_court = Court(enclosure_type=EnclosureType.WALL)
+    for seg in wall_court.side_enclosure_segments():
+        print(
+            f"[{seg.y_start_from_back:.1f}, {seg.y_end_from_back:.1f}]m "
+            f"len={seg.length:.1f}m solid={seg.solid_height:.1f}m "
+            f"mesh={seg.mesh_height:.1f}m"
+        )
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Properties {{ tag: 'property', label: 'Derived Spans' }}
+
+<Properties>
+  <Property name="length" type="float">
+    Longitudinal span of the segment along the sideline in meters (`max(0.0, y_end_from_back - y_start_from_back)`).
+  </Property>
+  <Property name="mesh_height" type="float">
+    Vertical height of the metallic wire mesh rising above the solid wall (`max(0.0, total_height - solid_height)`).
+  </Property>
+</Properties>

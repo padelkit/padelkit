@@ -1,0 +1,111 @@
+# BounceEvent
+
+`BounceEvent` is a frozen dataclass recording an instantaneous surface impact detected by [`BallPhysicsEngine`](/ball-physics-engine). Every bounce captured during [`simulate()`](/ball-physics-engine#simulate) is stored chronologically in [`BallTrajectory.bounces`](/ball-trajectory). Import via `from padelkit import BounceEvent`. {{ className: 'lead' }}
+
+Unlike pre/post summaries that lose spin direction, `BounceEvent` stores the complete pre- and post-impact 3D linear velocity and angular spin vectors so you can measure spin transfer (`SLIDING` vs `ROLLING`) off glass walls, turf, or mesh.
+
+---
+
+## Parameters & Fields {{ tag: 'dataclass', label: 'BounceEvent' }}
+
+<Row>
+  <Col>
+
+    <Properties>
+      <Property name="timestamp" type="float">
+        Simulation time when impact occurred, in seconds.
+      </Property>
+      <Property name="surface" type="SurfaceType">
+        Court surface struck during the impact (`FLOOR`, `BACK_GLASS`, `SIDE_GLASS`, `BACK_WALL`, `SIDE_WALL`, `BACK_FENCE`, `SIDE_FENCE`, `NET`, or `CEILING`). See [`SurfaceType`](/physics-enums#surface-type).
+      </Property>
+      <Property name="position" type="tuple[float, float, float]">
+        3D ball center coordinates `(x, y, z)` at contact in court meters.
+      </Property>
+      <Property name="velocity_before" type="tuple[float, float, float]">
+        3D linear velocity `(vx, vy, vz)` immediately before collision, in `m/s`.
+      </Property>
+      <Property name="velocity_after" type="tuple[float, float, float]">
+        3D linear velocity `(vx, vy, vz)` immediately after collision, in `m/s`.
+      </Property>
+      <Property name="angular_velocity_before" type="tuple[float, float, float]">
+        3D angular spin `(wx, wy, wz)` immediately before collision, in `rad/s`.
+      </Property>
+      <Property name="angular_velocity_after" type="tuple[float, float, float]">
+        3D angular spin `(wx, wy, wz)` immediately after collision, in `rad/s`.
+      </Property>
+      <Property name="regime" type="ContactRegime">
+        Tangential friction regime resolved at contact (`SLIDING`, `ROLLING`, or `DAMPED`). See [`ContactRegime`](/physics-enums#contact-regime).
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Inspect Recorded Bounces" tag="dataclass" label="BounceEvent">
+
+    ```python
+    from padelkit import BallPhysicsEngine, BallState
+
+    traj = BallPhysicsEngine().simulate(
+        BallState.from_shot((0.0, -3.0, 2.2), (1.0, 17.0, -2.5), topspin_rpm=-2000),
+        duration_s=2.0,
+    )
+
+    for b in traj.bounces:
+        print(
+            f"t={b.timestamp:.3f}s | {b.surface.value:10s} | {b.regime.value:7s} "
+            f"| v: {b.speed_before*3.6:.1f} -> {b.speed_after*3.6:.1f} km/h "
+            f"| spin: {b.spin_rpm_before:.0f} -> {b.spin_rpm_after:.0f} RPM"
+        )
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Properties {{ tag: 'property', label: 'Impact Magnitudes' }}
+
+<Properties>
+  <Property name="speed_before" type="float">
+    Ball linear speed `||velocity_before||` right before contact in `m/s`.
+  </Property>
+  <Property name="speed_after" type="float">
+    Ball linear speed `||velocity_after||` right after contact in `m/s`.
+  </Property>
+  <Property name="spin_rpm_before" type="float">
+    Total ball angular spin rate before contact in `RPM`.
+  </Property>
+  <Property name="spin_rpm_after" type="float">
+    Total ball angular spin rate after contact in `RPM`.
+  </Property>
+</Properties>
+
+---
+
+## `to_dict()` {{ tag: 'method', label: 'bounce.to_dict()' }}
+
+<Row>
+  <Col>
+
+    Exports rounded bounce telemetry (`timestamp`, `surface`, `regime`, `position`, `velocity_before`, `velocity_after`, `speed_before_ms`, `speed_after_ms`, `spin_rpm_before`, `spin_rpm_after`) into a JSON-friendly dictionary.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Serialize Bounce" tag="method" label="to_dict">
+
+    ```python
+    from padelkit import BallPhysicsEngine, BallState
+
+    traj = BallPhysicsEngine().simulate(BallState.from_shot((0, -2, 2), (0, 14, -2)))
+    if traj.bounces:
+        print(traj.bounces[0].to_dict())
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

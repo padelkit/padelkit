@@ -25,13 +25,13 @@ This document serves as the single source of truth regarding the architecture, d
   - `main` is the production branch. Merging `develop` into `main` triggers the Vercel Production Deploy Hook (`VERCEL_DEPLOY_HOOK_URL`) for `https://padelkit.dev`.
   - Publishing a GitHub Release (`vX.Y.Z`) on `main` triggers `.github/workflows/release.yml` to verify tag/version parity, run tests, and publish to PyPI via Trusted Publishing.
 - **Decoupled Docs Architecture:**
-  - `docs/` in this repository contains the `.mdx` content pages, custom SVG icons (`docs/icons/`), and `docs/docs.config.json`.
-  - A separate private Next.js repository (`padelkit-docs`) syncs `docs/` during build and deploys to `https://padelkit.dev` via Vercel.
-  - **MDX Rules (enforced by `tests/test_version_and_docs.py`):**
-    1. Do **not** include `export const metadata = { ... }` at the top of `.mdx` files (`padelkit-docs/scripts/sync-docs.mjs` injects it automatically from `docs/docs.config.json`).
-    2. Register every new page in `docs/docs.config.json` under `"pages"` (with `"min": "0.1.0"` for `0.1.0` features), `"navigation"`, and optionally `"intro_cards"`.
-    3. Follow the modular 2-column layout (`<Row>`, `<Col>`, `<Col sticky>`, `<Properties>`, `<Property>`, `<CodeGroup>`, `<Schematic>`).
-    4. Static light/dark vector schematics in `docs/images/schematics/` are generated deterministically via `.venv/bin/python scripts/generate_schematics.py` (and verified via `--check` in `tests/test_docs_schematics.py`).
+  - `docs/` in this repository contains the `.mdx` content pages, custom SVG icons (`docs/icons/`), `docs/README.md`, and `docs/docs.config.json`.
+  - A separate private Next.js repository (`padelkit-docs`) syncs `docs/` during build and deploys to `https://padelkit.dev` via Vercel. Because `padelkit-docs` is private, public PR contributors rely entirely on `docs/README.md` and `padelkit` CI checks.
+  - **Documentation, IDE Tip & CI Contract (enforced by `tests/test_version_and_docs.py` and `tests/test_docs_api_sync.py`):**
+    1. **Hybrid 1 Sync:** Keep `src/padelkit/py.typed` intact and maintain clean Markdown Google-style docstrings + PEP 257 inline dataclass field docstrings (`"""..."""`) in Python for crisp IDE tooltips; keep intuitive/rich MDX docs curated in `docs/` and verified against runtime objects in `pytest`.
+    2. **Diátaxis Separation:** Conceptual Guides explain intuition, SI units, FIP rules, and end-to-end workflows (never embed `<Properties>` class schemas in Guides). API Reference enforces `1 class/dataclass = 1 page` (`docs/<slug>/page.mdx`), while submodule enums/constants live on `<module>-enums/page.mdx` or `<module>-constants/page.mdx` (except `CourtLandmark` which keeps `/court-landmark`).
+    3. **MDX & Heading Rules:** Never include `export const metadata = { ... }`; register every route in `docs/docs.config.json` under `"pages"` and `"navigation"` without duplicating `intro_cards`; use only closed `<Heading>` `tag` values (`class`, `dataclass`, `enum`, `constant`, `constructor`, `fields`, `property`, `classmethod`, `method`, `guide`, `schema`, `cli`) and `name`/`type` props on `<Property>`; link `#anchor` targets using hyphenated heading slugs.
+    4. **Schematics:** Static light/dark vector schematics in `docs/images/schematics/` are generated deterministically via `.venv/bin/python scripts/generate_schematics.py` (verified via `--check` in `tests/test_docs_schematics.py`).
 
 ---
 

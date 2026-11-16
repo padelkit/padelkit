@@ -1,6 +1,8 @@
 # CameraDistortion
 
-`CameraDistortion` models optical lens distortion and iterative undistortion for both standard rectilinear lenses (`Brown-Conrady`) and ultra-wide action cameras (`Fisheye`) mounted inside or near a padel court. {{ className: 'lead' }}
+`CameraDistortion` is an immutable dataclass encoding optical lens distortion parameters alongside vectorized forward distortion and iterative inverse undistortion math. Import via `from padelkit import CameraDistortion`. {{ className: 'lead' }}
+
+Supports ideal pinhole lenses (`NONE`), standard OpenCV radial/tangential lenses (`BROWN_CONRADY`), and wide-angle action cameras (`FISHEYE` Kannala-Brandt equidistant model).
 
 <Schematic
   name="camera-distortion-grid"
@@ -8,17 +10,63 @@
   caption="Comparison of ideal pinhole (DistortionModel.NONE), Brown-Conrady radial/tangential barrel distortion, and Kannala-Brandt equidistant Fisheye projection."
 />
 
-## Properties
+## Parameters & Fields {{ tag: 'dataclass', label: 'CameraDistortion' }}
+
+<Row>
+  <Col>
+
+    In practice, use the dedicated factory constructors ([`none()`](#none), [`brown_conrady()`](#brown-conrady), [`fisheye()`](#fisheye)) to ensure `model` and coefficients match cleanly.
+
+    <Properties>
+      <Property name="model" type="DistortionModel">
+        Active lens distortion formulation (`NONE`, `BROWN_CONRADY`, or `FISHEYE`). Defaults to `DistortionModel.NONE`.
+      </Property>
+      <Property name="k1" type="float">
+        First radial (or `theta^3`) distortion coefficient (`< 0` for barrel distortion, `> 0` for pincushion). Defaults to `0.0`.
+      </Property>
+      <Property name="k2" type="float">
+        Second radial (`r^4` or `theta^5`) distortion coefficient. Defaults to `0.0`.
+      </Property>
+      <Property name="p1" type="float">
+        First tangential (decentering) coefficient (`BROWN_CONRADY` only). Defaults to `0.0`.
+      </Property>
+      <Property name="p2" type="float">
+        Second tangential (decentering) coefficient (`BROWN_CONRADY` only). Defaults to `0.0`.
+      </Property>
+      <Property name="k3" type="float">
+        Third radial (`r^6` or `theta^7`) distortion coefficient. Defaults to `0.0`.
+      </Property>
+      <Property name="k4" type="float">
+        Fourth equidistant coefficient (`theta^9` term, `FISHEYE` only). Defaults to `0.0`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Initialization via Factories" tag="dataclass" label="CameraDistortion">
+
+    ```python
+    from padelkit import CameraDistortion
+
+    pinhole = CameraDistortion.none()
+    bc = CameraDistortion.brown_conrady(k1=-0.18, k2=0.04)
+    fish = CameraDistortion.fisheye(k1=-0.02, k2=0.005)
+    print(bc.coefficients)  # (-0.18, 0.04, 0.0, 0.0, 0.0)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Properties {{ tag: 'property', label: 'Model Inspection' }}
 
 <Properties>
-  <Property name="model" type="DistortionModel">
-    The active optical distortion model (`NONE`, `BROWN_CONRADY`, or `FISHEYE`).
-  </Property>
-  <Property name="k1, k2, k3, k4" type="float">
-    Radial / equidistant polynomial distortion coefficients.
-  </Property>
-  <Property name="p1, p2" type="float">
-    Tangential decentering distortion coefficients (used by `BROWN_CONRADY`).
+  <Property name="is_identity" type="bool">
+    Returns `True` when `model == DistortionModel.NONE` or all distortion coefficients are effectively zero (`< 1e-12`).
   </Property>
   <Property name="coefficients" type="tuple[float, ...]">
     Returns `(k1, k2, p1, p2, k3)` for `BROWN_CONRADY`, `(k1, k2, k3, k4)` for `FISHEYE`, or `()` for `NONE`.
@@ -27,40 +75,60 @@
 
 ---
 
-## Factory Constructors
+## Factory Constructors {{ tag: 'classmethod', label: 'none / brown_conrady / fisheye' }}
 
 <Row>
   <Col>
 
-    Instantiate distortion models cleanly using dedicated classmethods:
-
-    - `CameraDistortion.none()`: Ideal distortion-free pinhole lens.
-    - `CameraDistortion.brown_conrady(k1, k2, p1, p2, k3)`: Standard OpenCV 5-parameter radial + tangential distortion.
-    - `CameraDistortion.fisheye(k1, k2, k3, k4)`: Kannala-Brandt equidistant fisheye model.
+    - **`CameraDistortion.none()`**: Ideal distortion-free pinhole mapping.
+    - **`CameraDistortion.brown_conrady(k1=0.0, k2=0.0, p1=0.0, p2=0.0, k3=0.0)`**: OpenCV 5-parameter radial/tangential lens model for broadcast and CCTV optics.
+    - **`CameraDistortion.fisheye(k1=0.0, k2=0.0, k3=0.0, k4=0.0)`**: Equidistant `cv2.fisheye` / Kannala-Brandt model for ultra-wide cameras mounted right next to court glass.
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Distortion Models" tag="classmethod" label="CameraDistortion">
+    <CodeGroup title="Factory Methods" tag="classmethod" label="CameraDistortion">
 
     ```python
     from padelkit import CameraDistortion
 
-    # Standard rectilinear wide lens
-    rect_dist = CameraDistortion.brown_conrady(
-        k1=-0.15,
-        k2=0.03,
-        p1=0.0005,
-        p2=-0.0005,
-    )
+    wide = CameraDistortion.fisheye(k1=-0.03, k2=0.01)
+    print(wide.model.value, wide.coefficients)
+    # fisheye (-0.03, 0.01, 0.0, 0.0)
+    ```
 
-    # Wide-angle action camera mounted on the back glass
-    fisheye_dist = CameraDistortion.fisheye(
-        k1=-0.06,
-        k2=0.015,
-        k3=-0.002,
-        k4=0.0003,
-    )
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `distort_normalized()` & `undistort_normalized()` {{ tag: 'method', label: 'Forward & Inverse Math' }}
+
+<Row>
+  <Col>
+
+    Low-level vectorized transforms operating on normalized pinhole plane coordinates `(x_n, y_n) = (X_cam / Z_cam, Y_cam / Z_cam)`:
+
+    - **`distort_normalized(xy)`**: Applies forward optical distortion to an `(..., 2)` NumPy array.
+    - **`undistort_normalized(xy_distorted, iterations=12)`**: Iteratively inverts optical distortion (fixed-point for Brown-Conrady, Newton-Raphson for Fisheye) to recover ideal normalized rays before `K^-1` back-projection.
+    - **`to_dict()`**: Exports `model` and `(k1, k2, p1, p2, k3, k4)` as a JSON dictionary.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Distort & Undistort Round-Trip" tag="method" label="undistort_normalized">
+
+    ```python
+    import numpy as np
+    from padelkit import CameraDistortion
+
+    dist = CameraDistortion.brown_conrady(k1=-0.18, k2=0.04)
+    ideal = np.array([[0.3, -0.2]])
+    warped = dist.distort_normalized(ideal)
+    recovered = dist.undistort_normalized(warped, iterations=12)
+    assert np.allclose(ideal, recovered, atol=1e-7)
     ```
 
     </CodeGroup>

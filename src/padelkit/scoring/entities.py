@@ -4,6 +4,8 @@ from typing import Any, Literal
 
 
 class TeamId(str, Enum):
+    """Identifier for one of the two competing padel pairs (`A` or `B`)."""
+
     A = "A"
     B = "B"
 
@@ -13,8 +15,11 @@ class Player:
     """Represents a padel player."""
 
     name: str
+    """Display name of the player (must be unique within a match)."""
     side: Literal["left", "right"] | None = None
+    """Preferred receiving court half (`"left"` or `"right"`, or `None` unset)."""
     nationality: str | None = None
+    """Optional ISO country code or nationality string."""
 
     def to_dict(self) -> dict[str, Any]:
         """Serializes the player to a dictionary."""
@@ -26,7 +31,7 @@ class Player:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Player":
-        """Reconstructs a :class:`Player` instance from a dictionary."""
+        """Reconstructs a `Player` instance from a dictionary."""
         return cls(
             name=str(data["name"]),
             side=data.get("side"),
@@ -39,10 +44,15 @@ class Team:
     """Represents a padel team composed of two players."""
 
     id: TeamId
+    """Team slot identifier (`TeamId.A` or `TeamId.B`)."""
     player1: Player
+    """First `Player` of the pair (default starting server if unconfigured)."""
     player2: Player
+    """Second `Player` of the pair (must have a distinct `name` from `player1`)."""
     serve_formation: Literal["standard", "australian"] = "standard"
+    """Tactical serve formation (`"standard"` or `"australian"`)."""
     name: str | None = None
+    """Optional custom team or pair name."""
 
     def __post_init__(self) -> None:
         if self.player1 == self.player2 or self.player1.name == self.player2.name:
@@ -52,6 +62,7 @@ class Team:
 
     @property
     def display_name(self) -> str:
+        """Returns custom `name` or `'player1 / player2'` fallback label."""
         if self.name:
             return self.name
         return f"{self.player1.name} / {self.player2.name}"
@@ -68,7 +79,7 @@ class Team:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Team":
-        """Reconstructs a :class:`Team` instance from a dictionary."""
+        """Reconstructs a `Team` instance from a dictionary."""
         return cls(
             id=TeamId(data["id"]),
             player1=Player.from_dict(data["player1"]),
@@ -84,9 +95,13 @@ class ServingState:
     at a specific point."""
 
     team: TeamId
+    """Team currently serving (`TeamId.A` or `TeamId.B`)."""
     player: Player | None = None
+    """Specific `Player` serving on the current point (`None` if teams unset)."""
     receiver: Player | None = None
+    """Opposing `Player` returning the serve (`None` if teams unset)."""
     court_side: Literal["left", "right"] | None = None
+    """Service box diagonal side (`"right"` / deuce vs `"left"` / ad)."""
 
     def to_dict(self) -> dict[str, Any]:
         """Serializes the serving state to a dictionary."""
@@ -99,7 +114,7 @@ class ServingState:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ServingState":
-        """Reconstructs a :class:`ServingState` instance from a dictionary."""
+        """Reconstructs a `ServingState` instance from a dictionary."""
         return cls(
             team=TeamId(data["team"]),
             player=Player.from_dict(data["player"]) if data.get("player") else None,
@@ -116,13 +131,20 @@ class MatchConfiguration:
     match."""
 
     best_of_sets: int = 3
+    """Total maximum sets in the match (positive odd integer: `1`, `3`, `5`...)."""
     advantage_method: Literal["advantage", "gold_point"] = "advantage"
+    """Deuce resolution rule (`"advantage"` vs `"gold_point"` Golden Point)."""
     set_format: Literal["standard", "mini"] = "standard"
+    """Games per set (`"standard"` first to 6, or `"mini"` first to 4)."""
     deciding_set_format: Literal["regular", "tiebreak", "super_tiebreak"] = "regular"
+    """Final-set format (`"regular"` full set, 7-pt `"tiebreak"`, or 10-pt)."""
     starting_server_team: TeamId = TeamId.A
+    """Team that serves the very first game of Set 1 (`TeamId.A` or `TeamId.B`)."""
     set_starting_servers: dict[int, dict[TeamId, Player]] = field(default_factory=dict)
+    """Optional overrides mapping 1-based set index -> `{TeamId: Player}`."""
 
     def validate(self) -> None:
+        """Validates all scoring configuration parameters and raises on invalid."""
         if (
             not isinstance(self.best_of_sets, int)
             or self.best_of_sets <= 0
@@ -192,7 +214,7 @@ class MatchConfiguration:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "MatchConfiguration":
-        """Reconstructs a :class:`MatchConfiguration` instance from a dictionary."""
+        """Reconstructs a `MatchConfiguration` instance from a dictionary."""
         raw_servers = data.get("set_starting_servers") or {}
         parsed_servers: dict[int, dict[TeamId, Player]] = {}
         for k, team_map in raw_servers.items():

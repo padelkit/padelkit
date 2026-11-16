@@ -1,0 +1,146 @@
+# BallProperties
+
+`BallProperties` is a frozen dataclass capturing the mass, radius, moment of inertia, felt wear (`fuzz_factor`), internal pressure, color, and bounce restitution factor of a padel ball. Import via `from padelkit import BallProperties`. {{ className: 'lead' }}
+
+Validation requires `mass > 0`, `radius > 0`, `moment_of_inertia > 0`, `bounce_restitution_factor > 0`, and `0.0 <= fuzz_factor <= 1.0`.
+
+---
+
+## Parameters & Fields {{ tag: 'dataclass', label: 'BallProperties' }}
+
+<Row>
+  <Col>
+
+    All default values represent a brand-new FIP regulation padel ball at sea level (`BallProperties.fip_standard()`).
+
+    <Properties>
+      <Property name="mass" type="float">
+        Ball mass in kilograms (FIP regulation: `0.056–0.0594 kg`). Defaults to `0.058`.
+      </Property>
+      <Property name="radius" type="float">
+        Outer sphere radius in meters (FIP regulation diameter `0.0635–0.0677 m`, i.e. radius `0.03175–0.03385 m`). Defaults to `0.033`.
+      </Property>
+      <Property name="moment_of_inertia" type="float">
+        Rotational moment of inertia `I` around the center of mass in `kg·m²` (approx. `0.55 * mass * radius²` for a hollow pressurized core). Defaults to `3.47e-5`.
+      </Property>
+      <Property name="fuzz_factor" type="float">
+        Felt wear / nap fluffiness index in `[0.0, 1.0]`. Scales baseline drag coefficient `C_D = 0.50 + 0.15 * fuzz_factor` (`0.50` new to `0.65` heavily worn). Defaults to `0.0`.
+      </Property>
+      <Property name="pressure_psi" type="float">
+        Internal gas pressure in PSI (FIP regulation: `10.0–11.0` PSI). Defaults to `11.0`.
+      </Property>
+      <Property name="color" type="BallColor | str">
+        Official [`BallColor`](/physics-enums#ball-color) (`YELLOW`, `WHITE`, `ORANGE`, `MAGENTA` FIP-approved) or custom CSS/hex color rendered by [`PadelVisualizer`](/padel-visualizer). Defaults to `BallColor.YELLOW`.
+      </Property>
+      <Property name="bounce_restitution_factor" type="float">
+        Multiplier applied to surface COR during bounces (`1.0` standard; `~0.955` for high-altitude low-bounce balls). Defaults to `1.0`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Initialization" tag="dataclass" label="BallProperties">
+
+    ```python
+    from padelkit import BallColor, BallProperties
+
+    ball = BallProperties(
+        mass=0.058,
+        radius=0.033,
+        fuzz_factor=0.25,
+        pressure_psi=10.8,
+        color=BallColor.YELLOW,
+    )
+    print("Drag coeff C_D:", round(ball.drag_coefficient, 4))
+    print("FIP compliant:", ball.is_fip_compliant())
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Properties {{ tag: 'property', label: 'Aerodynamic Derivations' }}
+
+<Properties>
+  <Property name="effective_color" type="str">
+    Resolved color string value (e.g. `"yellow"`, `"orange"`).
+  </Property>
+  <Property name="cross_section_area" type="float">
+    Frontal cross-sectional area `pi * radius²` in `m²` used in aerodynamic drag and lift.
+  </Property>
+  <Property name="inertia_ratio" type="float">
+    Dimensionless inertia factor `alpha = I / (m * R²)` (`~0.55` hollow ball), governing rotational spin pickup during `ROLLING` bounces.
+  </Property>
+  <Property name="drag_coefficient" type="float">
+    Aerodynamic drag coefficient `C_D = 0.50 + 0.15 * fuzz_factor`.
+  </Property>
+</Properties>
+
+---
+
+## Regulatory & Play-Condition Presets {{ tag: 'classmethod', label: 'Presets' }}
+
+<Row>
+  <Col>
+
+    Factory classmethods model real match conditions directly:
+    - **`fip_standard(color=BallColor.YELLOW)`**: Brand-new FIP ball at sea level.
+    - **`worn(fuzz_factor=0.75, pressure_psi=9.8, color=BallColor.YELLOW)`**: Fluffed felt and lower pressure (`C_D ≈ 0.6125`), slowing fast shots.
+    - **`high_altitude(bounce_restitution_factor=0.955, pressure_psi=9.5, color=BallColor.YELLOW)`**: FIP altitude ball (> 500 m venue, *La Pelota* §4) with lower restitution so altitude matches don't bounce too high.
+    - **`wet(absorbed_water_g=2.0, color=BallColor.YELLOW)`**: Heavy water-logged ball (`mass = 0.058 + absorbed_water_g / 1000`, `fuzz_factor=0.35`, recomputed `moment_of_inertia`).
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Compare Ball Conditions" tag="classmethod" label="BallProperties Presets">
+
+    ```python
+    from padelkit import BallProperties
+
+    fresh = BallProperties.fip_standard()
+    worn = BallProperties.worn(fuzz_factor=0.8)
+    altitude = BallProperties.high_altitude()
+    wet = BallProperties.wet(absorbed_water_g=2.5)
+
+    print("Fresh C_D:", fresh.drag_coefficient)  # 0.5
+    print("Worn C_D: ", worn.drag_coefficient)   # 0.62
+    print("Wet mass: ", wet.mass)                # 0.0605
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `is_fip_compliant()` & Serialization {{ tag: 'method', label: 'FIP Check & dict I/O' }}
+
+<Row>
+  <Col>
+
+    - **`is_fip_compliant(*, strict_colors=False)`**: Checks `0.056 <= mass <= 0.0594 kg`, `0.0635 <= 2*radius <= 0.0677 m`, and color (`{"yellow", "white"}` when `strict_colors=True`, or also `{"orange", "magenta"}` by default).
+    - **`to_dict()` / `BallProperties.from_dict(data)`**: Serializes all fields (plus computed `cross_section_area` and `drag_coefficient`) and reconstructs cleanly.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="FIP Compliance & Round-Trip" tag="method" label="is_fip_compliant">
+
+    ```python
+    from padelkit import BallColor, BallProperties
+
+    pro_orange = BallProperties.fip_standard(color=BallColor.ORANGE)
+    print(pro_orange.is_fip_compliant())                     # True
+    print(pro_orange.is_fip_compliant(strict_colors=True))   # False
+    assert BallProperties.from_dict(pro_orange.to_dict()) == pro_orange
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>

@@ -1,132 +1,95 @@
 # PadelKit Documentation Guide
 
-Welcome to the PadelKit documentation source! The official documentation website (https://padelkit.dev) is automatically generated from this folder. 
+Welcome to the **PadelKit** documentation source! The official documentation website (**[https://padelkit.dev](https://padelkit.dev)**) is generated automatically from this directory whenever changes in `docs/**` are pushed to `develop` or `main`.
 
-We use a decoupled architecture: this public repository holds the content (Markdown) and configuration (JSON), while a separate private Next.js repository handles the rendering, styling, and deployment via Vercel.
+This public repository is **100% self-contained** for documentation contributors: you do not need access to any private website repository to write guides, document new classes, add SVG icons/schematics, or run full CI verification before opening a Pull Request.
 
-## 📝 Writing Content
+---
 
-Documentation pages are written using standard Markdown (`.mdx`). 
-You should place your files inside this folder (e.g., `my-feature/page.mdx`).
+## 1. Editorial Architecture (Diátaxis)
 
-**Important Rules:**
-- Do **not** use Next.js `export const metadata = { ... }` blocks at the top of your markdown files.
-- Write pure markdown (e.g., start directly with `# My Feature Title`).
-- Code blocks can be wrapped in `<CodeGroup>` components for tabbed interfaces if needed.
-- Technical schematics can be embedded with `<Schematic name="court-landmarks-3d" alt="..." caption="..." />`, which automatically switches between `/images/schematics/{name}-light.svg` and `/images/schematics/{name}-dark.svg` based on the active theme. Regenerate schematics with `.venv/bin/python scripts/generate_schematics.py`.
+PadelKit separates **conceptual Guides** from **formal API Reference** so concepts are intuitive without cluttering specifications, and specifications are complete without duplicating tutorials:
 
-### 🏷️ Multi-Version Documentation
+| Document Role | Location & Sidebar Group | What Belongs Here | What Is Forbidden |
+| :--- | :--- | :--- | :--- |
+| **Guides & Formats** | `Getting Started`, `Guides` (`/quickstart`, `/court-geometry`, `/camera-system`, `/ball-physics`, `/visualization-3d`, `/stroke-library`, `/scoring-system`, `/match-format`) | Intuitive explanations assuming zero prior context, coordinate/unit conventions, regulatory rationale, SVG `<Schematic>` diagrams, end-to-end `<CodeGroup>` examples, and links to API pages. | Never embed `<Properties>` / `<Property>` class parameter specs or duplicate constructor tables inside guides. |
+| **Class / Dataclass API** | `API: Court`, `API: Camera`, `API: Physics`, `API: Scoring`, `API: Visualization` | **Strict `1 class = 1 page` rule.** Exact fields/constructor, read-only `@property` attributes, `@classmethod` factories, methods (`### Arguments` / `### Returns`), and self-contained Python examples. | Never bundle multiple public classes onto a single page (e.g. `FrameState` and `PlayerPose` live on separate pages). |
+| **Enums & Constants** | `<module>-enums/page.mdx` or `<module>-constants/page.mdx` (plus `/court-landmark` for spatial landmarks) | One `## \`EnumName\` {{ tag: 'enum' }}` section per exported enum/constant containing a full member-value table matching Python source and a short usage example. | Never omit exported enum members or mix unrelated classes onto the same page. |
 
-PadelKit uses a single-source-of-truth differential engine for its documentation, combining global page constraints with granular MDX components.
+### Clarity & Intuitiveness Standard
 
-#### 1. Full-Page Versioning (docs.config.json)
-If a page (like a class or concept) was introduced in a specific version or deprecated in another, define this in `docs.config.json` inside the `"pages"` object. 
-The system will **automatically** intercept requests to out-of-bounds pages, hide them from the sidebar and search results, and display a standardized warning.
+PadelKit bridges **3D geometry, computer vision, physics simulation, and padel rules**. Do not treat domain conventions as "obvious":
+- Always state **units** explicitly (`m`, `m/s`, `rad/s`, `RPM`, `PSI`, `kg·m²`, `pixels`, `degrees`).
+- Remind readers of the **spatial frame** when coordinates appear (`CENTERED` `(0,0,0)` at net center, `+X` right, `+Y` far, `+Z` up from the NEAR-side view).
+- Keep all **Python docstrings** in `src/padelkit/` clean Markdown Google-style (no `:class:` / `:attr:` Sphinx directives that render poorly in IDE tooltips), include inline `"""..."""` attribute docstrings underneath dataclass fields, and preserve [src/padelkit/py.typed](../src/padelkit/py.typed).
 
-```json
-"pages": {
-  "/my-feature": {
-    "title": "My Feature",
-    "description": "API Reference.",
-    "min": "2.0.0", // Only available in 2.0.0 or higher
-    "max": "2.5.0", // Deprecated after 2.5.0
-    "supersededBy": { // Optional: suggest an alternative when deprecated
-      "title": "NewFeature",
-      "href": "/new-feature"
-    }
-  }
-}
+---
+
+## 2. Writing MDX Pages & Canonical API Template
+
+Documentation pages live under `docs/<route-slug>/page.mdx` (or `docs/page.mdx` for `/`).
+
+**Strict MDX rules:**
+- Start directly with `# Title` — **never** add `export const metadata = { ... }` (metadata is injected automatically from [docs.config.json](./docs.config.json)).
+- Only **`##` (`H2`)** headings appear in the secondary sidebar outline and full-text search index, and only **`##`** headings accept `{{ tag: '...', label: '...' }}` eyebrow annotations. Use `###` for sub-sections inside methods (`### Arguments`, `### Returns`).
+- `<Property name="..." type="...">` only accepts **`name`** and **`type`** props—state defaults and constraints inside the body (e.g. `Defaults to \`0.058\`.`).
+- Use only the canonical tag vocabulary in `{{ tag: '...' }}`:
+  - **API Reference:** `class`, `dataclass`, `enum`, `constant`, `constructor`, `fields`, `property`, `classmethod`, `method`
+  - **Guides & Workflows:** `guide`, `schema`, `cli`
+
+### Canonical API Page Skeleton
+
+1. **Lead + Import:** `# ClassName`, brief intuitive summary, `from padelkit import ClassName`, optional `<Note>` or `<Schematic />`.
+2. **`## Parameters & Fields {{ tag: 'dataclass', label: 'ClassName' }}`** *(for dataclasses whose fields match `__init__` 1:1)* — **or** separate **`## Constructor {{ tag: 'constructor' }}`** and **`## Attributes {{ tag: 'fields' }}`** when `__init__` differs from stored state, paired with `<Col sticky><CodeGroup title="Initialization">...</CodeGroup></Col>`.
+3. **`## Properties {{ tag: 'property' }}`** *(optional: computed `@property` attributes only)*.
+4. **Factories / Methods:** Each factory (`{{ tag: 'classmethod' }}`) or public method (`{{ tag: 'method' }}`) gets a dedicated `## \`method_name()\`` heading with `### Arguments` / `### Returns` on the left and a runnable `<CodeGroup>` on the right.
+
+---
+
+## 3. Registering Pages, Schematics & Icons (`docs.config.json`)
+
+Every page must be registered in [`docs/docs.config.json`](./docs.config.json):
+
+1. **`"pages"`**: Add `"/your-route"` with `"title"`, `"description"`, optional `"min"` / `"max"` version bounds (matching `"versions"`), and `"icon"` (required if featured in `intro_cards.resources`).
+2. **`"navigation"`**: Add `"/your-route"` under the appropriate sidebar group (`Getting Started`, `Guides`, or `API: <Module>`).
+3. **`"intro_cards"`**: Avoid duplicating a route across both `guides` and `resources`.
+4. **Icons (`docs/icons/`):** Pre-existing SVG React components live in [`./icons/`](./icons/) (e.g., `BoltIcon`, `ShapesIcon`, `ViewfinderCircleIcon`, `CogIcon`, `MapPinIcon`, `TrophyIcon`, `UsersIcon`, `UserIcon`, `DocumentIcon`). To add a custom icon, place `MyIcon.tsx` inside `./icons/` and reference `"icon": "MyIcon"` in `docs.config.json`.
+5. **Vector Schematics (`docs/images/schematics/`):** Light and dark SVGs are generated deterministically by [`scripts/generate_schematics.py`](../scripts/generate_schematics.py). Embed them with:
+   ```mdx
+   <Schematic
+     name="court-dimensions"
+     alt="Official FIP CourtDimensions Blueprint"
+     caption="..."
+   />
+   ```
+   After editing a schematic generator, regenerate both themes via:
+   ```bash
+   .venv/bin/python scripts/generate_schematics.py
+   ```
+
+---
+
+## 4. Multi-Version Annotations
+
+- **Whole-page availability:** Use `"min"` / `"max"` (and optional `"supersededBy"`) in [`docs/docs.config.json`](./docs.config.json) rather than wrapping an entire MDX page in `<Version>`.
+- **Granular inline notices:** Within a valid page, use `<AddedIn version="X.Y.Z">...</AddedIn>`, `<DeprecatedIn version="X.Y.Z">...</DeprecatedIn>`, or `<Version min="X.Y.Z" max="A.B.C">...</Version>`. Note that `"X.Y.Z"` must be declared in `docs.config.json`'s `"versions"` array once released.
+
+---
+
+## 5. Local Validation & Deployment
+
+Pull requests target **`develop`** (which triggers the staging preview when `docs/**` merges to `develop`), and merging `develop` into **`main`** deploys live to **[https://padelkit.dev](https://padelkit.dev)**.
+
+Before opening a PR, run the full documentation, API-sync, lint, and test checks locally:
+
+```bash
+.venv/bin/ruff check .
+.venv/bin/ruff format --check .
+.venv/bin/python scripts/generate_schematics.py --check
+.venv/bin/pytest
 ```
-*Note: Do NOT wrap the entire MDX file content in `<Version>` tags if the entire page is restricted. Let `docs.config.json` handle it globally!*
 
-#### 2. Granular Versioning (MDX)
-If you only need to show/hide specific paragraphs, properties, or methods *within* a valid page, use MDX components:
-
-- `<Version min="1.0.0" max="1.5.0">...</Version>`: Shows inner content only if the selected version is within the specified range.
-- `<AddedIn version="1.2.0">...</AddedIn>`: Shows a styled block indicating that a granular feature was added.
-- `<DeprecatedIn version="1.6.0">...</DeprecatedIn>`: Shows a styled block indicating that a granular feature was deprecated.
-
-**Example usage:**
-```mdx
-<Version min="1.0.0" max="1.5.0">
-  This property had the old behavior.
-</Version>
-
-<AddedIn version="1.6.0">
-  This is the new behavior.
-</AddedIn>
-```
-
-## ⚙️ Configuring the Website
-
-The entire structure of the website is controlled by **`docs.config.json`**. This is the Single Source of Truth for all metadata, URLs, and navigation menus.
-
-If you create a new page, you **must** register it in `docs.config.json`.
-
-### 1. Register the Page Metadata
-Add your page to the `"pages"` object. The key should be the URL path (which corresponds to the folder name):
-
-```json
-"pages": {
-  "/my-feature": {
-    "title": "My Awesome Feature",
-    "description": "Learn how to use my awesome feature in PadelKit.",
-    "icon": "UserIcon" // Optional: Only needed if it's a resource card on the homepage
-  }
-}
-```
-
-### 2. Add it to the Sidebar Navigation
-To make the page accessible from the sidebar menu, add its URL to the `"navigation"` array:
-
-```json
-"navigation": [
-  {
-    "title": "Guides",
-    "links": ["/", "/quickstart", "/my-feature"]
-  }
-]
-```
-
-### 3. Add it to the Homepage Cards (Optional)
-If you want the page to appear as a large visual card on the homepage, add its URL to the `"intro_cards"` object under `guides` or `resources`. 
-
-If you place it under `resources`, you must specify a valid `"icon"` string in the page's object inside `"pages"`.
-
-#### 🎨 Synced Icons System
-Icons are defined directly within PadelKit in [docs/icons/](file:///home/fidelechevarria/repos/padelkit/docs/icons/). The build pipeline automatically copies these icons, registers them, and exposes them dynamically on the documentation website.
-
-*   **Using an Existing Icon:** 
-    You can use any of the pre-configured icons by setting `"icon"` to the icon's component name (without the `.tsx` extension). Some of the available built-in options include:
-    *   `UserIcon` / `UserNoCircleIcon` (for single user/player metrics)
-    *   `UsersIcon` (for teams/groups)
-    *   `TrophyIcon` (for matches/tournaments)
-    *   `ChatBubbleIcon` (for chat, scoring history, or feedback)
-    *   `ViewfinderCircleIcon` (for landmarks/vision system)
-    *   `BookIcon`, `CalendarIcon`, `CartIcon`, `ClipboardIcon`, `CogIcon`, `FolderIcon`, `LinkIcon`, `MapPinIcon`, `PackageIcon`, `TagIcon` (and many more in [docs/icons/](file:///home/fidelechevarria/repos/padelkit/docs/icons/)).
-
-*   **Adding a Custom Icon:**
-    If you need a new icon that is not in the list, simply create a new React component file inside [docs/icons/](file:///home/fidelechevarria/repos/padelkit/docs/icons/) (e.g., `NewFeatureIcon.tsx`). It must be a standard React SVG component accepting SVG properties:
-    
-    ```tsx
-    export function NewFeatureIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
-      return (
-        <svg viewBox="0 0 20 20" aria-hidden="true" {...props}>
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="..."
-          />
-        </svg>
-      )
-    }
-    ```
-    
-    Once the file is saved, reference it in `docs.config.json` as `"icon": "NewFeatureIcon"`. During the next automated sync, the build process will automatically copy, register, and render your custom icon.
-
-## 🚀 Deployment (Preview & Production)
-
-You do not need to do anything manual to deploy the documentation:
-- **Preview / Staging (`develop` branch):** Open your Pull Request targeting the **`develop`** branch. Whenever changes to `docs/` are merged into `develop`, a GitHub Action automatically triggers the Vercel Preview Deploy Hook so the team can verify the rendered changes on the staging environment.
-- **Production (`main` branch):** Whenever `develop` is merged into `main`, the Vercel Production Deploy Hook automatically fetches the `main` branch, injects metadata from `docs.config.json`, builds the Next.js site, and deploys updates live to **[https://padelkit.dev](https://padelkit.dev)**.
-- **CI Validation:** Running `.venv/bin/pytest` locally (and automatically on every PR) validates that `docs/docs.config.json`, all `.mdx` routes, custom icons, and `<Schematic />` SVG pairs are 100% consistent before deployment.
+Our CI suite ([`tests/test_version_and_docs.py`](../tests/test_version_and_docs.py), [`tests/test_docs_schematics.py`](../tests/test_docs_schematics.py), and [`tests/test_docs_api_sync.py`](../tests/test_docs_api_sync.py)) enforces:
+- 100% coverage of every symbol exported in `padelkit.__all__`.
+- Runtime introspection parity between documented fields/methods/enum values and real Python signatures (`inspect.signature`, `dataclasses.fields`, `hasattr`).
+- Diátaxis separation (no API `<Properties>` blocks inside Guide pages), valid `<Heading tag="...">` names, valid internal `/slug` and `/slug#anchor` links, balanced JSX containers, SVG parity, and package version alignment.

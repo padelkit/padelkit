@@ -30,12 +30,17 @@ class BallPhysicsEngine:
     """
 
     court: Court = field(default_factory=Court.fip_standard)
+    """Court geometry (`Court`) defining boundaries, walls, net, and doorways."""
     ball: BallProperties = field(default_factory=BallProperties.fip_standard)
+    """Ball mass, radius, inertia, felt wear, pressure, and COR factor."""
     environment: EnvironmentConditions = field(
         default_factory=EnvironmentConditions.standard
     )
+    """Gravity, air density, wind velocity, and spin decay conditions."""
     surfaces: SurfaceMaterials = field(default_factory=SurfaceMaterials.fip_standard)
+    """Restitution (COR) and friction coefficients across court surfaces."""
     coordinate_system: CoordinateSystem = CoordinateSystem.CENTERED
+    """Spatial reference frame (`CENTERED` or `CORNER_BASED`) for simulation."""
 
     # ------------------------------------------------------------------ #
     # Aerodynamics (Free Flight Forces & Torque)
@@ -266,7 +271,7 @@ class BallPhysicsEngine:
         z: np.ndarray,
         radius: float,
     ) -> np.ndarray:
-        """Vectorized mask matching :meth:`Court.is_doorway_opening_at`."""
+        """Vectorized mask matching `Court.is_doorway_opening_at`."""
         mask = np.zeros(y_centered.shape, dtype=bool)
         if self.court.door_state_for(side) is DoorState.CLOSED:  # type: ignore[arg-type]
             return mask
@@ -540,7 +545,7 @@ class BallPhysicsEngine:
         *,
         duration: float | None = None,
     ) -> BallTrajectory:
-        """Simulates a 3D ball trajectory and records all :class:`BounceEvent`s."""
+        """Simulates a 3D ball trajectory and records all `BounceEvent` impacts."""
         if duration is not None:
             duration_s = duration
         if duration_s <= 0.0 or dt <= 0.0:

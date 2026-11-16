@@ -1,69 +1,54 @@
 # PadelVisualizer
 
-`PadelVisualizer` is PadelKit's interactive Three.js 3D court studio, multi-camera inspector, and synthetic computer vision pass renderer (`RGB`, `Semantic Segmentation`, `Depth Map`, and `17 Court Landmarks`). It renders [`MatchTimeline`](/match-timeline) recordings from [`.parquet`](/match-format) or `.csv` files, streams real-time [`FrameState`](/frame-state) updates over Server-Sent Events, and supports both Mixamo `.glb` skeletal clips and baked 17-joint H36M 3D skeletons. {{ className: 'lead' }}
+`PadelVisualizer` builds and serves the interactive **Three.js 3D court studio** for PadelKit. It renders regulatory courts (glass/masonry walls, wire mesh, open/closed doorways, safety zones, indoor ceilings), spinning padel balls, trajectory ribbons, Mixamo `.glb` animated players, or 17-joint baked H36M skeletons, alongside computer vision render passes (`RGB`, `Segmentation`, `Depth`, and `17 Court Landmarks`). Import via `from padelkit import PadelVisualizer`. {{ className: 'lead' }}
 
-## Constructor & Attributes
-
-<Properties>
-  <Property name="court" type="Court | None" optional default="None">
-    [`Court`](/court) instance defining dimensions, enclosure variant, turf color, and 17 3D landmarks. Defaults to `timeline.court` or `Court.fip_standard()`.
-  </Property>
-  <Property name="cameras" type="list[Camera] | None" optional default="None">
-    List of [`Camera`](/camera) presets available in the studio's camera selector dropdown. Defaults to 5 standard presets (`broadcast_near`, `broadcast_far`, `overhead_zenith`, `corner_near_left`, `side_net_right`).
-  </Property>
-  <Property name="timeline" type="MatchTimeline | None" optional default="None">
-    [`MatchTimeline`](/match-timeline) loaded into the scrubber. Defaults to `MatchTimeline.demo_rally()`.
-  </Property>
-  <Property name="animation_library_dir" type="str | Path | None" optional default="None">
-    Optional directory containing `manifest.json` and `.glb` stroke animations exported by `padelkit-animator`.
-  </Property>
-</Properties>
-
-<AddedIn version="0.1.1">
-  <Properties>
-    <Property name="offline" type="bool" optional default="True">
-      Embeds the minified Three.js `r170.0` bundle directly inside generated HTML documents so exported files run with zero internet access or `file://` restrictions. Set `offline=False` to load Three.js from the jsDelivr CDN via an ES module import map for smaller HTML files.
-    </Property>
-  </Properties>
-</AddedIn>
+<Note>
+  `PadelVisualizer` embeds the Three.js runtime directly inside generated HTML by default (`offline=True`, added on the `0.1.1` development branch) so standalone exports work cleanly over `file://` URLs with zero internet connection. Pass `offline=False` to load Three.js via CDN instead.
+</Note>
 
 ---
 
-## Create from Parquet or CSV {{ tag: 'classmethod', label: 'from_parquet / from_csv' }}
+## Constructor {{ tag: 'constructor', label: 'PadelVisualizer' }}
 
 <Row>
   <Col>
 
-    Constructs a `PadelVisualizer` directly from a [Universal Match Format (`.parquet`)](/match-format) or `.csv` file.
-
-    When loading a `.parquet` file via `PadelVisualizer.from_parquet()`, the `Court` configuration (turf color, dimensions, indoor/outdoor setting) is automatically restored from the Parquet `padelkit_metadata` header, and any baked 17-joint 3D skeletons (`keypoints_3d`) are rendered directly in Three.js without requiring external `.glb` files.
-
-    ### Factory Classmethods
+    All arguments are optional. Calling `PadelVisualizer()` with zero arguments launches a physics-simulated [`MatchTimeline.demo_rally()`](/match-timeline#demo-rally) with 5 standard venue cameras.
 
     <Properties>
-      <Property name="from_parquet(parquet_path, court=None, cameras=None, animation_library_dir=None)" type="PadelVisualizer">
-        Loads a `.parquet` match recording and initializes the 3D visualizer with its embedded court and skeletal/trajectory data.
+      <Property name="court" type="Court | None">
+        [`Court`](/court) geometry to render. Defaults to `timeline.court` or `Court.fip_standard()`.
       </Property>
-      <Property name="from_csv(csv_path, court=None, cameras=None, animation_library_dir=None)" type="PadelVisualizer">
-        Loads a `.csv` timeline recording into a new `PadelVisualizer`.
+      <Property name="cameras" type="list[Camera] | None">
+        List of [`Camera`](/camera) presets or calibrated video views selectable in the studio HUD. Defaults to 5 views (`broadcast_near`, `broadcast_far`, `overhead_zenith`, `corner_near_left`, `side_net_right`).
+      </Property>
+      <Property name="timeline" type="MatchTimeline | None">
+        [`MatchTimeline`](/match-timeline) recording or live buffer to display. Defaults to `MatchTimeline.demo_rally(...)`.
+      </Property>
+      <Property name="animation_library_dir" type="str | Path | None">
+        Optional directory containing a `manifest.json` and Mixamo `.glb` clips generated by `padelkit-animator`. See [Stroke Library](/stroke-library). Defaults to `None`.
+      </Property>
+      <Property name="offline" type="bool">
+        When `True` (default), embeds the Three.js library directly into output HTML for standalone offline use; when `False`, uses a CDN import map.
+      </Property>
+      <Property name="ball_properties" type="BallProperties | None">
+        Optional visual [`BallProperties`](/ball-properties) (radius and turf contrast color). Defaults to `timeline.ball_properties`.
       </Property>
     </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Load Parquet in 3D Studio" tag="classmethod" label="from_parquet">
+    <CodeGroup title="Initialization" tag="constructor" label="PadelVisualizer">
 
     ```python
-    from padelkit import MatchTimeline, PadelVisualizer
+    from padelkit import Court, CourtSurfaceColor, PadelVisualizer
 
-    # 1. Generate and save a match with baked 17-joint 3D skeletons
-    timeline = MatchTimeline.demo_rally(bake_skeleton=True)
-    timeline.to_parquet("match_baked.parquet")
-
-    # 2. Load directly from .parquet and export standalone HTML
-    viz = PadelVisualizer.from_parquet("match_baked.parquet")
-    viz.export_html("match_studio.html")
+    viz = PadelVisualizer(
+        court=Court(turf_color=CourtSurfaceColor.BLUE),
+        offline=True,
+    )
+    viz.export_html("court_studio.html")
     ```
 
     </CodeGroup>
@@ -73,58 +58,268 @@
 
 ---
 
-## Export HTML, Serve & Stream {{ tag: 'methods', label: 'export_html / serve / push_frame' }}
+## Attributes {{ tag: 'fields', label: 'Scene State' }}
+
+<Properties>
+  <Property name="timeline" type="MatchTimeline">
+    Active [`MatchTimeline`](/match-timeline) rendered or appended to during live streaming.
+  </Property>
+  <Property name="court" type="Court">
+    Active [`Court`](/court) model shown in the 3D scene.
+  </Property>
+  <Property name="ball_properties" type="BallProperties">
+    Ball visual radius, felt color, and metadata shown in the HUD.
+  </Property>
+  <Property name="cameras" type="list[Camera]">
+    Registered camera viewpoints accessible from the Three.js camera selector.
+  </Property>
+  <Property name="animation_library_dir" type="Path | None">
+    Path to `padelkit-animator` `.glb` stroke clips, if configured.
+  </Property>
+  <Property name="offline" type="bool">
+    Default offline-bundle setting applied by `to_html()`, `export_html()`, and `serve()`.
+  </Property>
+</Properties>
+
+---
+
+## `from_parquet()` {{ tag: 'classmethod', label: 'PadelVisualizer.from_parquet()' }}
 
 <Row>
   <Col>
 
+    Factory constructor reading a Universal Match Format `.parquet` file via [`MatchTimeline.from_parquet()`](/match-timeline#to-parquet-and-from-parquet), automatically reconstructing embedded court geometry, ball properties, and 17-joint 3D skeletal frames.
+
+    ### Arguments
     <Properties>
-      <Property name="export_html(output_path)" type="Path">
-        Writes a self-contained `.html` file embedding the court geometry, cameras, timeline frames, and (if configured) base64-encoded `.glb` animations.
+      <Property name="parquet_path" type="str | Path">
+        Path to `.parquet` match file.
       </Property>
-      <Property name="to_html(live_stream_url=None)" type="str">
-        Returns the complete HTML string for the 3D studio.
+      <Property name="court" type="Court | None">
+        Optional `Court` override (defaults to the `Court` stored in `padelkit_metadata`).
       </Property>
-      <Property name="serve(host='127.0.0.1', port=8765, open_browser=True, background=False)" type="ThreadingHTTPServer | None">
-        Starts a local HTTP + Server-Sent Events (`/events`) server. When `background=True`, runs on a daemon thread so Python code can push frames via `push_frame()`.
+      <Property name="cameras" type="list[Camera] | None">
+        Optional camera list.
       </Property>
-      <Property name="push_frame(frame)" type="None">
-        Appends a [`FrameState`](/frame-state) to `self.timeline` and broadcasts it immediately to all connected browser clients.
+      <Property name="animation_library_dir" type="str | Path | None">
+        Optional directory of Mixamo `.glb` clips.
       </Property>
-      <Property name="stop()" type="None">
-        Stops the background HTTP server started by `serve(background=True)`.
-      </Property>
-      <Property name="load_parquet(parquet_path) / load_csv(csv_path)" type="PadelVisualizer">
-        Replaces the active `timeline` in-place from a `.parquet` or `.csv` file and returns `self`.
-      </Property>
-      <Property name="load_animation_library(animation_library_dir)" type="PadelVisualizer">
-        Attaches a `padelkit-animator` `.glb` library directory and returns `self`.
-      </Property>
-      <Property name="add_camera(camera)" type="PadelVisualizer">
-        Registers an additional [`Camera`](/camera) viewpoint in the 3D scene and returns `self`.
+      <Property name="offline" type="bool">
+        Embed Three.js bundle locally. Defaults to `True`.
       </Property>
     </Properties>
-
-    <AddedIn version="0.1.1">
-      `export_html(path, offline=...)`, `to_html(live_stream_url=..., offline=...)`, and `serve(..., offline=...)` all accept an optional `offline: bool` override (`True` by default) to switch between the embedded Three.js runtime and CDN import-map mode per call.
-    </AddedIn>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Interactive Server & Jupyter" tag="method" label="serve">
+    <CodeGroup title="Load Parquet Match" tag="classmethod" label="from_parquet">
+
+    ```python
+    from padelkit import MatchTimeline, PadelVisualizer
+
+    MatchTimeline.demo_rally(bake_skeleton=True).to_parquet("match.parquet")
+    viz = PadelVisualizer.from_parquet("match.parquet")
+    viz.export_html("replay.html")
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `from_csv()` {{ tag: 'classmethod', label: 'PadelVisualizer.from_csv()' }}
+
+<Row>
+  <Col>
+
+    Factory constructor loading tabular trajectories from a `.csv` file exported by [`MatchTimeline.to_csv()`](/match-timeline#to-dataframe-to-csv-from-dataframe-and-from-csv).
+
+    ### Arguments
+    <Properties>
+      <Property name="csv_path" type="str | Path">
+        Path to `.csv` timeline file.
+      </Property>
+      <Property name="court" type="Court | None">
+        Optional `Court` geometry (defaults to `Court.fip_standard()` since plain CSV has no JSON header).
+      </Property>
+      <Property name="cameras" type="list[Camera] | None">
+        Optional camera list.
+      </Property>
+      <Property name="animation_library_dir" type="str | Path | None">
+        Optional `.glb` animation directory.
+      </Property>
+      <Property name="offline" type="bool">
+        Embed Three.js bundle locally. Defaults to `True`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Load CSV Match" tag="classmethod" label="from_csv">
+
+    ```python
+    from padelkit import Court, MatchTimeline, PadelVisualizer
+
+    MatchTimeline.demo_rally().to_csv("match.csv")
+    viz = PadelVisualizer.from_csv("match.csv", court=Court.fip_standard())
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `add_camera()`, `load_*()` & `build_config()` {{ tag: 'method', label: 'Scene Builders' }}
+
+<Row>
+  <Col>
+
+    Fluent mutator methods returning `self` for method chaining:
+    - **`add_camera(camera)`**: Appends a [`Camera`](/camera) viewpoint to `self.cameras`.
+    - **`load_csv(csv_path)`**: Replaces `self.timeline` from a CSV file using `self.court`.
+    - **`load_parquet(parquet_path)`**: Replaces `self.timeline` and `self.court` from a `.parquet` file.
+    - **`load_animation_library(animation_library_dir)`**: Attaches a `padelkit-animator` directory.
+    - **`build_config(live_stream_url=None)`**: Returns the complete JSON-serializable scene dictionary consumed by the Three.js frontend.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Register Calibrated Camera" tag="method" label="add_camera">
 
     ```python
     from padelkit import Camera, PadelVisualizer
 
-    viz = PadelVisualizer.from_parquet("match_baked.parquet")
-    viz.add_camera(Camera.overhead_zenith())
+    viz = PadelVisualizer().add_camera(
+        Camera.from_preset("corner_far_right")
+    )
+    scene_cfg = viz.build_config()
+    print("Cameras loaded:", len(scene_cfg["cameras"]))
+    ```
 
-    # In a Jupyter Notebook cell, returning `viz` renders an iframe automatically:
-    # viz
+    </CodeGroup>
 
-    # Or launch the local interactive server:
-    # viz.serve(port=8765, open_browser=True)
+  </Col>
+</Row>
+
+---
+
+## `export_html()`, `to_html()` & `_repr_html_()` {{ tag: 'method', label: 'HTML & Notebooks' }}
+
+<Row>
+  <Col>
+
+    Render the studio outside Python without running a persistent web server:
+    - **`export_html(path, offline=None)`**: Creates parent folders if necessary, writes the complete Three.js viewer HTML to `path`, and returns the resolved `Path`.
+    - **`to_html(live_stream_url=None, offline=None)`**: Returns the raw HTML document string.
+    - **`_repr_html_()`**: Automatically renders an embedded `<iframe>` (width 100%, height 640px) whenever a `PadelVisualizer` instance is evaluated in Jupyter or Google Colab.
+
+    ### Arguments
+    <Properties>
+      <Property name="path" type="str | Path">
+        Output `.html` destination path for `export_html()`.
+      </Property>
+      <Property name="offline" type="bool | None">
+        Override `self.offline` for this export (`True` embeds Three.js inline; `False` loads from jsDelivr CDN; `None` uses `self.offline`).
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Export Offline HTML" tag="method" label="export_html">
+
+    ```python
+    from padelkit import PadelVisualizer
+
+    viz = PadelVisualizer()
+    out_file = viz.export_html("output/rally_viewer.html", offline=True)
+    print("Wrote:", out_file)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `serve()` {{ tag: 'method', label: 'viz.serve()' }}
+
+<Row>
+  <Col>
+
+    Starts a local `ThreadingHTTPServer` serving the interactive 3D viewer (`/`), optional `.glb` assets (`/animations/...`), and a Server-Sent Events stream (`/events`).
+
+    ### Arguments
+    <Properties>
+      <Property name="host" type="str">
+        Bind address. Defaults to `"127.0.0.1"`.
+      </Property>
+      <Property name="port" type="int">
+        TCP listening port. Defaults to `8765`.
+      </Property>
+      <Property name="open_browser" type="bool">
+        Automatically opens the URL in the default web browser. Defaults to `True`.
+      </Property>
+      <Property name="background" type="bool">
+        If `True`, runs the server on a daemon thread and returns immediately so Python can call `push_frame()`; if `False`, blocks until `KeyboardInterrupt`. Defaults to `False`.
+      </Property>
+      <Property name="offline" type="bool | None">
+        Override Three.js embedding mode (`None` falls back to `self.offline`).
+      </Property>
+    </Properties>
+
+    ### Returns
+    `ThreadingHTTPServer` — Active HTTP server handle.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Launch Background Server" tag="method" label="serve">
+
+    ```python
+    from padelkit import PadelVisualizer
+
+    viz = PadelVisualizer()
+    server = viz.serve(port=8765, open_browser=False, background=True)
+    # ... stream frames with viz.push_frame(...) ...
+    viz.stop_server()
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `push_frame()` & `stop_server()` {{ tag: 'method', label: 'Live Streaming' }}
+
+<Row>
+  <Col>
+
+    - **`push_frame(frame)`**: Appends a [`FrameState`](/frame-state) snapshot to `self.timeline` and broadcasts its JSON payload over `/events` to all connected browser clients.
+    - **`stop_server()`**: Gracefully shuts down and closes the background `ThreadingHTTPServer` started by `serve(background=True)`.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Push Frame & Shutdown" tag="method" label="push_frame / stop_server">
+
+    ```python
+    from padelkit import FrameState, PadelVisualizer
+
+    viz = PadelVisualizer()
+    viz.serve(port=8770, open_browser=False, background=True)
+    try:
+        viz.push_frame(FrameState(timestamp=0.0, ball_position=(0.0, -3.0, 1.5)))
+    finally:
+        viz.stop_server()
     ```
 
     </CodeGroup>

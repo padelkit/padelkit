@@ -11,20 +11,27 @@ class CameraDistortion:
     """Optical lens distortion parameters and forward/inverse distortion math.
 
     Supports three optical models:
-    - :attr:`DistortionModel.NONE`: Pinhole projection (identity mapping).
-    - :attr:`DistortionModel.BROWN_CONRADY`: Radial ``(k1, k2, k3)`` and
-      tangential ``(p1, p2)`` distortion, matching OpenCV's 5-parameter model.
-    - :attr:`DistortionModel.FISHEYE`: Kannala-Brandt equidistant fisheye
-      distortion ``(k1, k2, k3, k4)``, matching ``cv2.fisheye``.
+    - `DistortionModel.NONE`: Pinhole projection (identity mapping).
+    - `DistortionModel.BROWN_CONRADY`: Radial `(k1, k2, k3)` and
+      tangential `(p1, p2)` distortion, matching OpenCV's 5-parameter model.
+    - `DistortionModel.FISHEYE`: Kannala-Brandt equidistant fisheye
+      distortion `(k1, k2, k3, k4)`, matching `cv2.fisheye`.
     """
 
     model: DistortionModel = DistortionModel.NONE
+    """Optical distortion formulation (`NONE`, `BROWN_CONRADY`, or `FISHEYE`)."""
     k1: float = 0.0
+    """First radial distortion coefficient (barrel `< 0`, pincushion `> 0`)."""
     k2: float = 0.0
+    """Second radial distortion coefficient (`r^4` or `theta^4` term)."""
     p1: float = 0.0
+    """First tangential (decentering) coefficient (Brown-Conrady only)."""
     p2: float = 0.0
+    """Second tangential (decentering) coefficient (Brown-Conrady only)."""
     k3: float = 0.0
+    """Third radial distortion coefficient (`r^6` or `theta^6` term)."""
     k4: float = 0.0
+    """Fourth radial coefficient (`theta^8` term, `FISHEYE` model only)."""
 
     # ------------------------------------------------------------------ #
     # Factory constructors

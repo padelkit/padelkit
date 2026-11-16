@@ -1,6 +1,8 @@
 # CameraExtrinsics
 
-`CameraExtrinsics` defines the 6-DoF position and orientation of a camera in the 3D padel court coordinate system. {{ className: 'lead' }}
+`CameraExtrinsics` is a frozen dataclass representing the 6-DoF rigid pose (3D position + 3D orientation) of a camera in court world meters. Import via `from padelkit import CameraExtrinsics`. {{ className: 'lead' }}
+
+Internally, `P_cam = R @ (P_w - position) = R @ P_w + t` uses the **OpenCV camera convention** (`+X_cam` right across pixels, `+Y_cam` down across rows, `+Z_cam` forward out of the lens), while exposing `opengl_camera_to_world_matrix` directly for Three.js and Blender.
 
 <Schematic
   name="camera-frustum-3d"
@@ -8,65 +10,26 @@
   caption="6-DoF camera pose in 3D court coordinates showing optical center position, look-at optical axis, and frustum planes."
 />
 
-## Properties
-
-<Properties>
-  <Property name="position" type="tuple[float, float, float]">
-    3D world coordinates `(X, Y, Z)` of the camera optical center in meters.
-  </Property>
-  <Property name="rotation_matrix" type="tuple[tuple[float, float, float], ...]">
-    `3x3` orthogonal world-to-camera rotation matrix `R` in OpenCV convention.
-  </Property>
-  <Property name="R" type="np.ndarray">
-    `3x3` world-to-camera rotation matrix as a NumPy `float64` array.
-  </Property>
-  <Property name="t" type="np.ndarray">
-    `3D` world-to-camera translation vector `t = -R @ center`.
-  </Property>
-  <Property name="forward" type="tuple[float, float, float]">
-    Unit optical axis vector (`+Z_cam`) in world coordinates.
-  </Property>
-  <Property name="up" type="tuple[float, float, float]">
-    Unit vector pointing upwards in the image (`-Y_cam`) in world coordinates.
-  </Property>
-  <Property name="right" type="tuple[float, float, float]">
-    Unit vector pointing right (`+X_cam`) in world coordinates.
-  </Property>
-  <Property name="world_to_camera_matrix" type="np.ndarray">
-    `4x4` homogeneous world-to-camera transformation matrix (OpenCV convention).
-  </Property>
-  <Property name="opengl_camera_to_world_matrix" type="np.ndarray">
-    `4x4` camera-to-world transformation matrix in OpenGL / Three.js / Blender convention (`+X` right, `+Y` up, `-Z` forward).
-  </Property>
-</Properties>
-
----
-
-## Look-At Initialization {{ tag: 'classmethod', label: 'CameraExtrinsics.from_look_at()' }}
+## Parameters & Fields {{ tag: 'dataclass', label: 'CameraExtrinsics' }}
 
 <Row>
   <Col>
 
-    Creates a `CameraExtrinsics` instance placed at `position` and oriented directly towards `target`. Automatically resolves zenith singularities when looking straight down (`-Z`).
-
-    ### Arguments
+    In most workflows you should construct `CameraExtrinsics` via [`from_look_at()`](#from-look-at), [`from_euler()`](#from-euler), or [`from_rt()`](#from-rt) instead of building an `SO(3)` rotation matrix manually. `__post_init__` validates orthonormality (`R @ R.T == I`, `det(R) == +1`).
 
     <Properties>
-      <Property name="position" type="tuple[float, float, float] | Sequence[float]">
-        Camera position `(X, Y, Z)` in meters.
+      <Property name="position" type="tuple[float, float, float]">
+        3D world coordinates `(x, y, z)` of the camera's optical center in centered court meters.
       </Property>
-      <Property name="target" type="tuple[float, float, float] | Sequence[float]" default="(0.0, 0.0, 0.0)">
-        3D target point `(X, Y, Z)` the optical axis points at.
-      </Property>
-      <Property name="roll_deg" type="float" default="0.0">
-        Optional camera roll angle around the optical axis in degrees.
+      <Property name="rotation_matrix" type="tuple[tuple[float, float, float], ...]">
+        `3x3` special orthogonal `SO(3)` world-to-camera rotation matrix `R` whose rows are `(right, down, forward)`.
       </Property>
     </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Usage" tag="classmethod" label="from_look_at">
+    <CodeGroup title="Initialization via Look-At" tag="dataclass" label="CameraExtrinsics">
 
     ```python
     from padelkit import CameraExtrinsics
@@ -74,6 +37,90 @@
     extr = CameraExtrinsics.from_look_at(
         position=(0.0, -13.8, 5.8),
         target=(0.0, 0.0, 0.5),
+    )
+    print("Position:", extr.position)
+    print("Forward vector:", tuple(round(v, 3) for v in extr.forward))
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Properties {{ tag: 'property', label: 'Matrices & Basis Vectors' }}
+
+<Properties>
+  <Property name="R" type="np.ndarray">
+    `3x3` world-to-camera OpenCV rotation matrix as a `float64` NumPy array.
+  </Property>
+  <Property name="center" type="np.ndarray">
+    Camera optical center `(3,)` in world coordinates as a NumPy array.
+  </Property>
+  <Property name="t" type="np.ndarray">
+    `3D` OpenCV translation vector `t = -R @ center`.
+  </Property>
+  <Property name="right" type="tuple[float, float, float]">
+    Unit vector pointing right (`+X_cam`) in world court coordinates.
+  </Property>
+  <Property name="down" type="tuple[float, float, float]">
+    Unit vector pointing downward in the image (`+Y_cam`) in world court coordinates.
+  </Property>
+  <Property name="up" type="tuple[float, float, float]">
+    Unit vector pointing upward in the image (`-Y_cam`) in world court coordinates.
+  </Property>
+  <Property name="forward" type="tuple[float, float, float]">
+    Unit optical axis vector (`+Z_cam`, viewing direction) in world court coordinates.
+  </Property>
+  <Property name="world_to_camera_matrix" type="np.ndarray">
+    `4x4` homogeneous OpenCV transform mapping world points into camera space.
+  </Property>
+  <Property name="camera_to_world_matrix" type="np.ndarray">
+    `4x4` homogeneous OpenCV transform mapping camera coordinates back to world meters.
+  </Property>
+  <Property name="opengl_camera_to_world_matrix" type="np.ndarray">
+    `4x4` camera-to-world transform converted to OpenGL / Three.js / Blender convention (`+Y` up, `-Z` forward).
+  </Property>
+</Properties>
+
+---
+
+## `from_look_at()` {{ tag: 'classmethod', label: 'CameraExtrinsics.from_look_at()' }}
+
+<Row>
+  <Col>
+
+    Orients the camera at `position` aimed directly toward a 3D `target` point. Automatically prevents gimbal/singularity flips in pure overhead zenith or nadir shots (`world_up` collinear with `forward`) by aligning image up with the court `+Y` axis.
+
+    ### Arguments
+    <Properties>
+      <Property name="position" type="tuple[float, float, float] | Sequence[float]">
+        Camera world center `(x, y, z)` in meters.
+      </Property>
+      <Property name="target" type="tuple[float, float, float] | Sequence[float]">
+        3D point the camera looks toward. Defaults to `(0.0, 0.0, 0.0)`.
+      </Property>
+      <Property name="roll_deg" type="float">
+        Clockwise roll around the optical axis in degrees. Defaults to `0.0`.
+      </Property>
+      <Property name="world_up" type="tuple[float, float, float] | Sequence[float]">
+        World up reference vector. Defaults to `(0.0, 0.0, 1.0)`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Aim at Court Target" tag="classmethod" label="from_look_at">
+
+    ```python
+    from padelkit import CameraExtrinsics
+
+    corner = CameraExtrinsics.from_look_at(
+        position=(-5.8, -10.8, 4.4),
+        target=(0.5, 0.5, 0.8),
+        roll_deg=0.0,
     )
     ```
 
@@ -84,30 +131,111 @@
 
 ---
 
-## Euler Angles Initialization {{ tag: 'classmethod', label: 'CameraExtrinsics.from_euler()' }}
+## `from_euler()` {{ tag: 'classmethod', label: 'CameraExtrinsics.from_euler()' }}
 
 <Row>
   <Col>
 
-    Creates a `CameraExtrinsics` instance from pan (`yaw_deg`), tilt (`pitch_deg`), and roll (`roll_deg`) angles.
+    Constructs `CameraExtrinsics` from intuitive **pan / tilt / roll** angles:
+    - `yaw_deg = 0` points along `+Y` (near to far wall); `yaw_deg = 90` pans right along `+X`; `yaw_deg = 180` faces `-Y`.
+    - `pitch_deg < 0` tilts downward toward the floor (`0` is horizontal).
+    - `roll_deg` rotates around the optical axis.
 
-    - `yaw_deg = 0` points along `+Y` (from near to far side).
-    - Negative `pitch_deg` tilts the camera downwards towards the floor.
+    ### Arguments
+    <Properties>
+      <Property name="position" type="tuple[float, float, float] | Sequence[float]">
+        Camera world center `(x, y, z)` in meters.
+      </Property>
+      <Property name="yaw_deg" type="float">
+        Horizontal pan angle in degrees (`0.0` default faces `+Y`).
+      </Property>
+      <Property name="pitch_deg" type="float">
+        Vertical elevation/tilt in degrees (`-22.0` looks down onto the floor). Defaults to `0.0`.
+      </Property>
+      <Property name="roll_deg" type="float">
+        Roll angle around optical axis in degrees. Defaults to `0.0`.
+      </Property>
+    </Properties>
 
   </Col>
   <Col sticky>
 
-    <CodeGroup title="Usage" tag="classmethod" label="from_euler">
+    <CodeGroup title="Pan / Tilt / Roll" tag="classmethod" label="from_euler">
 
     ```python
     from padelkit import CameraExtrinsics
 
     extr = CameraExtrinsics.from_euler(
-        position=(0.0, -13.5, 5.5),
+        position=(0.0, -13.8, 5.8),
         yaw_deg=0.0,
         pitch_deg=-22.0,
         roll_deg=0.0,
     )
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `from_rt()` {{ tag: 'classmethod', label: 'CameraExtrinsics.from_rt()' }}
+
+<Row>
+  <Col>
+
+    Constructs `CameraExtrinsics` directly from OpenCV calibration outputs `R` (`3x3` rotation) and `t` (`3,` translation vector), computing `position = -R.T @ t` automatically.
+
+    ### Arguments
+    <Properties>
+      <Property name="r_matrix" type="np.ndarray | Sequence[Sequence[float]]">
+        `3x3` OpenCV rotation matrix `R`.
+      </Property>
+      <Property name="t_vector" type="np.ndarray | Sequence[float]">
+        `3`-element translation vector `t` in meters.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="From OpenCV R & t" tag="classmethod" label="from_rt">
+
+    ```python
+    import numpy as np
+    from padelkit import CameraExtrinsics
+
+    extr = CameraExtrinsics.from_rt(np.eye(3), np.array([0.0, 0.0, 5.0]))
+    print(extr.position)  # (0.0, 0.0, -5.0)
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `look_at_point()` & `to_dict()` {{ tag: 'method', label: 'Helpers & Export' }}
+
+<Row>
+  <Col>
+
+    - **`look_at_point(distance_m=10.0)`**: Returns a 3D world point lying `distance_m` meters ahead of the camera along its `forward` optical axis (handy for configuring `OrbitControls` targets in 3D viewers).
+    - **`to_dict()`**: Serializes `position`, `forward`, `up`, `right`, `rotation_matrix`, and `t` to a plain dictionary.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Optical Target & Export" tag="method" label="look_at_point / to_dict">
+
+    ```python
+    from padelkit import CameraExtrinsics
+
+    extr = CameraExtrinsics.from_look_at((0.0, -13.8, 5.8), (0.0, 0.0, 0.0))
+    print(extr.look_at_point(distance_m=12.0))
+    payload = extr.to_dict()
     ```
 
     </CodeGroup>

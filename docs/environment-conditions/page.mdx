@@ -1,0 +1,121 @@
+# EnvironmentConditions
+
+`EnvironmentConditions` is a frozen dataclass modeling gravity, ambient air density (`rho`), constant 3D wind velocity, in-flight spin decay, and optional venue weather/altitude telemetry. Import via `from padelkit import EnvironmentConditions`. {{ className: 'lead' }}
+
+Air density strongly affects padel ball speed: at high altitude (e.g. Madrid at `655 m`, or Mexico City at `2,240 m`), air is noticeably thinner (`rho ≈ 1.095` or `~0.96 kg/m³` vs `~1.20 kg/m³` at sea level), reducing both aerodynamic drag and Magnus spin curve. Use [`from_atmosphere()`](#from-atmosphere) to compute exact humid air density automatically from altitude, temperature, and humidity.
+
+---
+
+## Parameters & Fields {{ tag: 'dataclass', label: 'EnvironmentConditions' }}
+
+<Row>
+  <Col>
+
+    `gravity` and `air_density` must be non-negative, and `wind_velocity` must be a 3-element `(wx, wy, wz)` vector.
+
+    <Properties>
+      <Property name="gravity" type="float">
+        Downward gravitational acceleration magnitude along `-Z` in `m/s²`. Defaults to `9.81`.
+      </Property>
+      <Property name="air_density" type="float">
+        Ambient air density `rho` in `kg/m³` (`~1.18` default representing typical `21 °C` indoor club conditions; lower values reduce drag and Magnus force). Defaults to `1.18`.
+      </Property>
+      <Property name="wind_velocity" type="tuple[float, float, float]">
+        Constant 3D ambient wind vector `(wx, wy, wz)` in `m/s` in world court coordinates (`F_drag` uses `v_rel = v - wind_velocity`). Defaults to `(0.0, 0.0, 0.0)`.
+      </Property>
+      <Property name="spin_decay_rate" type="float">
+        Exponential angular velocity decay coefficient `k_spin` in `1/s` during free flight (`alpha_ang = -spin_decay_rate * omega`). Defaults to `0.001`.
+      </Property>
+      <Property name="temperature_c" type="float | None">
+        Optional ambient air temperature in degrees Celsius (populated automatically by `from_atmosphere()`). Defaults to `None`.
+      </Property>
+      <Property name="relative_humidity" type="float | None">
+        Optional relative humidity fraction in `[0.0, 1.0]` (populated by `from_atmosphere()`). Defaults to `None`.
+      </Property>
+      <Property name="altitude_m" type="float | None">
+        Optional venue altitude above sea level in meters (populated by `from_atmosphere()`). Defaults to `None`.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Initialization" tag="dataclass" label="EnvironmentConditions">
+
+    ```python
+    from padelkit import EnvironmentConditions
+
+    windy = EnvironmentConditions(
+        air_density=1.20,
+        wind_velocity=(3.0, -1.5, 0.0),
+    )
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## `standard()` & `from_atmosphere()` {{ tag: 'classmethod', label: 'Presets & Barometric Model' }}
+
+<Row>
+  <Col>
+
+    - **`EnvironmentConditions.standard()`**: Default indoor calm atmosphere (`gravity=9.81`, `air_density=1.18`, zero wind).
+    - **`EnvironmentConditions.from_atmosphere(altitude_m=0.0, temperature_c=20.0, relative_humidity=0.5, wind_velocity=(0,0,0))`**: Computes exact humid air density `rho` (`kg/m³`) using the International Barometric Formula and Tetens saturation vapor pressure, storing `temperature_c`, `relative_humidity`, and `altitude_m` in the returned object.
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Sea Level vs Madrid Altitude" tag="classmethod" label="from_atmosphere">
+
+    ```python
+    from padelkit import EnvironmentConditions
+
+    sea_level = EnvironmentConditions.from_atmosphere(
+        altitude_m=0.0,
+        temperature_c=20.0,
+        relative_humidity=0.5,
+    )
+    madrid = EnvironmentConditions.from_atmosphere(
+        altitude_m=655.0,
+        temperature_c=28.0,
+        relative_humidity=0.35,
+        wind_velocity=(1.2, 0.0, 0.0),
+    )
+    print(f"Sea level rho: {sea_level.air_density:.4f} kg/m^3")
+    print(f"Madrid rho:    {madrid.air_density:.4f} kg/m^3")
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
+
+---
+
+## Serialization (`to_dict` / `from_dict`) {{ tag: 'method', label: 'dict I/O' }}
+
+<Row>
+  <Col>
+
+    Exports all 7 fields to a dictionary (`env.to_dict()`) and reconstructs an identical `EnvironmentConditions` instance (`EnvironmentConditions.from_dict(data)`). Embedded automatically inside [`MatchTimeline.to_parquet()`](/match-timeline#to-parquet-and-from-parquet).
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Dictionary Round-Trip" tag="method" label="to_dict / from_dict">
+
+    ```python
+    from padelkit import EnvironmentConditions
+
+    env = EnvironmentConditions.from_atmosphere(altitude_m=650.0, temperature_c=24.0)
+    assert EnvironmentConditions.from_dict(env.to_dict()) == env
+    ```
+
+    </CodeGroup>
+
+  </Col>
+</Row>
